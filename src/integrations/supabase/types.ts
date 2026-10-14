@@ -21,6 +21,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          restaurant_id: string | null
         }
         Insert: {
           created_at?: string
@@ -28,6 +29,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          restaurant_id?: string | null
         }
         Update: {
           created_at?: string
@@ -35,8 +37,17 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          restaurant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -51,6 +62,7 @@ export type Database = {
           outside: boolean
           people: number
           phone: string | null
+          restaurant_id: string | null
           shift: string
           table_ids: string[]
           time: string
@@ -67,6 +79,7 @@ export type Database = {
           outside?: boolean
           people?: number
           phone?: string | null
+          restaurant_id?: string | null
           shift: string
           table_ids?: string[]
           time?: string
@@ -83,6 +96,7 @@ export type Database = {
           outside?: boolean
           people?: number
           phone?: string | null
+          restaurant_id?: string | null
           shift?: string
           table_ids?: string[]
           time?: string
@@ -95,6 +109,95 @@ export type Database = {
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reservations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          restaurant_id: string
+          role: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name?: string
+          restaurant_id: string
+          role?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          restaurant_id?: string
+          role?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_invites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_members: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          restaurant_id: string
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          restaurant_id: string
+          role?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          restaurant_id?: string
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_members_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       restaurant_tables: {
@@ -102,6 +205,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          restaurant_id: string | null
           room_id: string
           seats: number
           x: number
@@ -111,6 +215,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          restaurant_id?: string | null
           room_id: string
           seats?: number
           x?: number
@@ -120,12 +225,20 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          restaurant_id?: string | null
           room_id?: string
           seats?: number
           x?: number
           y?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "restaurant_tables_room_id_fkey"
             columns: ["room_id"]
@@ -135,33 +248,76 @@ export type Database = {
           },
         ]
       }
+      restaurants: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           created_at: string
           id: string
           name: string
+          restaurant_id: string | null
           sort_order: number
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          restaurant_id?: string | null
           sort_order?: number
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          restaurant_id?: string | null
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_restaurant: {
+        Args: { _display_name: string; _name: string }
+        Returns: string
+      }
+      get_invite: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          name: string
+          restaurant_name: string
+          role: string
+        }[]
+      }
+      is_master: { Args: never; Returns: boolean }
+      my_restaurant_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
