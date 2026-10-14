@@ -14,7 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          arrived: boolean
+          created_at: string
+          customer_id: string | null
+          date: string
+          id: string
+          is_new: boolean
+          name: string
+          notes: string
+          outside: boolean
+          people: number
+          phone: string | null
+          shift: string
+          table_ids: string[]
+          time: string
+        }
+        Insert: {
+          arrived?: boolean
+          created_at?: string
+          customer_id?: string | null
+          date: string
+          id?: string
+          is_new?: boolean
+          name?: string
+          notes?: string
+          outside?: boolean
+          people?: number
+          phone?: string | null
+          shift: string
+          table_ids?: string[]
+          time?: string
+        }
+        Update: {
+          arrived?: boolean
+          created_at?: string
+          customer_id?: string | null
+          date?: string
+          id?: string
+          is_new?: boolean
+          name?: string
+          notes?: string
+          outside?: boolean
+          people?: number
+          phone?: string | null
+          shift?: string
+          table_ids?: string[]
+          time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_tables: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          room_id: string
+          seats: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          room_id: string
+          seats?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          room_id?: string
+          seats?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
