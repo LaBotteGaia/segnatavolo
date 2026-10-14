@@ -42,7 +42,7 @@ function AgendaPage() {
   const [mobileShift, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : "pranzo");
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  const setDate = (d: string) => navigate({ search: { d: d === todayStr() ? undefined : d } });
+  const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
   const dateObj = parseISO(date);
 
   const visible = reservations.filter((r) => !hidden.has(r.id));
