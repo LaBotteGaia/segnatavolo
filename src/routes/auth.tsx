@@ -31,7 +31,10 @@ function AuthPage() {
     if (mode === "in") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setBusy(false);
-      if (error) return toast.error("Email o password non corretti");
+      if (error) {
+        toast.error("Email o password non corretti");
+        return;
+      }
       navigate({ to: "/agenda" });
     } else {
       const { error } = await supabase.auth.signUp({
@@ -40,7 +43,10 @@ function AuthPage() {
         options: { emailRedirectTo: window.location.origin + "/agenda" },
       });
       setBusy(false);
-      if (error) return toast.error(error.message);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success("Controlla la tua email per confermare l'account");
       setMode("in");
     }

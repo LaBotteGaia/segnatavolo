@@ -12,7 +12,7 @@ export type NewReservationInput = {
   is_new: boolean;
   outside: boolean;
   notes: string;
-  customer?: Customer;
+  customer?: Customer | undefined;
 };
 
 export function NewReservationRow({ defaultTime, onCreate }: { defaultTime: string; onCreate: (v: NewReservationInput) => Promise<void> }) {

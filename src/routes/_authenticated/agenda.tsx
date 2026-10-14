@@ -17,9 +17,10 @@ import { NewReservationRow, type NewReservationInput } from "@/components/agenda
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    d: typeof s.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.d) ? s.d : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { d?: string } => {
+    const d = s["d"];
+    return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {};
+  },
   head: () => ({
     meta: [
       { title: "Agenda — Prenotazioni" },
