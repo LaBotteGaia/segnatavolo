@@ -17,20 +17,26 @@ import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { AppMenu } from "@/components/AppMenu";
 import { NewReservationDialog, type NewReservationInput } from "@/components/agenda/NewReservationDialog";
-import { Plus } from "lucide-react";
+import { Plus, Printer } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
+import { APP_NAME } from "@/lib/extras";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>): { d?: string } => {
-    const d = s["d"];
-    return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {};
+  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string } => {
+    const d = s["d"], h = s["h"];
+    return {
+      ...(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {}),
+      ...(typeof h === "string" && h ? { h } : {}),
+    };
   },
   head: () => ({
     meta: [
-      { title: "Agenda — Prenotazioni" },
+      { title: "Agenda — Segnatavolo" },
       { name: "description", content: "Agenda giornaliera di pranzo e sera." },
-      { property: "og:title", content: "Agenda — Prenotazioni" },
+      { property: "og:title", content: "Agenda — Segnatavolo" },
       { property: "og:description", content: "Agenda giornaliera di pranzo e sera." },
     ],
   }),
@@ -48,6 +54,7 @@ function AgendaPage() {
   const qc = useQueryClient();
   const [newShift, setNewShift] = useState<Shift | null>(null);
   const { data: reservations = [] } = useReservations(date);
+  const [onlyPending, setOnlyPending] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const settings = useSettings();
   const shifts = activeShifts(settings);
@@ -72,6 +79,7 @@ function AgendaPage() {
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
+  const goTo = (r: Reservation) => { setMobileShift(r.shift as Shift); navigate({ search: { ...(r.date === todayStr() ? {} : { d: r.date }), h: r.id } }); };
   const dateObj = parseISO(date);
 
   const visible = reservations.filter((r) => !hidden.has(r.id));
@@ -177,8 +185,9 @@ function AgendaPage() {
 
   const closedToday = closedShifts(date, settings);
   const renderPage = (shift: Shift, side: "left" | "right" | "mid") => {
-    const rows = byShift(shift);
-    const c = shiftCounters(rows);
+    const all = byShift(shift);
+    const c = shiftCounters(all);
+    const rows = onlyPending ? all.filter((r) => !r.arrived) : all;
     const closed = closedToday.includes(shift);
     return (
       <section
@@ -198,6 +207,11 @@ function AgendaPage() {
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
         </header>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>
+          <Button asChild size="sm" variant="outline"><Link to="/foglio" search={{ d: date, s: shift }}><Printer /> 🖨️ Foglio di Sala</Link></Button>
+        </div>
+        <ServiceNotes date={date} shift={shift} />
         <Button className="mb-3 hidden w-full md:flex" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span>Ora</span>
@@ -210,7 +224,8 @@ function AgendaPage() {
           <ReservationRow
             key={r.id}
             r={r}
-            others={rows}
+            others={all}
+            highlight={search.h === r.id}
             onUpdate={(p) => update(r.id, p)}
             onDelete={() => remove(r)}
             onCustomerPhone={(ph) => saveCustomerPhone(r, ph)}
@@ -219,7 +234,7 @@ function AgendaPage() {
             dayExtra={dayExtra}
           />
         ))}
-        {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">Nessuna prenotazione</p>}
+        {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">{all.length ? "Tutti arrivati" : "Nessuna prenotazione"}</p>}
       </section>
     );
   };
@@ -254,6 +269,7 @@ function AgendaPage() {
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setDate(todayStr())}>Oggi</Button>
           </div>
+          <SearchBox onPick={goTo} />
           <div className="ml-auto flex items-center gap-1">
             <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
@@ -284,6 +300,7 @@ function AgendaPage() {
         </div>
         <div className="md:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
       </main>
+      <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} />
     </div>
   );
