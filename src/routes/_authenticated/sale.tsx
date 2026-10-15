@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
-import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall } from "@/lib/data";
+import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 
 export const Route = createFileRoute("/_authenticated/sale")({
@@ -46,6 +46,14 @@ function SalePage() {
   const roomTables = tables.filter((t) => t.room_id === room?.id);
   const selected = tables.find((t) => t.id === sel);
 
+  const grid = gridOf(room);
+  const resize = (dc: number, dr: number) => {
+    if (!room) return;
+    const cols = Math.min(60, grid.cols + dc), rows = Math.min(60, grid.rows + dr);
+    if (cols < 1 || rows < 1) return;
+    if (roomTables.some((t) => t.x >= cols || t.y >= rows)) return toast.error("Sposta prima i tavoli che stanno nell'ultima riga/colonna");
+    updateRoom(room, { grid_cols: cols, grid_rows: rows });
+  };
   const caps = totalCapacities(rooms, tables);
   const updateRoom = async (r: Room, patch: Partial<Room>) => {
     qc.setQueryData<Room[]>(["rooms"], (old) => old?.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
@@ -172,7 +180,16 @@ function SalePage() {
                 </Button>
                 {drawWalls && <span className="text-sm text-muted-foreground">Tocca un bordo tra le caselle per tracciare un muro; ritoccalo per toglierlo.</span>}
               </div>
+              <div className="mb-2 flex flex-wrap items-center gap-1 text-sm">
+                <span className="mr-1 font-semibold">Griglia {grid.cols}×{grid.rows}</span>
+                <Button size="sm" variant="outline" onClick={() => resize(0, 1)}>+ Riga</Button>
+                <Button size="sm" variant="outline" onClick={() => resize(0, -1)}>- Riga</Button>
+                <Button size="sm" variant="outline" onClick={() => resize(1, 0)}>+ Colonna</Button>
+                <Button size="sm" variant="outline" onClick={() => resize(-1, 0)}>- Colonna</Button>
+              </div>
               <RoomGrid
+                cols={grid.cols}
+                rows={grid.rows}
                 tables={roomTables}
                 walls={wallsOf(room)}
                 editWalls={drawWalls}
@@ -181,13 +198,14 @@ function SalePage() {
                   <button
                     onClick={() => !drawWalls && cellClick(x, y)}
                     className={cn(
-                      "flex h-full w-full items-center justify-center overflow-hidden rounded-md text-center text-sm font-bold",
+                      "relative flex h-full w-full items-center justify-center overflow-hidden rounded-md text-center font-bold leading-tight",
                       t ? "bg-free text-free-foreground" : "border border-dashed border-rule text-muted-foreground/40 hover:bg-accent",
                       t && t.id === sel && "ring-4 ring-primary ring-offset-2 ring-offset-paper",
                       drawWalls && "opacity-60",
                     )}
                   >
                     {t ? `${t.name} - ${t.seats}p` : drawWalls ? "" : "+"}
+                    {t && !t.allow_extras && <span className="absolute right-0.5 top-0 text-[0.8em]" title="Niente sponde/barelle">⛔</span>}
                   </button>
                 )}
               />
@@ -201,6 +219,33 @@ function SalePage() {
                   <div>
                     <label className="text-xs text-muted-foreground">Posti</label>
                     <Input className="w-20" type="number" min={1} value={selected.seats} onChange={(e) => updateTable(selected, { seats: Math.max(1, Number(e.target.value) || 1) })} />
+                  </div>
+                  <div className="w-full space-y-2 border-t pt-3">
+                    <div className="font-display text-lg">Regole e Vincoli Speciali</div>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={selected.allow_extras} onChange={(e) => updateTable(selected, { allow_extras: e.target.checked })} />
+                      Consente l'inserimento di sponde / barelle
+                    </label>
+                    <div className="text-sm">Non abbinabile con:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {roomTables.filter((o) => o.id !== selected.id).map((o) => {
+                        const byWall = wallBetween(selected, o, wallsOf(room));
+                        const on = byWall || selected.no_join.includes(o.id) || o.no_join.includes(selected.id);
+                        return (
+                          <button key={o.id} type="button" disabled={byWall} title={byWall ? "Parete tra i tavoli" : undefined}
+                            onClick={() => {
+                              const add = !on;
+                              updateTable(selected, { no_join: add ? [...selected.no_join, o.id] : selected.no_join.filter((i) => i !== o.id) });
+                              if (!add && o.no_join.includes(selected.id)) updateTable(o, { no_join: o.no_join.filter((i) => i !== selected.id) });
+                            }}
+                            className={cn("rounded-md border px-2 py-1 text-sm", on ? "border-busy bg-busy text-busy-foreground" : "bg-paper", byWall && "opacity-70")}>
+                            {o.name}{byWall ? " 🧱" : ""}
+                          </button>
+                        );
+                      })}
+                      {roomTables.length < 2 && <span className="text-xs text-muted-foreground">Nessun altro tavolo in questa sala.</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">🧱 = parete disegnata tra i due tavoli: non abbinabili in automatico.</p>
                   </div>
                   <Button
                     variant="destructive"
