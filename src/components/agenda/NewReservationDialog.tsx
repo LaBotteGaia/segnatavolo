@@ -218,7 +218,7 @@ export function NewReservationDialog({
         {outside && rooms && outsideClosed(rooms, date) && (
           <p className="rounded-md border border-warning bg-warning/20 p-2 text-sm font-semibold">❄️ Attenzione: in questa data le sale esterne sono chiuse per stagione o giorno di riposo.</p>
         )}
-        {(phone.trim() || match) && <LoyaltyBox customerId={match?.id} phone={phone || match?.phone} />}
+        {(phone.trim() || match) && <LoyaltyBox customerId={match?.id ?? null} phone={phone || match?.phone || null} />}
 
         {closed && (
           <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">

@@ -106,6 +106,7 @@ function AgendaPage() {
     }
     qc.invalidateQueries({ queryKey: ["customer-history"] });
     qc.invalidateQueries({ queryKey: ["search"] });
+    qc.invalidateQueries({ queryKey: ["reservations-month"] });
   };
 
   const remove = (r: Reservation) => {
@@ -171,11 +172,12 @@ function AgendaPage() {
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
-    const { error } = await supabase.from("reservations").update({ ...v, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
+    const { error } = await supabase.from("reservations").update({ ...v, no_show: false, arrived: false, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
     qc.invalidateQueries({ queryKey: key });
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
     qc.invalidateQueries({ queryKey: ["reservations-month"] });
     if (error) { toast.error("Spostamento non riuscito"); return; }
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
     toast.success(`Prenotazione spostata al ${format(parseISO(v.date), "d MMMM", { locale: it })} · ${shiftName(v.shift)} ${v.time}. Tavolo da assegnare.`, {
       action: { label: "Vai", onClick: () => setDate(v.date) },
     });

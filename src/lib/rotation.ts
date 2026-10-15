@@ -26,7 +26,7 @@ export function interval(r: Slot, cfg: RotationCfg) {
   return { start, end: start + d, free: start + d + b };
 }
 
-type Other = Slot & Pick<Reservation, "id" | "name" | "table_ids">;
+type Other = Slot & Pick<Reservation, "id" | "name" | "table_ids"> & { no_show?: boolean };
 export type TableState =
   | { kind: "free" }
   | { kind: "busy"; until: string; name: string }
@@ -36,12 +36,12 @@ export type TableState =
 export function tableState(tableId: string, me: Slot & { id: string }, others: Other[], cfg: RotationCfg): TableState {
   const mine = interval(me, cfg);
   if (isNaN(mine.start)) {
-    const o = others.find((x) => x.id !== me.id && x.table_ids.includes(tableId));
+    const o = others.find((x) => !x.no_show && x.id !== me.id && x.table_ids.includes(tableId));
     return o ? { kind: "busy", until: "—", name: o.name } : { kind: "free" };
   }
   let limit = Infinity;
   for (const o of others) {
-    if (o.id === me.id || !o.table_ids.includes(tableId)) continue;
+    if (o.no_show || o.id === me.id || !o.table_ids.includes(tableId)) continue;
     const it = interval(o, cfg);
     if (isNaN(it.start)) return { kind: "busy", until: "—", name: o.name };
     if (mine.start < it.free && it.start < mine.free) return { kind: "busy", until: it.free >= 24 * 60 ? "fine serata" : fmt(it.free), name: o.name };
@@ -55,7 +55,7 @@ export function rotationNote(r: Slot & Pick<Reservation, "id" | "table_ids">, ot
   if (!r.table_ids.length) return "";
   const me = interval(r, cfg);
   if (isNaN(me.start)) return "";
-  const share = others.filter((o) => o.id !== r.id && o.table_ids.some((t) => r.table_ids.includes(t))).map((o) => interval(o, cfg)).filter((i) => !isNaN(i.start));
+  const share = others.filter((o) => !o.no_show && o.id !== r.id && o.table_ids.some((t) => r.table_ids.includes(t))).map((o) => interval(o, cfg)).filter((i) => !isNaN(i.start));
   if (share.some((i) => i.start >= me.end)) return ` (fino ${fmt(me.end)})`;
   if (share.some((i) => i.start < me.start)) return ` (dalle ${r.time})`;
   return "";
@@ -94,7 +94,7 @@ export function shiftAvailability(tables: RTable[], rows: Other[], shift: Shift,
   const open = toMin(ranges[shift].from), last = toMin(ranges[shift].to);
   const out: Availability = { free: [], first: [], second: [], full: [] };
   for (const t of tables) {
-    const its = rows.filter((r) => r.table_ids.includes(t.id)).map((r) => interval(r, cfg)).filter((i) => !isNaN(i.start)).sort((a, b) => a.start - b.start);
+    const its = rows.filter((r) => !r.no_show && r.table_ids.includes(t.id)).map((r) => interval(r, cfg)).filter((i) => !isNaN(i.start)).sort((a, b) => a.start - b.start);
     if (!its.length) { out.free.push(t); continue; }
     let any = false;
     const until = its[0]!.start - cfg.buffer;
