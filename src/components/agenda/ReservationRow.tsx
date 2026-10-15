@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Phone, MessageCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { tableLabel, whatsappLink, useRooms, useTables, type Reservation } from "@/lib/data";
+import { tableLabel, whatsappLink, useRooms, useTables, commitTimeCheck, type Reservation } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
 
 export const ROW_GRID =
@@ -39,6 +39,27 @@ export function ReservationRow({
 
   const label = tableLabel(r.table_ids, tables, rooms);
   const dim = r.arrived && "opacity-50";
+  const [timeBad, setTimeBad] = useState(false);
+
+  const commitTime = () => {
+    const res = commitTimeCheck(time, r.shift);
+    if (res.kind === "revert") {
+      toast.error(res.error);
+      setTime(r.time);
+      setTimeBad(true);
+      return;
+    }
+    setTimeBad(false);
+    if (res.kind === "save") {
+      if (res.time !== r.time) onUpdate({ time: res.time });
+      return;
+    }
+    toast(res.message, {
+      duration: 6000,
+      action: { label: res.actionLabel, onClick: () => onUpdate({ time: res.time, shift: res.shift }) },
+    });
+    setTime(r.time);
+  };
 
   const notesInput = (
     <input
@@ -57,8 +78,8 @@ export function ReservationRow({
         <input
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          onBlur={() => time !== r.time && onUpdate({ time })}
-          className={cn("w-full bg-transparent font-display font-semibold tabular-nums outline-none", dim)}
+          onBlur={commitTime}
+          className={cn("w-full rounded bg-transparent font-display font-semibold tabular-nums outline-none", dim, timeBad && "text-destructive ring-1 ring-destructive")}
           inputMode="numeric"
           placeholder="--:--"
         />
