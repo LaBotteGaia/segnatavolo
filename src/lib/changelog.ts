@@ -3,6 +3,14 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.3.1-alpha",
+    date: "15 ottobre 2026",
+    items: [
+      "Su smartphone verticale: Oggi, ricerca e menù sulla prima riga; data grande con frecce sulla seconda, poi Nuova Prenotazione e turni.",
+      "Nella vista affiancata e nel Foglio di Sala ogni servizio mostra giorno e mese accanto al turno.",
+    ],
+  },
+  {
     version: "v0.3.0-alpha",
     date: "15 ottobre 2026",
     items: [
