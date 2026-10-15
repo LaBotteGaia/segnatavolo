@@ -44,9 +44,11 @@ describe("commitTimeCheck (typing a time straight into a row)", () => {
     expect(r.kind).toBe("revert");
     expect(r.kind === "revert" && r.error).toContain("14:30");
   });
-  it("blocks a time belonging to the other shift for the current row", () => {
+  it("offers to move a lunch row when a dinner time is typed", () => {
     const r = commitTimeCheck("20:00", "pranzo");
-    expect(r.kind).toBe("revert");
+    expect(r.kind).toBe("move");
+    expect(r.kind === "move" && r.shift).toBe("sera");
+    expect(r.kind === "move" && r.actionLabel).toBe("Sposta in Cena");
   });
   it("asks before moving a dinner row to a lunch time", () => {
     const r = commitTimeCheck("12:30", "sera");
