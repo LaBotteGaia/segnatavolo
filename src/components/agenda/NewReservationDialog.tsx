@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
-  findCustomer, reservationsQuery, tableLabel, timeSlots, useCustomers, useRooms, useTables,
+  findCustomer, reservationsQuery, tableLabel, extrasText, NO_EXTRAS, type TableExtras, timeSlots, useCustomers, useRooms, useTables,
   validateReservation, activeShifts, rangesOf, isShiftClosed, isDayClosed, shiftName, type Customer, type ReservationErrors, type Shift,
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
@@ -19,7 +19,7 @@ import { useMembership, useSettings } from "@/lib/membership";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
-  is_new: boolean; outside: boolean; notes: string; table_ids: string[]; customer?: Customer | undefined;
+  is_new: boolean; outside: boolean; notes: string; table_ids: string[]; extras: TableExtras; customer?: Customer | undefined;
 };
 
 const field = "w-full rounded-md border bg-paper px-3 py-2";
@@ -43,6 +43,7 @@ export function NewReservationDialog({
   const [notes, setNotes] = useState("");
   const [outside, setOutside] = useState(false);
   const [tableIds, setTableIds] = useState<string[]>([]);
+  const [extras, setExtras] = useState<TableExtras>(NO_EXTRAS);
   const [errors, setErrors] = useState<ReservationErrors>({});
   const [tableOpen, setTableOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,7 @@ export function NewReservationDialog({
     setShift(s);
     if (!timeSlots(s, ranges).includes(time)) setTime("");
     setTableIds([]);
+    setExtras(NO_EXTRAS);
   };
 
   const submit = async () => {
@@ -83,13 +85,13 @@ export function NewReservationDialog({
     setBusy(true);
     const ok = await onCreate({
       date, shift, time, name: name.trim(), people: Number(people), phone: match ? match.phone ?? "" : phone.trim(),
-      is_new: isNew, outside, notes: notes.trim(), table_ids: tableIds, customer: match,
+      is_new: isNew, outside, notes: notes.trim(), table_ids: tableIds, extras, customer: match,
     });
     setBusy(false);
     if (ok) onOpenChange(false);
   };
 
-  const label = tableLabel(tableIds, tables, rooms);
+  const label = tableIds.length ? tableLabel(tableIds, tables, rooms) + extrasText(extras) : "";
   const err = (k: keyof ReservationErrors) => errors[k] && <p className="mt-1 text-sm text-destructive">{errors[k]}</p>;
 
   return (
@@ -206,7 +208,7 @@ export function NewReservationDialog({
 
         <TableDialog open={tableOpen} onOpenChange={setTableOpen}
           reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds }}
-          others={others} onConfirm={setTableIds} />
+          others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); }} />
       </DialogContent>
     </Dialog>
   );

@@ -313,3 +313,22 @@ export function zoneMismatch(
 }
 export const mismatchText = (m: ZoneMismatch) =>
   m === "interno-per-esterno" ? "Incongruenza: tavolo Interno per richiesta Esterno" : m ? "Incongruenza: tavolo Esterno per richiesta Interno" : "";
+
+// --- Sponde / Barelle (posti extra) ---
+export type TableExtras = { extra_sponde: number; extra_barelle: number; barella_seats: number };
+export const NO_EXTRAS: TableExtras = { extra_sponde: 0, extra_barelle: 0, barella_seats: 2 };
+export const extraSeats = (e: TableExtras) => Math.max(0, e.extra_sponde) + Math.max(0, e.extra_barelle) * (e.barella_seats || 0);
+export function extrasText(e: Partial<TableExtras>) {
+  const s = e.extra_sponde ?? 0, b = e.extra_barelle ?? 0;
+  const parts: string[] = [];
+  if (s > 0) parts.push(`+${s} ${s === 1 ? "Sponda" : "Sponde"}`);
+  if (b > 0) parts.push(`+${b} ${b === 1 ? "Barella" : "Barelle"}`);
+  return parts.length ? ` (${parts.join(", ")})` : "";
+}
+
+// --- Pareti: "h:x:y" = muro orizzontale sul bordo superiore della cella (x,y); "v:x:y" = muro verticale sul bordo sinistro ---
+export function wallsOf(room: Pick<Room, "walls"> | undefined): string[] {
+  const w = room?.walls;
+  return Array.isArray(w) ? (w.filter((k) => typeof k === "string") as string[]) : [];
+}
+export const toggleWall = (walls: string[], key: string) => (walls.includes(key) ? walls.filter((k) => k !== key) : [...walls, key]);

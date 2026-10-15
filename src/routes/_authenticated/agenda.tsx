@@ -128,7 +128,7 @@ function AgendaPage() {
     }
     const { error } = await supabase.from("reservations").insert({
       date: v.date, shift: v.shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
-      is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids,
+      is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids, ...v.extras,
     });
     if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
     toast.success("Prenotazione salvata");
@@ -151,7 +151,7 @@ function AgendaPage() {
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
-    const { error } = await supabase.from("reservations").update({ ...v, table_ids: [] }).eq("id", r.id);
+    const { error } = await supabase.from("reservations").update({ ...v, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
     qc.invalidateQueries({ queryKey: key });
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
     qc.invalidateQueries({ queryKey: ["reservations-month"] });

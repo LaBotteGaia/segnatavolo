@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, Copy, LayoutGrid, 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  activeShifts, commitTimeCheck, firstName, mismatchText, rangesOf, tableLabel, whatsappLink, zoneMismatch,
+  activeShifts, commitTimeCheck, firstName, mismatchText, rangesOf, tableLabel, extrasText, whatsappLink, zoneMismatch,
   useRooms, useTables, type Reservation, type Shift,
 } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
@@ -46,7 +46,7 @@ export function ReservationRow({
   useEffect(() => setTime(r.time), [r.time]);
   useEffect(() => setPhone(r.phone ?? ""), [r.phone]);
 
-  const label = tableLabel(r.table_ids, tables, rooms);
+  const label = r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) : "";
   const mismatch = zoneMismatch(r, tables, rooms);
   const dim = r.arrived && "opacity-50";
 
@@ -72,9 +72,12 @@ export function ReservationRow({
         className={cn(ROW_GRID, "relative w-full py-2 text-left")}
       >
         <span className={cn("font-display font-semibold tabular-nums", dim)}>{r.time || "--:--"}</span>
-        <span className={cn("flex min-w-0 items-center gap-1 font-hand text-lg text-ink", dim)}>
-          <span className="truncate">{firstName(r.name) || "—"}</span>
-          {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
+        <span className={cn("flex min-w-0 flex-col", dim)}>
+          <span className="flex min-w-0 items-center gap-1 font-hand text-lg leading-tight text-ink">
+            <span className="truncate">{firstName(r.name) || "—"}</span>
+            {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
+          </span>
+          {label && <span className="truncate text-[11px] font-semibold leading-tight text-primary">{label}</span>}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
         <span className={cn("whitespace-nowrap text-sm", dim)}>{r.outside ? "☀️ Fuori" : "🏠 Dentro"}</span>
@@ -161,7 +164,7 @@ export function ReservationRow({
         </div>
       )}
 
-      <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} onConfirm={(ids) => onUpdate({ table_ids: ids })} />
+      <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} extras={r} onConfirm={(ids, ex) => onUpdate({ table_ids: ids, ...ex })} />
       <MoveDialog open={moveOpen} onOpenChange={setMoveOpen} r={r} dayExtra={dayExtra}
         onConfirm={(v) => { setMoveOpen(false); setOpen(false); onMove(v); }} />
       <DuplicateDialog open={dupOpen} onOpenChange={setDupOpen} r={r} dayExtra={dayExtra}

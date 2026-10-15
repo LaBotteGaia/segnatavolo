@@ -19,3 +19,11 @@ describe("pallini", () => {
   it("usa il turno più occupato", () =>
     expect(dayDots([{ shift: "pranzo", people: 10, outside: false }, { shift: "sera", people: 30, outside: false }, { shift: "sera", people: 2, outside: true }], { inside: 40, outside: 0 })).toEqual({ inside: "yellow", outside: "off" }));
 });
+
+import { extraSeats, extrasText, toggleWall } from "@/lib/data";
+describe("sponde e barelle", () => {
+  it("sponda +1, barella +2", () => expect(extraSeats({ extra_sponde: 1, extra_barelle: 1, barella_seats: 2 })).toBe(3));
+  it("barella da 1 posto", () => expect(extraSeats({ extra_sponde: 0, extra_barelle: 2, barella_seats: 1 })).toBe(2));
+  it("etichetta", () => expect(extrasText({ extra_sponde: 1, extra_barelle: 0 })).toBe(" (+1 Sponda)"));
+  it("parete toggle", () => expect(toggleWall(toggleWall([], "h:1:2"), "h:1:2")).toEqual([]));
+});

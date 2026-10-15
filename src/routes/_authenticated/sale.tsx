@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
-import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room } from "@/lib/data";
-import { GRID_COLS, GRID_ROWS } from "@/components/agenda/TableDialog";
+import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall } from "@/lib/data";
+import { RoomGrid } from "@/components/agenda/RoomGrid";
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
@@ -41,6 +41,7 @@ function SalePage() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState("");
+  const [drawWalls, setDrawWalls] = useState(false);
   const room = rooms.find((r) => r.id === (roomId ?? rooms[0]?.id));
   const roomTables = tables.filter((t) => t.room_id === room?.id);
   const selected = tables.find((t) => t.id === sel);
@@ -165,25 +166,31 @@ function SalePage() {
                 </div>
               </div>
 
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0,1fr))` }}>
-                {Array.from({ length: GRID_ROWS * GRID_COLS }).map((_, i) => {
-                  const x = i % GRID_COLS, y = Math.floor(i / GRID_COLS);
-                  const t = roomTables.find((tt) => tt.x === x && tt.y === y);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => cellClick(x, y)}
-                      className={cn(
-                        "flex aspect-square items-center justify-center rounded-md text-sm font-bold",
-                        t ? "bg-free text-free-foreground" : "border border-dashed border-rule text-muted-foreground/40 hover:bg-accent",
-                        t && t.id === sel && "ring-4 ring-primary ring-offset-2 ring-offset-paper",
-                      )}
-                    >
-                      {t ? `${t.name} - ${t.seats}p` : "+"}
-                    </button>
-                  );
-                })}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" variant={drawWalls ? "default" : "outline"} onClick={() => { setDrawWalls((w) => !w); setSel(null); }}>
+                  🧱 Disegna Pareti {drawWalls ? "(attivo)" : ""}
+                </Button>
+                {drawWalls && <span className="text-sm text-muted-foreground">Tocca un bordo tra le caselle per tracciare un muro; ritoccalo per toglierlo.</span>}
               </div>
+              <RoomGrid
+                tables={roomTables}
+                walls={wallsOf(room)}
+                editWalls={drawWalls}
+                onToggleWall={(k) => updateRoom(room, { walls: toggleWall(wallsOf(room), k) })}
+                renderCell={(x, y, t) => (
+                  <button
+                    onClick={() => !drawWalls && cellClick(x, y)}
+                    className={cn(
+                      "flex h-full w-full items-center justify-center overflow-hidden rounded-md text-center text-sm font-bold",
+                      t ? "bg-free text-free-foreground" : "border border-dashed border-rule text-muted-foreground/40 hover:bg-accent",
+                      t && t.id === sel && "ring-4 ring-primary ring-offset-2 ring-offset-paper",
+                      drawWalls && "opacity-60",
+                    )}
+                  >
+                    {t ? `${t.name} - ${t.seats}p` : drawWalls ? "" : "+"}
+                  </button>
+                )}
+              />
 
               {selected && selected.room_id === room.id && (
                 <div className="mt-4 flex flex-wrap items-end gap-3 rounded-md border bg-card p-3">

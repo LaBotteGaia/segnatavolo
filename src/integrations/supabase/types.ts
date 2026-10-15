@@ -52,10 +52,13 @@ export type Database = {
       reservations: {
         Row: {
           arrived: boolean
+          barella_seats: number
           created_at: string
           created_by: string | null
           customer_id: string | null
           date: string
+          extra_barelle: number
+          extra_sponde: number
           id: string
           is_new: boolean
           name: string
@@ -70,10 +73,13 @@ export type Database = {
         }
         Insert: {
           arrived?: boolean
+          barella_seats?: number
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           date: string
+          extra_barelle?: number
+          extra_sponde?: number
           id?: string
           is_new?: boolean
           name?: string
@@ -88,10 +94,13 @@ export type Database = {
         }
         Update: {
           arrived?: boolean
+          barella_seats?: number
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           date?: string
+          extra_barelle?: number
+          extra_sponde?: number
           id?: string
           is_new?: boolean
           name?: string
@@ -281,6 +290,7 @@ export type Database = {
           name: string
           restaurant_id: string | null
           sort_order: number
+          walls: Json
         }
         Insert: {
           capacity?: number | null
@@ -290,6 +300,7 @@ export type Database = {
           name: string
           restaurant_id?: string | null
           sort_order?: number
+          walls?: Json
         }
         Update: {
           capacity?: number | null
@@ -299,6 +310,7 @@ export type Database = {
           name?: string
           restaurant_id?: string | null
           sort_order?: number
+          walls?: Json
         }
         Relationships: [
           {
