@@ -9,5 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Restaurant agenda: all staff share data; RLS allows any authenticated user full access (internal tool). Pages live under src/routes/_authenticated; data hooks in src/lib/data.ts.
+- Multi-restaurant: data rows carry restaurant_id (defaults to my_restaurant_id()); RLS scopes to active membership in restaurant_members; rooms/tables writable only by role master. Invites are accepted via a token server function (admin createUser) so staff cannot self-register into a restaurant. Pages live under src/routes/_authenticated; data hooks in src/lib/data.ts.
 - Assigned tables are stored as uuid[] on reservations, so deleting a reservation frees its tables automatically.
