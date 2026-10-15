@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
@@ -104,11 +104,11 @@ function AgendaPage() {
       else { setMobileShift(shifts[shifts.length - 1]!); setDate(format(addDays(dateObj, -1), "yyyy-MM-dd")); }
     }
   };
-  const onSwipeStart = (e: React.TouchEvent) => {
+  const onSwipeStart = (e: TouchEvent) => {
     const el = e.target as HTMLElement;
     touch.current = el.closest("input, textarea, select, [data-no-swipe]") ? null : { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
   };
-  const onSwipeEnd = (e: React.TouchEvent) => {
+  const onSwipeEnd = (e: TouchEvent) => {
     const t = touch.current; touch.current = null;
     if (!t || !shifts.length) return;
     const dx = e.changedTouches[0]!.clientX - t.x, dy = e.changedTouches[0]!.clientY - t.y;
@@ -322,7 +322,7 @@ function AgendaPage() {
             <Button
               variant="ghost"
               key={s}
-              onClick={() => setMobileShift(s)}
+              onClick={() => { setFlipDir(shifts.indexOf(s) > shifts.indexOf(mobileShift) ? 1 : shifts.indexOf(s) < shifts.indexOf(mobileShift) ? -1 : 0); setMobileShift(s); }}
               className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
             >
               {shiftEmoji(s)} {shiftName(s)}
