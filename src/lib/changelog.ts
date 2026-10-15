@@ -3,6 +3,15 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.4.0-alpha",
+    date: "15 ottobre 2026",
+    items: [
+      "Spunta Arrivato direttamente sulla riga dell'agenda, con barratura immediata e reversibile.",
+      "No-Show automatici dopo la fine del turno e segnalazione manuale dalla scheda prenotazione.",
+      "Storico per telefono: visite effettuate, No-Show e ultima mancata presentazione; avvisi non bloccanti in ricerca e nuova prenotazione.",
+    ],
+  },
+  {
     version: "v0.3.1-alpha",
     date: "15 ottobre 2026",
     items: [

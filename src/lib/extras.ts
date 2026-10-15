@@ -3,9 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, formatDistanceStrict, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { normPhone, rangesOf } from "./data";
+import { useMembership, useSettings } from "./membership";
+import { reliabilityStats, type HistoryRow } from "./no-show";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.3.1-alpha";
+export const APP_VERSION = "v0.4.0-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
@@ -24,18 +28,38 @@ export function lastVisitText(last: string, today: Date = new Date()): string {
 }
 
 export function useVisitStats(customerId: string | null | undefined, phone: string | null | undefined, excludeId?: string) {
-  const raw = (phone ?? "").trim();
-  const ph = raw.replace(/[\s\-.\/()]/g, "");
+  const history = useCustomerHistory();
+  const settings = useSettings();
+  const now = useServiceClock();
+  return { ...history, data: history.data ? reliabilityStats(history.data, phone, rangesOf(settings), now, excludeId) : undefined };
+}
+
+export function useServiceClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const timer = setInterval(() => setNow(new Date()), 15_000); return () => clearInterval(timer); }, []);
+  return now;
+}
+
+export function useCustomerHistory() {
+  const qc = useQueryClient();
+  const restaurantId = useMembership().data?.restaurant_id;
+  useEffect(() => {
+    if (!restaurantId) return;
+    const ch = supabase.channel(`history-${restaurantId}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations", filter: `restaurant_id=eq.${restaurantId}` }, () => qc.invalidateQueries({ queryKey: ["customer-history"] })).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [restaurantId, qc]);
   return useQuery({
-    queryKey: ["visits", customerId ?? null, ph, excludeId ?? null],
-    enabled: !!customerId || ph.length >= 5,
+    queryKey: ["customer-history", restaurantId], enabled: !!restaurantId,
     queryFn: async () => {
-      const today = format(new Date(), "yyyy-MM-dd");
-      const ors = [customerId && `customer_id.eq.${customerId}`, ph.length >= 5 && `phone.eq.${ph}`, ph.length >= 5 && raw !== ph && !/[,()]/.test(raw) && `phone.eq.${raw}`].filter(Boolean).join(",");
-      let q = supabase.from("reservations").select("id,date").or(ors).lt("date", today);
-      if (excludeId) q = q.neq("id", excludeId);
-      const { data } = await q;
-      return visitStats((data ?? []).map((r) => r.date), today);
+      const rows: HistoryRow[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("reservations").select("id,phone,date,shift,time,arrived,no_show").eq("restaurant_id", restaurantId ?? "").order("id").range(from, from + 999);
+        if (error) throw error;
+        rows.push(...data);
+        if (data.length < 1000) break;
+      }
+      return rows;
     },
   });
 }
