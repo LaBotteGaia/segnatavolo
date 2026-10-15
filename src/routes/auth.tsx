@@ -57,6 +57,7 @@ function AuthPage() {
       <form onSubmit={submit} className="paper-page w-full max-w-sm rounded-md py-10 pl-14 pr-8">
         <h1 className="font-display text-3xl text-primary">Agenda</h1>
         <p className="mb-6 font-hand text-lg text-muted-foreground">Prenotazioni del ristorante</p>
+        <p className="mb-4 text-xs text-muted-foreground">Sei un collaboratore? Usa il link di invito ricevuto dal tuo Master.</p>
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
@@ -67,10 +68,10 @@ function AuthPage() {
             <Input id="pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
-            {mode === "in" ? "Entra" : "Crea account staff"}
+            {mode === "in" ? "Entra" : "Registra account Master"}
           </Button>
           <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-            {mode === "in" ? "Primo accesso? Crea un account" : "Hai già un account? Entra"}
+            {mode === "in" ? "Apri un nuovo ristorante? Registrati come Master" : "Hai già un account? Entra"}
           </button>
         </div>
       </form>

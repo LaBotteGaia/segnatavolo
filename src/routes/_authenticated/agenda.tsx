@@ -12,6 +12,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { shiftCounters, useReservations, type Reservation, type Shift } from "@/lib/data";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
+import { RestaurantGate } from "@/components/RestaurantGate";
+import { UsersDialog } from "@/components/UsersDialog";
+import { useMembership, roleLabel } from "@/lib/membership";
 import { NewReservationRow, type NewReservationInput } from "@/components/agenda/NewReservationRow";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
@@ -29,7 +32,11 @@ export const Route = createFileRoute("/_authenticated/agenda")({
       { property: "og:description", content: "Agenda giornaliera di pranzo e sera." },
     ],
   }),
-  component: AgendaPage,
+  component: () => (
+    <RestaurantGate>
+      <AgendaPage />
+    </RestaurantGate>
+  ),
 });
 
 function AgendaPage() {
@@ -175,12 +182,24 @@ function AgendaPage() {
             <Button size="sm" variant="secondary" onClick={() => setDate(todayStr())}>Oggi</Button>
           </div>
           <div className="ml-auto flex items-center gap-1">
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/sale"><LayoutGrid /> Configura Sale</Link>
+            {isMaster && (
+              <>
+                <Button size="sm" variant="secondary" onClick={() => setUsersOpen(true)}>👥 Utenti</Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/sale"><LayoutGrid /> Configura Sale</Link>
+                </Button>
+              </>
+            )}
+            {me && (
+              <div className="ml-1 text-right text-xs leading-tight">
+                <div className="font-semibold">{me.name || me.email}</div>
+                <div className="opacity-75">{roleLabel(me.role)} · {me.restaurants?.name}</div>
+              </div>
+            )}
+            <Button size="sm" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={async () => { qc.clear(); await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); }} aria-label="Esci">
+              <LogOut /> Esci
             </Button>
-            <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => supabase.auth.signOut()} aria-label="Esci">
-              <LogOut />
-            </Button>
+            {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
           </div>
         </div>
         <div className="mx-auto mt-2 grid max-w-7xl grid-cols-2 gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
