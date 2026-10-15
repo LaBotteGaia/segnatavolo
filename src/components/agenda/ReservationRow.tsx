@@ -1,27 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, ChevronDown, LayoutGrid, MessageCircle, Phone, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, Copy, LayoutGrid, MessageCircle, Phone, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   activeShifts, commitTimeCheck, firstName, mismatchText, rangesOf, tableLabel, whatsappLink, zoneMismatch,
-  useRooms, useTables, type Reservation,
+  useRooms, useTables, type Reservation, type Shift,
 } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
 import { TableDialog } from "./TableDialog";
+import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
 
 export const ROW_GRID = "grid items-center gap-x-2 grid-cols-[3.4rem_minmax(0,1fr)_2.8rem_5.5rem_1.25rem]";
 
 export function ReservationRow({
-  r, others, onUpdate, onDelete, onCustomerPhone,
+  r, others, onUpdate, onDelete, onCustomerPhone, onMove, onDuplicate, dayExtra = null,
 }: {
   r: Reservation;
   others: Reservation[];
   onUpdate: (patch: Partial<Reservation>) => void;
   onDelete: () => void;
   onCustomerPhone: (phone: string) => void;
+  onMove: (v: { date: string; shift: Shift; time: string }) => void;
+  onDuplicate: (v: { dates: string[]; shift: Shift; time: string }) => Promise<boolean>;
+  dayExtra?: ((d: Date) => ReactNode) | null;
 }) {
   const { data: rooms } = useRooms();
   const { data: tables } = useTables();
@@ -33,6 +37,10 @@ export function ReservationRow({
   const [people, setPeople] = useState(String(r.people));
   const [tableOpen, setTableOpen] = useState(false);
   const [timeBad, setTimeBad] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [dupOpen, setDupOpen] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  useEffect(() => { if (!open) setConfirmDel(false); }, [open]);
   useEffect(() => setPeople(String(r.people)), [r.people]);
   useEffect(() => setNotes(r.notes), [r.notes]);
   useEffect(() => setTime(r.time), [r.time]);
@@ -132,11 +140,32 @@ export function ReservationRow({
             <label className="flex items-center gap-2"><Checkbox checked={r.is_new} onCheckedChange={(v) => onUpdate({ is_new: !!v })} /> Nuovo cliente</label>
           </div>
 
-          <Button variant="destructive" className="w-full" onClick={onDelete}><Trash2 /> 🗑️ Elimina prenotazione</Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={() => setMoveOpen(true)}><CalendarDays /> 📅 Sposta data</Button>
+            <Button variant="outline" onClick={() => setDupOpen(true)}><Copy /> 📋 Duplica</Button>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 border-t border-dashed pt-3">
+            <Button variant="secondary" onClick={() => setOpen(false)}><ArrowLeft /> Torna all'agenda</Button>
+            {confirmDel ? (
+              <span className="flex items-center gap-1">
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setConfirmDel(false)}>No</Button>
+                <Button size="sm" variant="destructive" className="h-7 px-2 text-xs" onClick={onDelete}>Sì, elimina</Button>
+              </span>
+            ) : (
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive" onClick={() => setConfirmDel(true)}>
+                <Trash2 className="size-3.5" /> Elimina
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
       <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} onConfirm={(ids) => onUpdate({ table_ids: ids })} />
+      <MoveDialog open={moveOpen} onOpenChange={setMoveOpen} r={r} dayExtra={dayExtra}
+        onConfirm={(v) => { setMoveOpen(false); setOpen(false); onMove(v); }} />
+      <DuplicateDialog open={dupOpen} onOpenChange={setDupOpen} r={r} dayExtra={dayExtra}
+        onConfirm={async (v) => { if (await onDuplicate(v)) setDupOpen(false); }} />
     </div>
   );
 }
