@@ -53,10 +53,12 @@ export type Database = {
         Row: {
           arrived: boolean
           barella_seats: number
+          buffer_min: number | null
           created_at: string
           created_by: string | null
           customer_id: string | null
           date: string
+          duration_min: number | null
           extra_barelle: number
           extra_sponde: number
           id: string
@@ -74,10 +76,12 @@ export type Database = {
         Insert: {
           arrived?: boolean
           barella_seats?: number
+          buffer_min?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           date: string
+          duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
           id?: string
@@ -95,10 +99,12 @@ export type Database = {
         Update: {
           arrived?: boolean
           barella_seats?: number
+          buffer_min?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
           date?: string
+          duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
           id?: string
@@ -290,6 +296,7 @@ export type Database = {
       rooms: {
         Row: {
           capacity: number | null
+          closed_periods: Json
           created_at: string
           environment: string
           grid_cols: number
@@ -297,12 +304,14 @@ export type Database = {
           id: string
           locked: boolean
           name: string
+          open_days: number[]
           restaurant_id: string | null
           sort_order: number
           walls: Json
         }
         Insert: {
           capacity?: number | null
+          closed_periods?: Json
           created_at?: string
           environment?: string
           grid_cols?: number
@@ -310,12 +319,14 @@ export type Database = {
           id?: string
           locked?: boolean
           name: string
+          open_days?: number[]
           restaurant_id?: string | null
           sort_order?: number
           walls?: Json
         }
         Update: {
           capacity?: number | null
+          closed_periods?: Json
           created_at?: string
           environment?: string
           grid_cols?: number
@@ -323,6 +334,7 @@ export type Database = {
           id?: string
           locked?: boolean
           name?: string
+          open_days?: number[]
           restaurant_id?: string | null
           sort_order?: number
           walls?: Json
