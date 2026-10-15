@@ -51,7 +51,7 @@ function SalePage() {
     if (!room) return;
     const cols = Math.min(60, grid.cols + dc), rows = Math.min(60, grid.rows + dr);
     if (cols < 1 || rows < 1) return;
-    if (roomTables.some((t) => t.x >= cols || t.y >= rows)) return toast.error("Sposta prima i tavoli che stanno nell'ultima riga/colonna");
+    if (roomTables.some((t) => t.x >= cols || t.y >= rows)) { toast.error("Sposta prima i tavoli che stanno nell'ultima riga/colonna"); return; }
     updateRoom(room, { grid_cols: cols, grid_rows: rows });
   };
   const caps = totalCapacities(rooms, tables);
