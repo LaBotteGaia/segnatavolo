@@ -113,3 +113,47 @@ export function whatsappLink(phone: string, r: { name: string; date: string; tim
   const text = `Buongiorno ${r.name}, le confermiamo la prenotazione per ${r.people} ${r.people === 1 ? "persona" : "persone"} il giorno ${d}/${m}/${y} alle ore ${r.time}. A presto!`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
+
+/** Allowed booking windows per shift (inclusive, HH:MM). */
+export const SHIFT_RANGES: Record<Shift, { from: string; to: string }> = {
+  pranzo: { from: "12:00", to: "14:30" },
+  sera: { from: "19:00", to: "23:00" },
+};
+
+const toMin = (t: string) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
+  if (!m) return NaN;
+  const h = Number(m[1]), mi = Number(m[2]);
+  return h < 24 && mi < 60 ? h * 60 + mi : NaN;
+};
+
+/** 15-minute slots inside a shift window. */
+export function timeSlots(shift: Shift): string[] {
+  const out: string[] = [];
+  for (let m = toMin(SHIFT_RANGES[shift].from); m <= toMin(SHIFT_RANGES[shift].to); m += 15)
+    out.push(`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
+  return out;
+}
+
+export function shiftForTime(time: string): Shift | null {
+  const m = toMin(time);
+  for (const s of ["pranzo", "sera"] as Shift[])
+    if (m >= toMin(SHIFT_RANGES[s].from) && m <= toMin(SHIFT_RANGES[s].to)) return s;
+  return null;
+}
+
+export type ReservationErrors = Partial<Record<"name" | "people" | "date" | "time", string>>;
+
+/** Blocking checks before saving a reservation. */
+export function validateReservation(v: { name: string; people: string | number | null; date: string; time: string; shift: Shift }): ReservationErrors {
+  const e: ReservationErrors = {};
+  if (!v.name.trim()) e.name = "Inserisci il nome del cliente";
+  const p = typeof v.people === "number" ? v.people : v.people === null || String(v.people).trim() === "" ? NaN : Number(v.people);
+  if (!Number.isInteger(p) || p < 1) e.people = "Inserisci almeno 1 persona";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date) || isNaN(Date.parse(v.date))) e.date = "Seleziona una data valida";
+  if (shiftForTime(v.time) !== v.shift) {
+    const r = SHIFT_RANGES[v.shift];
+    e.time = `Seleziona un orario valido tra le ${r.from} e le ${r.to}`;
+  }
+  return e;
+}
