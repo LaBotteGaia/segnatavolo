@@ -19,6 +19,8 @@ import {
 import { TableDialog } from "./TableDialog";
 import { useMembership, useSettings } from "@/lib/membership";
 import { outsideClosed } from "@/lib/rotation";
+import { useCustomerHistory, useServiceClock } from "@/lib/extras";
+import { reliabilityStats } from "@/lib/no-show";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -55,6 +57,8 @@ export function NewReservationDialog({
   const [force, setForce] = useState(false);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const settings = useSettings();
+  const { data: history = [] } = useCustomerHistory();
+  const now = useServiceClock();
   const ranges = rangesOf(settings);
   const shifts = activeShifts(settings);
   const isMaster = useMembership().data?.role === "master";
@@ -79,16 +83,6 @@ export function NewReservationDialog({
   const isNew = name.trim().length > 0 && !match;
   const suggestions = name.trim() && !match
     ? (customers ?? []).filter((c) => c.name.toLowerCase().includes(name.trim().toLowerCase())).slice(0, 8) : [];
-  const { data: lastVisits } = useQuery({
-    queryKey: ["last-visits"], enabled: open, staleTime: 60_000,
-    queryFn: async () => {
-      const today = format(new Date(), "yyyy-MM-dd");
-      const { data } = await supabase.from("reservations").select("customer_id,date").lt("date", today).not("customer_id", "is", null).order("date", { ascending: false }).limit(5000);
-      const m = new Map<string, string>();
-      for (const r of data ?? []) if (r.customer_id && !m.has(r.customer_id)) m.set(r.customer_id, r.date);
-      return m;
-    },
-  });
   useEffect(() => { if (byPhone && !name.trim()) setName(byPhone.name); }, [byPhone?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const changeShift = (s: Shift) => {
@@ -172,14 +166,16 @@ export function NewReservationDialog({
               className={cn(field, "font-hand text-lg", errors.name && bad)} />
             {focus && suggestions.length > 0 && (
               <ul className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border bg-popover shadow-lg">
-                {suggestions.map((c) => (
+                {suggestions.map((c) => {
+                  const stats = reliabilityStats(history, c.phone, ranges, now);
+                  return (
                   <li key={c.id}>
                     <button type="button" onMouseDown={() => { setName(c.name); setPickedId(c.id); if (c.phone) setPhone(c.phone); }} className="w-full px-3 py-2 text-left hover:bg-accent">
                       <span className="font-hand text-lg">{c.name}</span>
-                      <span className="text-sm text-muted-foreground"> - {c.phone || "senza telefono"} (Ultima visita: {lastVisits?.get(c.id) ? format(parseISO(lastVisits.get(c.id)!), "d MMM yyyy", { locale: it }) : "mai"})</span>
+                      <span className={cn("text-sm", stats.lastNoShow ? "text-destructive" : "text-muted-foreground")}> - {c.phone || "senza telefono"} (Ultima visita: {stats.last ? `${stats.lastNoShow ? "Mancata presentazione · " : ""}${format(parseISO(stats.last), "d MMM yyyy", { locale: it })}` : "mai"})</span>
                     </button>
                   </li>
-                ))}
+                ); })}
               </ul>
             )}
             {err("name")}
@@ -197,6 +193,7 @@ export function NewReservationDialog({
           <label className="text-xs font-semibold text-muted-foreground">Telefono</label>
           <input value={phone} onChange={(e) => { setPhone(e.target.value); setPickedId(null); }} type="tel" placeholder="Numero di telefono" className={field} />
           {byPhone && <p className="mt-1 text-xs text-muted-foreground">Numero già in archivio: {byPhone.name}</p>}
+          {(phone.trim() || match) && <div className="mt-2"><LoyaltyBox customerId={match?.id ?? null} phone={phone || match?.phone || null} /></div>}
         </div>
 
         <div>
@@ -218,7 +215,6 @@ export function NewReservationDialog({
         {outside && rooms && outsideClosed(rooms, date) && (
           <p className="rounded-md border border-warning bg-warning/20 p-2 text-sm font-semibold">❄️ Attenzione: in questa data le sale esterne sono chiuse per stagione o giorno di riposo.</p>
         )}
-        {match && <LoyaltyBox customerId={match.id} phone={match.phone} />}
 
         {closed && (
           <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">

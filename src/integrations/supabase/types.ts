@@ -64,6 +64,7 @@ export type Database = {
           id: string
           is_new: boolean
           name: string
+          no_show: boolean
           notes: string
           outside: boolean
           people: number
@@ -87,6 +88,7 @@ export type Database = {
           id?: string
           is_new?: boolean
           name?: string
+          no_show?: boolean
           notes?: string
           outside?: boolean
           people?: number
@@ -110,6 +112,7 @@ export type Database = {
           id?: string
           is_new?: boolean
           name?: string
+          no_show?: boolean
           notes?: string
           outside?: boolean
           people?: number

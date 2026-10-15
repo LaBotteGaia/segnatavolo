@@ -6,9 +6,10 @@ import { Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { APP_VERSION, lastVisitText, saveServiceNote, searchFilter, useServiceNote, useVisitStats } from "@/lib/extras";
-import { shiftName, tableLabel, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
-import { useMembership } from "@/lib/membership";
+import { APP_VERSION, lastVisitText, saveServiceNote, searchFilter, useServiceNote, useVisitStats, useCustomerHistory, useServiceClock } from "@/lib/extras";
+import { rangesOf, shiftName, tableLabel, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
+import { useMembership, useSettings } from "@/lib/membership";
+import { reliabilityStats } from "@/lib/no-show";
 import { ChangelogDialog } from "@/components/ChangelogDialog";
 
 export function VersionBadge({ className }: { className?: string }) {
@@ -23,15 +24,21 @@ export function VersionBadge({ className }: { className?: string }) {
 }
 
 export function LoyaltyBox({ customerId, phone, excludeId, isNew }: { customerId?: string | null; phone?: string | null; excludeId?: string; isNew?: boolean }) {
-  const { data } = useVisitStats(isNew ? null : customerId, isNew ? null : phone, excludeId);
-  if (isNew || !data || data.count === 0)
+  const { data, isError } = useVisitStats(customerId, phone, excludeId);
+  if (isError) return <p className="text-sm text-destructive">Storico cliente non disponibile</p>;
+  if (!data || (data.count === 0 && data.noShows === 0))
     return <div className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">🌱 Nuovo cliente (Prima visita)</div>;
   return (
     <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
-      <div className="font-semibold text-primary">⭐ Visite registrate: {data.count} {data.count === 1 ? "volta" : "volte"}</div>
-      {data.last && <div className="text-muted-foreground">Ultima visita: {lastVisitText(data.last)}</div>}
+      {data.noShows > 0 && <NoShowAlert />}
+      <div className="mt-1 font-semibold text-primary">Visite effettuate: {data.count} | No-Show: {data.noShows}</div>
+      {data.last && <div className={data.lastNoShow ? "font-semibold text-destructive" : "text-muted-foreground"}>Ultima visita: {data.lastNoShow ? `Mancata presentazione (No-Show il ${format(parseISO(data.last), "d MMMM yyyy", { locale: it })})` : lastVisitText(data.last)}</div>}
     </div>
   );
+}
+
+export function NoShowAlert() {
+  return <div role="alert" className="rounded-md border border-warning bg-warning/20 px-2 py-2 text-sm font-semibold text-destructive">⚠️ Attenzione: No-Show precedente registrato per questo contatto!</div>;
 }
 
 export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => void; className?: string }) {
@@ -41,6 +48,9 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
   const box = useRef<HTMLDivElement>(null);
   const { data: rooms } = useRooms();
   const { data: tables } = useTables();
+  const { data: history = [] } = useCustomerHistory();
+  const settings = useSettings();
+  const now = useServiceClock();
   useEffect(() => { const t = setTimeout(() => setDeb(q), 250); return () => clearTimeout(t); }, [q]);
   useEffect(() => {
     const h = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
@@ -50,7 +60,8 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
   const { data: results = [], isFetching } = useQuery({
     queryKey: ["search", deb], enabled: !!filter,
     queryFn: async () => {
-      const { data } = await supabase.from("reservations").select("*").or(filter!).order("date", { ascending: false }).limit(20);
+      if (!filter) return [];
+      const { data } = await supabase.from("reservations").select("*").or(filter).order("date", { ascending: false }).limit(20);
       return data ?? [];
     },
   });
@@ -71,6 +82,7 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
                 {format(parseISO(r.date), "EEE d MMM yyyy", { locale: it })} · {shiftName(r.shift as Shift)} {r.time}
                 {r.table_ids.length ? ` · ${tableLabel(r.table_ids, tables, rooms)}` : " · Tavolo da assegnare"}
               </div>
+              {reliabilityStats(history, r.phone, rangesOf(settings), now).noShows > 0 && <NoShowAlert />}
             </button>
           ))}
           {!results.length && <div className="px-3 py-2 text-sm text-muted-foreground">{isFetching ? "Ricerca…" : "Nessun risultato"}</div>}

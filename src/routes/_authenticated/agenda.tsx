@@ -98,12 +98,16 @@ function AgendaPage() {
   useEffect(() => { setMonth(parseISO(date)); }, [date]);
 
   const update = async (id: string, patch: Partial<Reservation>) => {
+    void qc.cancelQueries({ queryKey: key });
     qc.setQueryData<Reservation[]>(key, (old) => old?.map((r) => (r.id === id ? { ...r, ...patch } : r)));
     const { error } = await supabase.from("reservations").update(patch).eq("id", id);
     if (error) {
       toast.error("Salvataggio non riuscito");
       qc.invalidateQueries({ queryKey: key });
     }
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
+    qc.invalidateQueries({ queryKey: ["search"] });
+    qc.invalidateQueries({ queryKey: ["reservations-month"] });
   };
 
   const remove = (r: Reservation) => {
@@ -112,6 +116,7 @@ function AgendaPage() {
       timers.current.delete(r.id);
       await supabase.from("reservations").delete().eq("id", r.id);
       await qc.invalidateQueries({ queryKey: key });
+      qc.invalidateQueries({ queryKey: ["customer-history"] });
       setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
     }, 5000);
     timers.current.set(r.id, t);
@@ -149,6 +154,7 @@ function AgendaPage() {
     if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
     toast.success("Prenotazione salvata");
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
     if (v.date !== date) setDate(v.date);
     return true;
   };
@@ -167,11 +173,12 @@ function AgendaPage() {
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
-    const { error } = await supabase.from("reservations").update({ ...v, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
+    const { error } = await supabase.from("reservations").update({ ...v, no_show: false, arrived: false, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
     qc.invalidateQueries({ queryKey: key });
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
     qc.invalidateQueries({ queryKey: ["reservations-month"] });
     if (error) { toast.error("Spostamento non riuscito"); return; }
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
     toast.success(`Prenotazione spostata al ${format(parseISO(v.date), "d MMMM", { locale: it })} · ${shiftName(v.shift)} ${v.time}. Tavolo da assegnare.`, {
       action: { label: "Vai", onClick: () => setDate(v.date) },
     });
@@ -223,6 +230,7 @@ function AgendaPage() {
         <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
         <Button className="mb-3 hidden w-full agenda-wide:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
+          <span title="Arrivato" className="text-center">✓</span>
           <span>Ora</span>
           <span>Nome</span>
           <span className="text-center">Pers.</span>

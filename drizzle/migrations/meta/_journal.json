@@ -57,6 +57,13 @@
       "when": 1792083376842,
       "tag": "0007_room_schedule_and_rotation",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792086228390,
+      "tag": "0008_reservation_manual_no_show",
+      "breakpoints": true
     }
   ]
 }

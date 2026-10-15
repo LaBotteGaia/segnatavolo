@@ -67,7 +67,7 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
                 {ticks.map((m) => <span key={m} className="absolute -translate-x-1/2" style={{ left: pct(m) }}>{m % 60 === 0 ? fmt(m) : "·"}</span>)}
               </div>
               {tables.map((t) => {
-                const its = rows.filter((r) => r.table_ids.includes(t.id)).map((r) => ({ r, i: interval(r, cfg) })).filter((x) => !isNaN(x.i.start)).sort((a, b) => a.i.start - b.i.start);
+                const its = rows.filter((r) => !r.no_show && r.table_ids.includes(t.id)).map((r) => ({ r, i: interval(r, cfg) })).filter((x) => !isNaN(x.i.start)).sort((a, b) => a.i.start - b.i.start);
                 // spazi liberi cliccabili a passi di 15'
                 const slots: number[] = [];
                 for (let m = toMin(ranges[shift].from); m <= last; m += 15) {

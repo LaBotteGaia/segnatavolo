@@ -62,6 +62,8 @@ export function useReservations(date: string) {
       .channel(`res-${date}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => {
         qc.invalidateQueries({ queryKey: ["reservations", date] });
+        qc.invalidateQueries({ queryKey: ["reservations-month"] });
+        qc.invalidateQueries({ queryKey: ["search"] });
       })
       .subscribe();
     return () => {
@@ -78,9 +80,10 @@ export function findCustomer(customers: Customer[] | undefined, name: string) {
 }
 
 /** Totals for a shift page header. */
-export function shiftCounters(rows: Pick<Reservation, "people" | "outside" | "arrived">[]) {
+export function shiftCounters(rows: (Pick<Reservation, "people" | "outside" | "arrived"> & { no_show?: boolean })[]) {
   let total = 0, inside = 0, outside = 0, pending = 0;
   for (const r of rows) {
+    if (r.no_show && !r.arrived) continue;
     total += r.people;
     if (r.outside) outside += r.people;
     else inside += r.people;
@@ -230,16 +233,16 @@ export function dotLevel(people: number, capacity: number): DotLevel {
 }
 
 /** Pallini interno/esterno di un giorno, sul turno più occupato. */
-export function dayDots(rows: Pick<Reservation, "people" | "outside" | "shift">[], cap: { inside: number; outside: number }) {
+export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift"> & { no_show?: boolean })[], cap: { inside: number; outside: number }) {
   const sum = (outside: boolean) =>
-    Math.max(0, ...(["pranzo", "sera"] as const).map((s) => rows.filter((r) => r.shift === s && r.outside === outside).reduce((a, r) => a + r.people, 0)));
+    Math.max(0, ...(["pranzo", "sera"] as const).map((s) => rows.filter((r) => !r.no_show && r.shift === s && r.outside === outside).reduce((a, r) => a + r.people, 0)));
   return { inside: dotLevel(sum(false), cap.inside), outside: dotLevel(sum(true), cap.outside) };
 }
 
 export const monthReservationsQuery = (from: string, to: string) => ({
   queryKey: ["reservations-month", from, to],
   queryFn: async () => {
-    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside").gte("date", from).lte("date", to);
+    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside, no_show").gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },

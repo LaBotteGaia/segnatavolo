@@ -6,6 +6,9 @@ const cfg = { duration: 90, buffer: 15 };
 const first = { id: "a", name: "Rossi", time: "20:00", table_ids: ["t4"] };
 
 describe("rotazione tavoli", () => {
+  it("un No-Show manuale libera il tavolo senza cancellare la prenotazione", () => {
+    expect(tableState("t4", { id: "n", time: "20:00" }, [{ ...first, no_show: true }], cfg).kind).toBe("free");
+  });
   it("20:00 occupa fino 21:30, riassegnabile dalle 21:45", () => {
     expect(interval(first, cfg)).toEqual({ start: 1200, end: 1290, free: 1305 });
   });
