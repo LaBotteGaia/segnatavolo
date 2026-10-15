@@ -268,21 +268,27 @@ export type Database = {
       }
       rooms: {
         Row: {
+          capacity: number | null
           created_at: string
+          environment: string
           id: string
           name: string
           restaurant_id: string | null
           sort_order: number
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
+          environment?: string
           id?: string
           name: string
           restaurant_id?: string | null
           sort_order?: number
         }
         Update: {
+          capacity?: number | null
           created_at?: string
+          environment?: string
           id?: string
           name?: string
           restaurant_id?: string | null
