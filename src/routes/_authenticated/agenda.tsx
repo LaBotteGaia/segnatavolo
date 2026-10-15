@@ -281,7 +281,7 @@ function AgendaPage() {
             <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
         </div>
-        <Button className="mx-auto mt-2 flex w-full max-w-7xl md:hidden" onClick={() => setNewShift(mobileShift)}><Plus /> Nuova Prenotazione</Button>
+        <Button className="mx-auto mt-2 flex w-full max-w-7xl md:hidden" onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
           {shifts.map((s) => (
             <button
