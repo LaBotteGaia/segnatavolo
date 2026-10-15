@@ -77,7 +77,7 @@ export function ReservationRow({
   const lbl = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
 
   return (
-    <div ref={rowRef} className={cn("relative ruled-row", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
+    <div ref={rowRef} className={cn("relative ruled-row scroll-mt-64 agenda-wide:scroll-mt-20", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
       <div className={cn(ROW_GRID, "relative min-h-11")}>
         <div className="relative z-10 grid min-h-11 place-items-center">
           <Checkbox className="size-6 bg-paper" aria-label={`Arrivato: ${r.name}`} checked={r.arrived} onCheckedChange={(v) => setArrived(v === true)} />
