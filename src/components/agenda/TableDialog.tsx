@@ -88,7 +88,7 @@ export function TableDialog({
                 </button>
               );
             })}
-            {!rooms?.length && <p className="text-muted-foreground">Nessuna sala. Creala da "Configura Sale".</p>}
+            {!rooms?.length && <p className="text-muted-foreground">Nessuna sala. Creala dal menù ☰ → Gestione Sale e Mappe.</p>}
           </div>
         ) : (
           <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0,1fr))` }}>

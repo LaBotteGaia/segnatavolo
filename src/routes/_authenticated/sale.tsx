@@ -159,8 +159,7 @@ function SalePage() {
                     </label>
                     <Input key={room.id + String(room.capacity === null)} type="number" min={0} className="h-9 w-24"
                       disabled={room.capacity === null}
-                      defaultValue={roomCapacity(room, tables)}
-                      value={room.capacity === null ? roomCapacity(room, tables) : undefined}
+                      {...(room.capacity === null ? { value: roomCapacity(room, tables), readOnly: true } : { defaultValue: room.capacity })}
                       onBlur={(e) => room.capacity !== null && updateRoom(room, { capacity: Math.max(0, Number(e.target.value) || 0) })} />
                   </div>
                 </div>
