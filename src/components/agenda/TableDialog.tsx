@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { canJoin, gridOf, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
 import { RoomGrid, GRID_COLS, GRID_ROWS } from "./RoomGrid";
+import { isRoomClosed, tableState } from "@/lib/rotation";
+import { useMembership, useSettings } from "@/lib/membership";
 
 export { GRID_COLS, GRID_ROWS };
 
@@ -23,12 +25,13 @@ function Stepper({ label, value, onChange, disabled }: { label: string; value: n
 }
 
 export function TableDialog({
-  open, onOpenChange, reservation, others, extras, onConfirm,
+  open, onOpenChange, reservation, others, extras, onConfirm, date,
 }: {
+  date: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  reservation: Pick<Reservation, "id" | "name" | "people" | "shift" | "table_ids">;
-  others: Pick<Reservation, "id" | "name" | "table_ids">[];
+  reservation: Pick<Reservation, "id" | "name" | "people" | "shift" | "table_ids" | "time"> & { duration_min?: number | null; buffer_min?: number | null };
+  others: (Pick<Reservation, "id" | "name" | "table_ids" | "time"> & { duration_min?: number | null; buffer_min?: number | null })[];
   extras?: TableExtras;
   onConfirm: (ids: string[], extras: TableExtras) => void;
 }) {
@@ -47,11 +50,14 @@ export function TableDialog({
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const occupiedBy = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const o of others) if (o.id !== reservation.id) for (const id of o.table_ids) m.set(id, o.name || "—");
-    return m;
-  }, [others, reservation.id]);
+  const settings = useSettings();
+  const isMaster = useMembership().data?.role === "master";
+  const [force, setForce] = useState(false);
+  const cfg = { duration: settings.duration, buffer: settings.buffer };
+  const stateOf = useMemo(() => {
+    const sameShift = others.filter((o) => o.id !== reservation.id);
+    return (id: string) => tableState(id, reservation, sameShift, cfg);
+  }, [others, reservation, cfg.duration, cfg.buffer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roomTables = tables?.filter((t) => t.room_id === roomId) ?? [];
   const nominal = tables?.filter((t) => selected.includes(t.id)).reduce((s, t) => s + t.seats, 0) ?? 0;
@@ -118,9 +124,11 @@ export function TableDialog({
           <div className="grid gap-2 sm:grid-cols-2">
             {rooms?.map((r) => {
               const count = tables?.filter((t) => t.room_id === r.id && selected.includes(t.id)).length ?? 0;
+              const shut = isRoomClosed(r, date);
               return (
-                <button key={r.id} onClick={() => setRoomId(r.id)} className="rounded-md border bg-card p-4 text-left font-display text-lg hover:bg-accent">
+                <button key={r.id} onClick={() => setRoomId(r.id)} className={cn("rounded-md border bg-card p-4 text-left font-display text-lg hover:bg-accent", shut && "opacity-50")}>
                   {r.name}
+                  {shut && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 font-sans text-xs font-bold text-muted-foreground">❄️ Chiusa per stagione</span>}
                   {count > 0 && <span className="ml-2 text-sm text-primary">({count} selezionati)</span>}
                 </button>
               );
@@ -128,6 +136,13 @@ export function TableDialog({
             {!rooms?.length && <p className="text-muted-foreground">Nessuna sala. Creala dal menù ☰ → Gestione Sale e Mappe.</p>}
           </div>
         ) : (
+          <>
+          {isRoomClosed(room, date) && (
+            <div className="rounded-md border border-muted-foreground/40 bg-muted p-3 text-sm">
+              <p className="font-bold">❄️ Chiusa per stagione: in questa data i tavoli di questa sala non sono assegnabili.</p>
+              {isMaster && <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> Forza comunque l'assegnazione (solo Master)</label>}
+            </div>
+          )}
           <RoomGrid
             cols={gridOf(room).cols}
             rows={gridOf(room).rows}
@@ -135,25 +150,29 @@ export function TableDialog({
             walls={wallsOf(room)}
             renderCell={(_x, _y, t) => {
               if (!t) return <div className="h-full w-full rounded-md border border-dashed border-rule" />;
-              const busy = occupiedBy.get(t.id);
+              const stt = stateOf(t.id);
+              const busy = stt.kind === "busy" ? stt.name || "—" : undefined;
               const sel = selected.includes(t.id);
+              const shut = isRoomClosed(room, date) && !force;
               return (
                 <button
-                  disabled={!!busy}
+                  disabled={(!!busy && !sel) || (shut && !sel)}
                   onClick={() => toggle(t.id)}
                   className={cn(
                     "relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md p-0.5 text-center font-bold leading-tight transition",
-                    busy ? "bg-busy text-busy-foreground opacity-90" : "bg-free text-free-foreground",
+                    busy ? "bg-busy text-busy-foreground opacity-90" : shut ? "bg-muted text-muted-foreground" : stt.kind === "limited" ? "bg-warning text-ink" : "bg-free text-free-foreground",
                     sel && "ring-4 ring-primary ring-offset-2 ring-offset-paper",
                   )}
                 >
                   <span>{t.name} - {t.seats}p</span>
                   {!t.allow_extras && <span className="absolute right-0.5 top-0 text-[0.8em]" title="Niente sponde/barelle">⛔</span>}
-                  {busy && <span className="max-w-full truncate font-hand font-normal">{busy}</span>}
+                  {stt.kind === "busy" && <span className="max-w-full truncate text-[0.75em] font-normal">Occupato fino alle {stt.until}</span>}
+                  {stt.kind === "limited" && <span className="max-w-full truncate text-[0.75em] font-normal">Disponibile fino alle {stt.until}</span>}
                 </button>
               );
             }}
           />
+          </>
         )}
 
         <div className="flex justify-between gap-2">

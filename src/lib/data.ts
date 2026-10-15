@@ -253,6 +253,9 @@ export type RestaurantSettings = {
   /** giorno settimana (0 = domenica) → turni chiusi */
   weekly: Record<string, Shift[]>;
   holidays: Holiday[];
+  /** durata standard tavolo e margine riallestimento, in minuti */
+  duration: number;
+  buffer: number;
 };
 
 export const DEFAULT_SETTINGS: RestaurantSettings = {
@@ -263,13 +266,15 @@ export const DEFAULT_SETTINGS: RestaurantSettings = {
   },
   weekly: {},
   holidays: [],
+  duration: 90,
+  buffer: 15,
 };
 
 export function normalizeSettings(raw: unknown): RestaurantSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<RestaurantSettings>;
   const shifts = { ...DEFAULT_SETTINGS.shifts };
   for (const s of ALL_SHIFTS) if (r.shifts?.[s]) shifts[s] = { ...shifts[s], ...r.shifts[s] };
-  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [] };
+  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15 };
 }
 
 export const rangesOf = (st: RestaurantSettings): Ranges =>

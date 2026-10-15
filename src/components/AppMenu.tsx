@@ -185,6 +185,22 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           </section>
 
           <section className="space-y-2">
+            <h3 className="font-display text-lg">Rotazione tavoli</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-sm">Durata standard tavolo
+                <select className="mt-1 w-full rounded-md border bg-paper px-2 py-2" value={st.duration} onChange={(e) => setSt((o) => ({ ...o, duration: Number(e.target.value) }))}>
+                  {Array.from({ length: 16 }, (_, i) => (i + 2) * 15).map((m) => <option key={m} value={m}>{Math.floor(m / 60)}h {String(m % 60).padStart(2, "0")}m</option>)}
+                </select>
+              </label>
+              <label className="text-sm">Margine di riallestimento (Buffer pulizia)
+                <select className="mt-1 w-full rounded-md border bg-paper px-2 py-2" value={st.buffer} onChange={(e) => setSt((o) => ({ ...o, buffer: Number(e.target.value) }))}>
+                  {[0, 5, 10, 15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m} min</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="space-y-2">
             <h3 className="font-display text-lg">Chiusure settimanali</h3>
             <p className="text-xs text-muted-foreground">Tocca i turni in cui il ristorante è chiuso.</p>
             {WEEKDAYS.map(([d, label]) => {

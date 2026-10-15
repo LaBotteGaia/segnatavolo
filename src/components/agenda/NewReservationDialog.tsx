@@ -18,6 +18,7 @@ import {
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
 import { useMembership, useSettings } from "@/lib/membership";
+import { outsideClosed } from "@/lib/rotation";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -28,8 +29,9 @@ const field = "w-full rounded-md border bg-paper px-3 py-2";
 const bad = "border-destructive ring-1 ring-destructive";
 
 export function NewReservationDialog({
-  open, onOpenChange, initialDate, initialShift, onCreate,
+  open, onOpenChange, initialDate, initialShift, onCreate, initialTime = "", initialTables = [],
 }: {
+  initialTime?: string; initialTables?: string[];
   open: boolean; onOpenChange: (o: boolean) => void; initialDate: string; initialShift: Shift;
   onCreate: (v: NewReservationInput) => Promise<boolean>;
 }) {
@@ -60,8 +62,8 @@ export function NewReservationDialog({
 
   useEffect(() => {
     if (open) {
-      setDate(initialDate); setShift(initialShift); setTime(""); setName(""); setPeople("2");
-      setPhone(""); setNotes(""); setOutside(false); setTableIds([]); setErrors({}); setForce(false); setPickedId(null);
+      setDate(initialDate); setShift(initialShift); setTime(initialTime); setName(""); setPeople("2");
+      setPhone(""); setNotes(""); setOutside(false); setTableIds(initialTables); setExtras(NO_EXTRAS); setErrors({}); setForce(false); setPickedId(null);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -213,6 +215,9 @@ export function NewReservationDialog({
           <label className="flex items-center gap-2"><Checkbox checked={outside} onCheckedChange={(v) => setOutside(!!v)} /> Fuori</label>
           <label className="flex items-center gap-2"><Checkbox checked={isNew} disabled /> Nuovo cliente</label>
         </div>
+        {outside && rooms && outsideClosed(rooms, date) && (
+          <p className="rounded-md border border-warning bg-warning/20 p-2 text-sm font-semibold">❄️ Attenzione: in questa data le sale esterne sono chiuse per stagione o giorno di riposo.</p>
+        )}
         {match && <LoyaltyBox customerId={match.id} phone={match.phone} />}
 
         {closed && (
@@ -228,8 +233,8 @@ export function NewReservationDialog({
 
         <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force))}>Conferma prenotazione</Button>
 
-        <TableDialog open={tableOpen} onOpenChange={setTableOpen}
-          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds }}
+        <TableDialog date={date} open={tableOpen} onOpenChange={setTableOpen}
+          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time }}
           others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); }} />
       </DialogContent>
     </Dialog>

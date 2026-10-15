@@ -5,7 +5,7 @@ import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.2.0-alpha";
+export const APP_VERSION = "v0.3.0-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
