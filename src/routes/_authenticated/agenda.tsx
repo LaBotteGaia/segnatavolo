@@ -137,7 +137,7 @@ function AgendaPage() {
     return true;
   };
 
-  const dayExtra = (d) => {
+  const dayExtra = (d: Date) => {
                   const ds = format(d, "yyyy-MM-dd");
                   if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
@@ -147,7 +147,7 @@ function AgendaPage() {
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
-                ;
+  };
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
