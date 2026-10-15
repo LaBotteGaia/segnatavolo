@@ -169,7 +169,7 @@ export function ReservationRow({
         </div>
       )}
 
-      <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} extras={r} onConfirm={(ids, ex) => onUpdate({ table_ids: ids, ...ex })} />
+      <TableDialog date={r.date} open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} extras={r} onConfirm={(ids, ex) => onUpdate({ table_ids: ids, ...ex })} />
       <MoveDialog open={moveOpen} onOpenChange={setMoveOpen} r={r} dayExtra={dayExtra}
         onConfirm={(v) => { setMoveOpen(false); setOpen(false); onMove(v); }} />
       <DuplicateDialog open={dupOpen} onOpenChange={setDupOpen} r={r} dayExtra={dayExtra}

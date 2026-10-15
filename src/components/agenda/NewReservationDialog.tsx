@@ -228,8 +228,8 @@ export function NewReservationDialog({
 
         <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force))}>Conferma prenotazione</Button>
 
-        <TableDialog open={tableOpen} onOpenChange={setTableOpen}
-          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds }}
+        <TableDialog date={date} open={tableOpen} onOpenChange={setTableOpen}
+          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time }}
           others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); }} />
       </DialogContent>
     </Dialog>
