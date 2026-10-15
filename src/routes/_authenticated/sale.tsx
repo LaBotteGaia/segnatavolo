@@ -9,15 +9,15 @@ import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
-import { useRooms, useTables, type RTable } from "@/lib/data";
+import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room } from "@/lib/data";
 import { GRID_COLS, GRID_ROWS } from "@/components/agenda/TableDialog";
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
     meta: [
-      { title: "Configura Sale — Prenotazioni" },
+      { title: "Gestione Sale — Prenotazioni" },
       { name: "description", content: "Crea le sale e disponi i tavoli sulla mappa." },
-      { property: "og:title", content: "Configura Sale — Prenotazioni" },
+      { property: "og:title", content: "Gestione Sale — Prenotazioni" },
       { property: "og:description", content: "Crea le sale e disponi i tavoli sulla mappa." },
     ],
   }),
@@ -45,6 +45,12 @@ function SalePage() {
   const roomTables = tables.filter((t) => t.room_id === room?.id);
   const selected = tables.find((t) => t.id === sel);
 
+  const caps = totalCapacities(rooms, tables);
+  const updateRoom = async (r: Room, patch: Partial<Room>) => {
+    qc.setQueryData<Room[]>(["rooms"], (old) => old?.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
+    const { error } = await supabase.from("rooms").update(patch).eq("id", r.id);
+    if (error) { toast.error("Salvataggio non riuscito"); refresh(); }
+  };
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["rooms"] });
     qc.invalidateQueries({ queryKey: ["tables"] });
@@ -84,7 +90,8 @@ function SalePage() {
           <Link to="/agenda"><ArrowLeft /> Torna all'agenda</Link>
         </Button>
         <div className="paper-page rounded-md py-6 pl-14 pr-4 sm:pr-8">
-          <h1 className="font-display text-3xl text-primary">Configura Sale</h1>
+          <h1 className="font-display text-3xl text-primary">Gestione Sale e Mappe</h1>
+          <div className="mb-3 flex flex-wrap gap-4 text-sm"><span>Capienza totale interna: <b>{caps.inside}</b></span><span>Capienza totale esterna: <b>{caps.outside}</b></span></div>
           <p className="mb-4 font-hand text-lg text-muted-foreground">Tocca una casella vuota per aggiungere un tavolo. Seleziona un tavolo e tocca una casella vuota per spostarlo.</p>
 
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -129,6 +136,34 @@ function SalePage() {
                 >
                   <Trash2 /> Elimina sala
                 </Button>
+              </div>
+              <div className="mb-4 flex flex-wrap items-end gap-4 rounded-md border bg-card p-3">
+                <div>
+                  <div className="mb-1 text-xs text-muted-foreground">Ambiente</div>
+                  <div className="flex gap-1">
+                    {(["interno", "esterno"] as const).map((env) => (
+                      <button key={env} onClick={() => updateRoom(room, { environment: env })}
+                        className={cn("rounded-md border px-3 py-1.5 text-sm", room.environment === env ? "bg-primary text-primary-foreground" : "bg-paper")}>
+                        {env === "interno" ? "Interno" : "Esterno / All'aperto (Fuori)"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-muted-foreground">Capienza massima coperti per turno</div>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1 text-sm">
+                      <input type="checkbox" checked={room.capacity === null}
+                        onChange={(e) => updateRoom(room, { capacity: e.target.checked ? null : roomCapacity(room, tables) })} />
+                      Automatica (somma posti tavoli)
+                    </label>
+                    <Input key={room.id + String(room.capacity === null)} type="number" min={0} className="h-9 w-24"
+                      disabled={room.capacity === null}
+                      defaultValue={roomCapacity(room, tables)}
+                      value={room.capacity === null ? roomCapacity(room, tables) : undefined}
+                      onBlur={(e) => room.capacity !== null && updateRoom(room, { capacity: Math.max(0, Number(e.target.value) || 0) })} />
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0,1fr))` }}>

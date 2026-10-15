@@ -36,6 +36,7 @@
   --color-rule: var(--rule);
   --color-margin: var(--margin);
   --color-free: var(--free);
+  --color-warning: var(--warning);
   --color-free-foreground: var(--free-foreground);
   --color-busy: var(--busy);
   --color-busy-foreground: var(--busy-foreground);
@@ -69,6 +70,7 @@
   --input: oklch(0.85 0.03 75);
   --ring: oklch(0.42 0.13 20);
   --free: oklch(0.62 0.14 150);
+  --warning: oklch(0.82 0.16 85);
   --free-foreground: oklch(0.99 0 0);
   --busy: oklch(0.56 0.19 27);
   --busy-foreground: oklch(0.99 0 0);
