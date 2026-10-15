@@ -104,6 +104,8 @@ function AgendaPage() {
       toast.error("Salvataggio non riuscito");
       qc.invalidateQueries({ queryKey: key });
     }
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
+    qc.invalidateQueries({ queryKey: ["search"] });
   };
 
   const remove = (r: Reservation) => {
@@ -112,6 +114,7 @@ function AgendaPage() {
       timers.current.delete(r.id);
       await supabase.from("reservations").delete().eq("id", r.id);
       await qc.invalidateQueries({ queryKey: key });
+      qc.invalidateQueries({ queryKey: ["customer-history"] });
       setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
     }, 5000);
     timers.current.set(r.id, t);
@@ -149,6 +152,7 @@ function AgendaPage() {
     if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
     toast.success("Prenotazione salvata");
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
+    qc.invalidateQueries({ queryKey: ["customer-history"] });
     if (v.date !== date) setDate(v.date);
     return true;
   };
@@ -223,6 +227,7 @@ function AgendaPage() {
         <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
         <Button className="mb-3 hidden w-full agenda-wide:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
+          <span title="Arrivato" className="text-center">✓</span>
           <span>Ora</span>
           <span>Nome</span>
           <span className="text-center">Pers.</span>

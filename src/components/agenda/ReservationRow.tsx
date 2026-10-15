@@ -14,8 +14,10 @@ import { useSettings } from "@/lib/membership";
 import { TableDialog } from "./TableDialog";
 import { DURATION_PRESETS, WHOLE_EVENING, durLabel, rotationNote } from "@/lib/rotation";
 import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
+import { isNoShow } from "@/lib/no-show";
+import { useServiceClock } from "@/lib/extras";
 
-export const ROW_GRID = "grid items-center gap-x-2 grid-cols-[3.4rem_minmax(0,1fr)_2.8rem_5.5rem_1.25rem]";
+export const ROW_GRID = "grid items-center gap-x-1 grid-cols-[2rem_3rem_minmax(0,1fr)_2.3rem_4.5rem_1rem]";
 
 export function ReservationRow({
   r, others, onUpdate, onDelete, onCustomerPhone, onMove, onDuplicate, dayExtra = null, highlight = false,
@@ -33,6 +35,9 @@ export function ReservationRow({
   const { data: rooms } = useRooms();
   const { data: tables } = useTables();
   const settings = useSettings();
+  const now = useServiceClock();
+  const noShow = isNoShow(r, rangesOf(settings), now);
+  const setArrived = (v: boolean) => onUpdate({ arrived: v, no_show: false });
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(r.notes);
   const [time, setTime] = useState(r.time);
@@ -56,7 +61,7 @@ export function ReservationRow({
   const dur = r.duration_min ?? settings.duration;
   const buf = r.buffer_min ?? settings.buffer;
   const mismatch = zoneMismatch(r, tables, rooms);
-  const dim = r.arrived && "opacity-50";
+  const dim = r.arrived && "opacity-60 text-muted-foreground";
 
   const commitTime = () => {
     const res = commitTimeCheck(time, r.shift, rangesOf(settings), activeShifts(settings));
@@ -73,11 +78,16 @@ export function ReservationRow({
 
   return (
     <div ref={rowRef} className={cn("relative ruled-row", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
-      <button
+      <div className={cn(ROW_GRID, "relative min-h-11")}>
+        <div className="relative z-10 grid min-h-11 place-items-center">
+          <Checkbox className="size-6 bg-paper" aria-label={`Arrivato: ${r.name}`} checked={r.arrived} onCheckedChange={(v) => setArrived(v === true)} />
+        </div>
+      <Button variant="ghost"
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={cn(ROW_GRID, "relative w-full py-2 text-left")}
+        aria-label={`Dettagli prenotazione: ${r.name}`}
+        className="col-span-5 grid h-auto min-w-0 grid-cols-subgrid gap-x-1 whitespace-normal rounded-none px-0 py-2 text-left font-normal hover:bg-accent/40"
       >
         <span className={cn("font-display font-semibold tabular-nums", dim)}>{r.time || "--:--"}</span>
         <span className={cn("flex min-w-0 flex-col", dim)}>
@@ -86,12 +96,14 @@ export function ReservationRow({
             {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
           </span>
           {label && <span className="truncate text-[11px] font-semibold leading-tight text-primary">{label}</span>}
+          {noShow && <span className="text-xs font-semibold text-destructive">No-Show</span>}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
         <span className={cn("whitespace-nowrap text-sm", dim)}>{r.outside ? "☀️ Fuori" : "🏠 Dentro"}</span>
         <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
-        {r.arrived && <span className="strike-line" />}
-      </button>
+      </Button>
+        {r.arrived && <span className="strike-line z-20" />}
+      </div>
 
       {open && (
         <div className="space-y-3 border-t border-dashed px-1 pb-4 pt-3 animate-in fade-in slide-in-from-top-1">
@@ -101,7 +113,7 @@ export function ReservationRow({
             </div>
           )}
           <div className="font-display text-xl">{r.name || "—"}</div>
-          <LoyaltyBox customerId={r.customer_id} phone={r.phone} excludeId={r.id} isNew={r.is_new} />
+          <LoyaltyBox customerId={r.customer_id} phone={r.phone} />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -124,7 +136,7 @@ export function ReservationRow({
           <div>
             <div className={lbl}>Telefono</div>
             <Input value={phone} type="tel" className="bg-paper" onChange={(e) => setPhone(e.target.value)}
-              onBlur={() => { if (phone !== (r.phone ?? "")) { onUpdate({ phone }); onCustomerPhone(phone); } }} />
+              onBlur={() => { const normalized = phone.replace(/[\s\-.\/()]/g, ""); setPhone(normalized); if (normalized !== (r.phone ?? "")) { onUpdate({ phone: normalized }); onCustomerPhone(normalized); } }} />
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Button asChild variant="outline" disabled={!phone}><a href={`tel:${phone}`}><Phone /> 📞 Chiama</a></Button>
               <Button asChild variant="outline" disabled={!phone}><a href={whatsappLink(phone, r)} target="_blank" rel="noreferrer"><MessageCircle /> 💬 WhatsApp</a></Button>
@@ -164,10 +176,14 @@ export function ReservationRow({
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <label className="flex items-center gap-2"><Checkbox checked={r.arrived} onCheckedChange={(v) => onUpdate({ arrived: !!v })} /> Arrivato</label>
+            <label className="flex items-center gap-2"><Checkbox checked={r.arrived} onCheckedChange={(v) => setArrived(v === true)} /> Arrivato</label>
             <label className="flex items-center gap-2"><Checkbox checked={r.outside} onCheckedChange={(v) => onUpdate({ outside: !!v })} /> Fuori</label>
             <label className="flex items-center gap-2"><Checkbox checked={r.is_new} onCheckedChange={(v) => onUpdate({ is_new: !!v })} /> Nuovo cliente</label>
           </div>
+
+          {!r.arrived && <Button variant="outline" className="w-full border-warning text-destructive" disabled={noShow && !r.no_show} onClick={() => onUpdate({ no_show: !r.no_show, arrived: false })}>
+            {r.no_show ? "Annulla No-Show manuale" : noShow ? "No-Show rilevato a fine servizio" : "Segna come No-Show"}
+          </Button>}
 
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={() => setMoveOpen(true)}><CalendarDays /> 📅 Sposta data</Button>
