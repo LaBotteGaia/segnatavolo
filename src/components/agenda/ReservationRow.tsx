@@ -12,6 +12,7 @@ import {
 } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
 import { TableDialog } from "./TableDialog";
+import { DURATION_PRESETS, WHOLE_EVENING, durLabel, rotationNote } from "@/lib/rotation";
 import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
 
 export const ROW_GRID = "grid items-center gap-x-2 grid-cols-[3.4rem_minmax(0,1fr)_2.8rem_5.5rem_1.25rem]";
@@ -50,7 +51,10 @@ export function ReservationRow({
   useEffect(() => setTime(r.time), [r.time]);
   useEffect(() => setPhone(r.phone ?? ""), [r.phone]);
 
-  const label = r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) : "";
+  const cfg = { duration: settings.duration, buffer: settings.buffer };
+  const label = r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) + rotationNote(r, others, cfg) : "";
+  const dur = r.duration_min ?? settings.duration;
+  const buf = r.buffer_min ?? settings.buffer;
   const mismatch = zoneMismatch(r, tables, rooms);
   const dim = r.arrived && "opacity-50";
 
@@ -133,6 +137,23 @@ export function ReservationRow({
               className={cn("h-auto w-full justify-start py-2.5", label ? "border-primary/50 text-primary" : "border-dashed text-muted-foreground")}>
               <LayoutGrid /> <span className="truncate font-semibold">{label || "Assegna tavolo sulla mappa"}</span>
             </Button>
+          </div>
+
+          <div>
+            <div className={lbl}>Permanenza al tavolo</div>
+            <div className="flex flex-wrap gap-1">
+              {[...DURATION_PRESETS, WHOLE_EVENING].map((d) => (
+                <button key={d} type="button" onClick={() => onUpdate({ duration_min: d })}
+                  className={cn("rounded-md border px-2 py-1 text-xs font-semibold", dur === d ? "bg-primary text-primary-foreground" : "bg-paper")}>
+                  {d < 0 ? "Tutta la sera / No rotazione" : durLabel(d)}
+                </button>
+              ))}
+            </div>
+            <label className="mt-2 flex items-center gap-2 text-xs">Buffer pulizia
+              <select value={buf} onChange={(e) => onUpdate({ buffer_min: Number(e.target.value) })} className="rounded-md border bg-paper px-2 py-1">
+                {[0, 5, 10, 15, 20, 30, 45].map((m) => <option key={m} value={m}>{m} min</option>)}
+              </select>
+            </label>
           </div>
 
           <div>

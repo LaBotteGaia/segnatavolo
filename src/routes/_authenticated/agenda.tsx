@@ -22,6 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
 import { WhatsNew } from "@/components/ChangelogDialog";
 import { APP_NAME } from "@/lib/extras";
+import { outsideClosed } from "@/lib/rotation";
+import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -54,6 +56,9 @@ function AgendaPage() {
   const navigate = useNavigate({ from: "/agenda" });
   const qc = useQueryClient();
   const [newShift, setNewShift] = useState<Shift | null>(null);
+  const [prefill, setPrefill] = useState<{ time: string; tables: string[] }>({ time: "", tables: [] });
+  const [availShift, setAvailShift] = useState<Shift | null>(null);
+  const openNew = (s: Shift, p: { time: string; tables: string[] } = { time: "", tables: [] }) => { setPrefill(p); setNewShift(s); };
   const { data: reservations = [] } = useReservations(date);
   const [onlyPending, setOnlyPending] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -73,7 +78,7 @@ function AgendaPage() {
     const g = new Map<string, typeof monthRows>();
     for (const r of monthRows) g.set(r.date, [...(g.get(r.date) ?? []), r]);
     const out = new Map<string, ReturnType<typeof dayDots>>();
-    for (const [d, rows] of g) out.set(d, dayDots(rows, cap));
+    for (const [d, rows] of g) { const dd = dayDots(rows, cap); out.set(d, outsideClosed(rooms, d) ? { ...dd, outside: "off" } : dd); }
     return out;
   }, [monthRows, rooms, tables]);
   const emptyDots = useMemo(() => dayDots([], totalCapacities(rooms, tables)), [rooms, tables]);
@@ -152,7 +157,7 @@ function AgendaPage() {
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <DayDots dots={dotsByDay.get(ds) ?? emptyDots} />
+                      <DayDots dots={dotsByDay.get(ds) ?? (outsideClosed(rooms, ds) ? { ...emptyDots, outside: "off" as DotLevel } : emptyDots)} />
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
@@ -213,7 +218,8 @@ function AgendaPage() {
           <Button asChild size="sm" variant="outline"><Link to="/foglio" search={{ d: date, s: shift }}><Printer /> 🖨️ Foglio di Sala</Link></Button>
         </div>
         <ServiceNotes date={date} shift={shift} />
-        <Button className="mb-3 hidden w-full md:flex" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
+        <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
+        <Button className="mb-3 hidden w-full md:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span>Ora</span>
           <span>Nome</span>
@@ -303,7 +309,9 @@ function AgendaPage() {
       </main>
       <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
-      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} />
+      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} />
+      <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
+        rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />
     </div>
   );
 }
