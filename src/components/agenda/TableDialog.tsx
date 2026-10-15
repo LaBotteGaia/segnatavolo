@@ -60,7 +60,7 @@ export function TableDialog({
             )}
           </DialogTitle>
           <p className="font-hand text-lg text-muted-foreground">
-            {reservation.name || "Prenotazione"} · {reservation.people} persone · {reservation.shift === "pranzo" ? "Pranzo" : "Sera"}
+            {reservation.name || "Prenotazione"} · {reservation.people} persone · {shiftName(reservation.shift)}
           </p>
         </DialogHeader>
 
