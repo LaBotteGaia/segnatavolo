@@ -50,6 +50,7 @@ export function NewReservationDialog({
   const [busy, setBusy] = useState(false);
   const [focus, setFocus] = useState(false);
   const [force, setForce] = useState(false);
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const settings = useSettings();
   const ranges = rangesOf(settings);
   const shifts = activeShifts(settings);
@@ -59,17 +60,33 @@ export function NewReservationDialog({
   useEffect(() => {
     if (open) {
       setDate(initialDate); setShift(initialShift); setTime(""); setName(""); setPeople("2");
-      setPhone(""); setNotes(""); setOutside(false); setTableIds([]); setErrors({}); setForce(false);
+      setPhone(""); setNotes(""); setOutside(false); setTableIds([]); setErrors({}); setForce(false); setPickedId(null);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date), enabled: open });
   const others = dayRes.filter((r) => r.shift === shift);
 
-  const match = findCustomer(customers, name);
+  // Identità cliente = telefono. Il nome da solo aggancia solo se non ci sono omonimi.
+  const byPhone = findCustomerByPhone(customers, phone);
+  const picked = customers?.find((c) => c.id === pickedId);
+  const sameName = (customers ?? []).filter((c) => c.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const byName = sameName.length === 1 && !phone.trim() ? findCustomer(customers, name) : undefined;
+  const match = byPhone ?? picked ?? byName;
   const isNew = name.trim().length > 0 && !match;
   const suggestions = name.trim() && !match
-    ? (customers ?? []).filter((c) => c.name.toLowerCase().includes(name.trim().toLowerCase())).slice(0, 6) : [];
+    ? (customers ?? []).filter((c) => c.name.toLowerCase().includes(name.trim().toLowerCase())).slice(0, 8) : [];
+  const { data: lastVisits } = useQuery({
+    queryKey: ["last-visits"], enabled: open, staleTime: 60_000,
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data } = await supabase.from("reservations").select("customer_id,date").lt("date", today).not("customer_id", "is", null).order("date", { ascending: false }).limit(5000);
+      const m = new Map<string, string>();
+      for (const r of data ?? []) if (r.customer_id && !m.has(r.customer_id)) m.set(r.customer_id, r.date);
+      return m;
+    },
+  });
+  useEffect(() => { if (byPhone && !name.trim()) setName(byPhone.name); }, [byPhone?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const changeShift = (s: Shift) => {
     setShift(s);
@@ -85,7 +102,7 @@ export function NewReservationDialog({
     if (closed && !(isMaster && force)) return;
     setBusy(true);
     const ok = await onCreate({
-      date, shift, time, name: name.trim(), people: Number(people), phone: match ? match.phone ?? "" : phone.trim(),
+      date, shift, time, name: name.trim(), people: Number(people), phone: normPhone(match ? match.phone || phone : phone),
       is_new: isNew, outside, notes: notes.trim(), table_ids: tableIds, extras, customer: match,
     });
     setBusy(false);
@@ -147,14 +164,17 @@ export function NewReservationDialog({
         <div className="grid grid-cols-[minmax(0,1fr)_5rem] gap-3">
           <div className="relative">
             <label className="text-xs font-semibold text-muted-foreground">Nome</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocus(true)}
+            <input value={name} onChange={(e) => { setName(e.target.value); setPickedId(null); }} onFocus={() => setFocus(true)}
               onBlur={() => setTimeout(() => setFocus(false), 150)} placeholder="Nome cliente"
               className={cn(field, "font-hand text-lg", errors.name && bad)} />
             {focus && suggestions.length > 0 && (
               <ul className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border bg-popover shadow-lg">
                 {suggestions.map((c) => (
                   <li key={c.id}>
-                    <button type="button" onMouseDown={() => setName(c.name)} className="w-full px-3 py-2 text-left font-hand text-lg hover:bg-accent">{c.name}</button>
+                    <button type="button" onMouseDown={() => { setName(c.name); setPickedId(c.id); if (c.phone) setPhone(c.phone); }} className="w-full px-3 py-2 text-left hover:bg-accent">
+                      <span className="font-hand text-lg">{c.name}</span>
+                      <span className="text-sm text-muted-foreground"> - {c.phone || "senza telefono"} (Ultima visita: {lastVisits?.get(c.id) ? format(parseISO(lastVisits.get(c.id)!), "d MMM yyyy", { locale: it }) : "mai"})</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -170,12 +190,11 @@ export function NewReservationDialog({
           {errors.people && <p className="col-span-2 -mt-2 text-sm text-destructive">{errors.people}</p>}
         </div>
 
-        {isNew && (
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Telefono</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Numero di telefono" className={field} />
-          </div>
-        )}
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Telefono</label>
+          <input value={phone} onChange={(e) => { setPhone(e.target.value); setPickedId(null); }} type="tel" placeholder="Numero di telefono" className={field} />
+          {byPhone && <p className="mt-1 text-xs text-muted-foreground">Numero già in archivio: {byPhone.name}</p>}
+        </div>
 
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Tavolo</label>
