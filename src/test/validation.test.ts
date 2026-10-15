@@ -57,3 +57,27 @@ describe("commitTimeCheck (typing a time straight into a row)", () => {
     expect(r.kind === "move" && r.actionLabel).toBe("Sposta in Pranzo");
   });
 });
+
+import { closedShifts, firstName, zoneMismatch, DEFAULT_SETTINGS, timeSlots as ts2 } from "@/lib/data";
+describe("nuove regole", () => {
+  it("first word only", () => { expect(firstName("Mario Rossi")).toBe("Mario"); expect(firstName("  Rossi Mario ")).toBe("Rossi"); });
+  const rooms = [{ id: "in", environment: "interno" }, { id: "out", environment: "esterno" }];
+  const tables = [{ id: "t1", room_id: "in" }, { id: "e1", room_id: "out" }];
+  it("Fuori + tavolo interno → avviso", () => expect(zoneMismatch({ outside: true, table_ids: ["t1"] }, tables, rooms)).toBe("interno-per-esterno"));
+  it("Dentro + tavolo esterno → avviso", () => expect(zoneMismatch({ outside: false, table_ids: ["e1"] }, tables, rooms)).toBe("esterno-per-interno"));
+  it("coerente → nessun avviso", () => expect(zoneMismatch({ outside: true, table_ids: ["e1"] }, tables, rooms)).toBeNull());
+  it("Domenica chiuso a cena", () => {
+    const st = { ...DEFAULT_SETTINGS, weekly: { "0": ["sera" as const] } };
+    expect(closedShifts("2026-10-18", st)).toEqual(["sera"]);
+    expect(closedShifts("2026-10-19", st)).toEqual([]);
+  });
+  it("ferie 10-25 agosto chiudono tutto", () => {
+    const st = { ...DEFAULT_SETTINGS, holidays: [{ from: "2026-08-10", to: "2026-08-25" }] };
+    expect(closedShifts("2026-08-15", st)).toHaveLength(3);
+    expect(closedShifts("2026-08-26", st)).toEqual([]);
+  });
+  it("slot dinamici sulla fascia configurata", () => {
+    const s = ts2("colazione", { ...{ pranzo: { from: "12:00", to: "14:30" }, sera: { from: "19:30", to: "23:00" } }, colazione: { from: "07:30", to: "10:30" } });
+    expect(s[0]).toBe("07:30"); expect(s.at(-1)).toBe("10:30"); expect(s).toHaveLength(13);
+  });
+});
