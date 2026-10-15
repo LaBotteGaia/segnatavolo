@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, Copy, LayoutGrid, 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  activeShifts, commitTimeCheck, firstName, mismatchText, rangesOf, tableLabel, whatsappLink, zoneMismatch,
+  activeShifts, commitTimeCheck, firstName, mismatchText, rangesOf, tableLabel, extrasText, whatsappLink, zoneMismatch,
   useRooms, useTables, type Reservation, type Shift,
 } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
@@ -46,7 +46,7 @@ export function ReservationRow({
   useEffect(() => setTime(r.time), [r.time]);
   useEffect(() => setPhone(r.phone ?? ""), [r.phone]);
 
-  const label = tableLabel(r.table_ids, tables, rooms);
+  const label = r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) : "";
   const mismatch = zoneMismatch(r, tables, rooms);
   const dim = r.arrived && "opacity-50";
 
@@ -161,7 +161,7 @@ export function ReservationRow({
         </div>
       )}
 
-      <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} onConfirm={(ids) => onUpdate({ table_ids: ids })} />
+      <TableDialog open={tableOpen} onOpenChange={setTableOpen} reservation={r} others={others} extras={r} onConfirm={(ids, ex) => onUpdate({ table_ids: ids, ...ex })} />
       <MoveDialog open={moveOpen} onOpenChange={setMoveOpen} r={r} dayExtra={dayExtra}
         onConfirm={(v) => { setMoveOpen(false); setOpen(false); onMove(v); }} />
       <DuplicateDialog open={dupOpen} onOpenChange={setDupOpen} r={r} dayExtra={dayExtra}
