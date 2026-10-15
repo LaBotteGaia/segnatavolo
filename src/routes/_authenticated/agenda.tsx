@@ -76,14 +76,14 @@ function AgendaPage() {
   const mTo = format(endOfMonth(addDays(endOfMonth(month), 7)), "yyyy-MM-dd");
   const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo));
   const dotsByDay = useMemo(() => {
-    const cap = totalCapacities(rooms, tables);
+    const cap = (s: Shift) => totalCapacities(rooms, tables, s);
     const g = new Map<string, typeof monthRows>();
     for (const r of monthRows) g.set(r.date, [...(g.get(r.date) ?? []), r]);
     const out = new Map<string, ReturnType<typeof dayDots>>();
     for (const [d, rows] of g) { const dd = dayDots(rows, cap); out.set(d, outsideClosed(rooms, d) ? { ...dd, outside: "off" } : dd); }
     return out;
   }, [monthRows, rooms, tables]);
-  const emptyDots = useMemo(() => dayDots([], totalCapacities(rooms, tables)), [rooms, tables]);
+  const emptyDots = useMemo(() => dayDots([], (s: Shift) => totalCapacities(rooms, tables, s)), [rooms, tables]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });

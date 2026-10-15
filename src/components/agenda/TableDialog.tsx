@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { canJoin, gridOf, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
 import { RoomGrid, GRID_COLS, GRID_ROWS } from "./RoomGrid";
-import { isRoomClosed, tableState } from "@/lib/rotation";
+import { isRoomClosedFor, isRoomClosed, tableState } from "@/lib/rotation";
 import { useMembership, useSettings } from "@/lib/membership";
 
 export { GRID_COLS, GRID_ROWS };
@@ -124,11 +124,11 @@ export function TableDialog({
           <div className="grid gap-2 sm:grid-cols-2">
             {rooms?.map((r) => {
               const count = tables?.filter((t) => t.room_id === r.id && selected.includes(t.id)).length ?? 0;
-              const shut = isRoomClosed(r, date);
+              const shut = isRoomClosedFor(r, date, reservation.shift);
               return (
                 <button key={r.id} onClick={() => setRoomId(r.id)} className={cn("rounded-md border bg-card p-4 text-left font-display text-lg hover:bg-accent", shut && "opacity-50")}>
                   {r.name}
-                  {shut && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 font-sans text-xs font-bold text-muted-foreground">❄️ Chiusa per stagione</span>}
+                  {shut && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 font-sans text-xs font-bold text-muted-foreground">{isRoomClosed(r, date) ? "❄️ Chiusa per stagione" : `🚫 Chiusa per il turno ${shiftName(reservation.shift)}`}</span>}
                   {count > 0 && <span className="ml-2 text-sm text-primary">({count} selezionati)</span>}
                 </button>
               );
@@ -137,9 +137,9 @@ export function TableDialog({
           </div>
         ) : (
           <>
-          {isRoomClosed(room, date) && (
+          {isRoomClosedFor(room, date, reservation.shift) && (
             <div className="rounded-md border border-muted-foreground/40 bg-muted p-3 text-sm">
-              <p className="font-bold">❄️ Chiusa per stagione: in questa data i tavoli di questa sala non sono assegnabili.</p>
+              <p className="font-bold">{isRoomClosed(room, date) ? "❄️ Chiusa per stagione: in questa data i tavoli di questa sala non sono assegnabili." : `🚫 Chiusa per il turno ${shiftName(reservation.shift)}: i tavoli di questa sala non sono assegnabili.`}</p>
               {isMaster && <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> Forza comunque l'assegnazione (solo Master)</label>}
             </div>
           )}
@@ -153,7 +153,7 @@ export function TableDialog({
               const stt = stateOf(t.id);
               const busy = stt.kind === "busy" ? stt.name || "—" : undefined;
               const sel = selected.includes(t.id);
-              const shut = isRoomClosed(room, date) && !force;
+              const shut = isRoomClosedFor(room, date, reservation.shift) && !force;
               return (
                 <button
                   disabled={(!!busy && !sel) || (shut && !sel)}
