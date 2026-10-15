@@ -187,6 +187,8 @@ function SalePage() {
                   </div>
                 </div>
               </div>
+              <RoomSchedule room={room} onChange={(p) => updateRoom(room, p)} />
+
 
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Button size="sm" variant={drawWalls ? "default" : "outline"} onClick={() => { setDrawWalls((w) => !w); setDrawObs(false); setSel(null); }}>
