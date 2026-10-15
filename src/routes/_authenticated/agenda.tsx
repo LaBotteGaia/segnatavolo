@@ -137,6 +137,44 @@ function AgendaPage() {
     return true;
   };
 
+  const dayExtra = (d: Date) => {
+                  const ds = format(d, "yyyy-MM-dd");
+                  if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
+                  const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
+                  return (
+                    <span className="flex flex-col items-center gap-0.5">
+                      <DayDots dots={dotsByDay.get(ds) ?? emptyDots} />
+                      {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
+                    </span>
+                  );
+  };
+
+  const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
+    qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
+    const { error } = await supabase.from("reservations").update({ ...v, table_ids: [] }).eq("id", r.id);
+    qc.invalidateQueries({ queryKey: key });
+    qc.invalidateQueries({ queryKey: ["reservations", v.date] });
+    qc.invalidateQueries({ queryKey: ["reservations-month"] });
+    if (error) { toast.error("Spostamento non riuscito"); return; }
+    toast.success(`Prenotazione spostata al ${format(parseISO(v.date), "d MMMM", { locale: it })} · ${shiftName(v.shift)} ${v.time}. Tavolo da assegnare.`, {
+      action: { label: "Vai", onClick: () => setDate(v.date) },
+    });
+  };
+
+  const duplicate = async (r: Reservation, v: { dates: string[]; shift: Shift; time: string }) => {
+    const rows = v.dates.map((d) => ({
+      date: d, shift: v.shift, time: v.time, name: r.name, people: r.people, phone: r.phone,
+      is_new: false, outside: r.outside, notes: r.notes, customer_id: r.customer_id, table_ids: [] as string[],
+    }));
+    const { error } = await supabase.from("reservations").insert(rows);
+    if (error) { toast.error("Duplicazione non riuscita"); return false; }
+    for (const d of v.dates) qc.invalidateQueries({ queryKey: ["reservations", d] });
+    qc.invalidateQueries({ queryKey: ["reservations-month"] });
+    const n = v.dates.length;
+    toast.success(`Prenotazione duplicata con successo su ${n} ${n === 1 ? "data" : "date"}`);
+    return true;
+  };
+
   const closedToday = closedShifts(date, settings);
   const renderPage = (shift: Shift, side: "left" | "right" | "mid") => {
     const rows = byShift(shift);
@@ -176,6 +214,9 @@ function AgendaPage() {
             onUpdate={(p) => update(r.id, p)}
             onDelete={() => remove(r)}
             onCustomerPhone={(ph) => saveCustomerPhone(r, ph)}
+            onMove={(v) => move(r, v)}
+            onDuplicate={(v) => duplicate(r, v)}
+            dayExtra={dayExtra}
           />
         ))}
         {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">Nessuna prenotazione</p>}
@@ -199,17 +240,7 @@ function AgendaPage() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarDayExtra.Provider value={(d) => {
-                  const ds = format(d, "yyyy-MM-dd");
-                  if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
-                  const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
-                  return (
-                    <span className="flex flex-col items-center gap-0.5">
-                      <DayDots dots={dotsByDay.get(ds) ?? emptyDots} />
-                      {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
-                    </span>
-                  );
-                }}>
+                <CalendarDayExtra.Provider value={dayExtra}>
                   <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
                 </CalendarDayExtra.Provider>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
