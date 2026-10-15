@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Minus, Plus } from "lucide-react";
 import type { RTable } from "@/lib/data";
 
 export const GRID_COLS = 6;
@@ -8,29 +9,62 @@ const pct = (n: number, of: number) => `${(n / of) * 100}%`;
 
 /** Griglia della sala con tavoli e pareti. In modalità editWalls mostra le zone cliccabili sui bordi. */
 export function RoomGrid({
-  tables, walls, renderCell, editWalls, onToggleWall,
+  tables, walls, renderCell, editWalls, onToggleWall, cols = GRID_COLS, rows = GRID_ROWS,
 }: {
+  cols?: number;
+  rows?: number;
   tables: RTable[];
   walls: string[];
   renderCell: (x: number, y: number, t: RTable | undefined) => ReactNode;
   editWalls?: boolean;
   onToggleWall?: (key: string) => void;
 }) {
+  const [cell, setCell] = useState(46);
+  const box = useRef<HTMLDivElement>(null);
+  const setZoom = (n: number) => setCell(Math.min(110, Math.max(24, Math.round(n))));
+  const cellRef = useRef(cell);
+  cellRef.current = cell;
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return; // pinch del trackpad o Ctrl+rotella
+      e.preventDefault();
+      setZoom(cellRef.current * Math.exp(-e.deltaY * 0.01));
+    };
+    let pinch: number | null = null, start = 0;
+    const dist = (t: TouchList) => Math.hypot(t[0]!.clientX - t[1]!.clientX, t[0]!.clientY - t[1]!.clientY);
+    const ts = (e: TouchEvent) => { if (e.touches.length === 2) { pinch = dist(e.touches); start = cellRef.current; } };
+    const tm = (e: TouchEvent) => { if (pinch && e.touches.length === 2) { e.preventDefault(); setZoom(start * (dist(e.touches) / pinch)); } };
+    const te = () => { pinch = null; };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", ts, { passive: true });
+    el.addEventListener("touchmove", tm, { passive: false });
+    el.addEventListener("touchend", te);
+    return () => { el.removeEventListener("wheel", onWheel); el.removeEventListener("touchstart", ts); el.removeEventListener("touchmove", tm); el.removeEventListener("touchend", te); };
+  }, []);
   const edges: { key: string; style: React.CSSProperties }[] = [];
-  for (let y = 0; y <= GRID_ROWS; y++)
-    for (let x = 0; x < GRID_COLS; x++)
-      edges.push({ key: `h:${x}:${y}`, style: { left: pct(x, GRID_COLS), top: pct(y, GRID_ROWS), width: pct(1, GRID_COLS) } });
-  for (let x = 0; x <= GRID_COLS; x++)
-    for (let y = 0; y < GRID_ROWS; y++)
-      edges.push({ key: `v:${x}:${y}`, style: { left: pct(x, GRID_COLS), top: pct(y, GRID_ROWS), height: pct(1, GRID_ROWS) } });
+  for (let y = 0; y <= rows; y++)
+    for (let x = 0; x < cols; x++)
+      edges.push({ key: `h:${x}:${y}`, style: { left: pct(x, cols), top: pct(y, rows), width: pct(1, cols) } });
+  for (let x = 0; x <= cols; x++)
+    for (let y = 0; y < rows; y++)
+      edges.push({ key: `v:${x}:${y}`, style: { left: pct(x, cols), top: pct(y, rows), height: pct(1, rows) } });
 
   return (
-    <div className="relative w-full select-none" style={{ aspectRatio: `${GRID_COLS} / ${GRID_ROWS}` }}>
-      {Array.from({ length: GRID_ROWS * GRID_COLS }).map((_, i) => {
-        const x = i % GRID_COLS, y = Math.floor(i / GRID_COLS);
+    <div>
+    <div className="mb-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+      Zoom
+      <button type="button" aria-label="Riduci" className="rounded border bg-card p-1" onClick={() => setZoom(cell / 1.2)}><Minus className="size-3.5" /></button>
+      <button type="button" aria-label="Ingrandisci" className="rounded border bg-card p-1" onClick={() => setZoom(cell * 1.2)}><Plus className="size-3.5" /></button>
+    </div>
+    <div ref={box} className="max-h-[65vh] overflow-auto rounded-md border border-rule/60 p-2">
+    <div className="relative select-none" style={{ width: cols * cell, height: rows * cell, fontSize: Math.max(9, cell / 4) }}>
+      {Array.from({ length: rows * cols }).map((_, i) => {
+        const x = i % cols, y = Math.floor(i / cols);
         const t = tables.find((tt) => tt.x === x && tt.y === y);
         return (
-          <div key={i} className="absolute p-1" style={{ left: pct(x, GRID_COLS), top: pct(y, GRID_ROWS), width: pct(1, GRID_COLS), height: pct(1, GRID_ROWS) }}>
+          <div key={i} className="absolute p-0.5" style={{ left: pct(x, cols), top: pct(y, rows), width: pct(1, cols), height: pct(1, rows) }}>
             {renderCell(x, y, t)}
           </div>
         );
@@ -59,6 +93,8 @@ export function RoomGrid({
           </div>
         );
       })}
+    </div>
+    </div>
     </div>
   );
 }

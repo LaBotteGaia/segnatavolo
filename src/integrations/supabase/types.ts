@@ -214,9 +214,11 @@ export type Database = {
       }
       restaurant_tables: {
         Row: {
+          allow_extras: boolean
           created_at: string
           id: string
           name: string
+          no_join: string[]
           restaurant_id: string | null
           room_id: string
           seats: number
@@ -224,9 +226,11 @@ export type Database = {
           y: number
         }
         Insert: {
+          allow_extras?: boolean
           created_at?: string
           id?: string
           name: string
+          no_join?: string[]
           restaurant_id?: string | null
           room_id: string
           seats?: number
@@ -234,9 +238,11 @@ export type Database = {
           y?: number
         }
         Update: {
+          allow_extras?: boolean
           created_at?: string
           id?: string
           name?: string
+          no_join?: string[]
           restaurant_id?: string | null
           room_id?: string
           seats?: number
@@ -286,6 +292,8 @@ export type Database = {
           capacity: number | null
           created_at: string
           environment: string
+          grid_cols: number
+          grid_rows: number
           id: string
           name: string
           restaurant_id: string | null
@@ -296,6 +304,8 @@ export type Database = {
           capacity?: number | null
           created_at?: string
           environment?: string
+          grid_cols?: number
+          grid_rows?: number
           id?: string
           name: string
           restaurant_id?: string | null
@@ -306,6 +316,8 @@ export type Database = {
           capacity?: number | null
           created_at?: string
           environment?: string
+          grid_cols?: number
+          grid_rows?: number
           id?: string
           name?: string
           restaurant_id?: string | null

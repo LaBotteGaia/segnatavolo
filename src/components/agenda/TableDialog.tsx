@@ -3,19 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
+import { toast } from "sonner";
+import { canJoin, gridOf, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
 import { RoomGrid, GRID_COLS, GRID_ROWS } from "./RoomGrid";
 
 export { GRID_COLS, GRID_ROWS };
 
-function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+function Stepper({ label, value, onChange, disabled }: { label: string; value: number; onChange: (n: number) => void; disabled?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-sm font-semibold">{label}</span>
       <div className="flex items-center gap-1">
-        <Button type="button" size="icon" variant="outline" className="size-8" aria-label={`Togli ${label}`} onClick={() => onChange(Math.max(0, value - 1))}><Minus /></Button>
+        <Button type="button" size="icon" variant="outline" className="size-8" disabled={disabled} aria-label={`Togli ${label}`} onClick={() => onChange(Math.max(0, value - 1))}><Minus /></Button>
         <span className="w-6 text-center font-bold tabular-nums">{value}</span>
-        <Button type="button" size="icon" variant="outline" className="size-8" aria-label={label} onClick={() => onChange(Math.min(20, value + 1))}><Plus /></Button>
+        <Button type="button" size="icon" variant="outline" className="size-8" disabled={disabled} aria-label={label} onClick={() => onChange(Math.min(20, value + 1))}><Plus /></Button>
       </div>
     </div>
   );
@@ -59,7 +60,19 @@ export function TableDialog({
   const over = selected.length > 0 && nominal < reservation.people;
   const ok = effective >= reservation.people;
 
-  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const selTables = tables?.filter((t) => selected.includes(t.id)) ?? [];
+  const noExtras = selTables.length > 0 && selTables.every((t) => !t.allow_extras);
+  const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
+  const toggle = (id: string) => {
+    if (selected.includes(id)) return setSelected((s) => s.filter((x) => x !== id));
+    const t = tables?.find((x) => x.id === id);
+    if (t && selTables.some((o) => !canJoin(o, t, wallsFor))) {
+      toast.warning("⚠️ Impossibile unire questi tavoli: presenza di ostacolo o vincolo strutturale");
+      return;
+    }
+    setSelected((s) => [...s, id]);
+  };
+  useEffect(() => { if (noExtras && (ex.extra_sponde || ex.extra_barelle)) setEx((e) => ({ ...e, extra_sponde: 0, extra_barelle: 0 })); }, [noExtras]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,8 +100,9 @@ export function TableDialog({
               ⚠️ Capienza tavoli: {nominal} posti | Richiesti: {reservation.people} persone
               {nominal < reservation.people && ` (+${reservation.people - nominal} mancanti)`}
             </p>
-            <Stepper label="Aggiungi Sponda (+1 posto)" value={ex.extra_sponde} onChange={(n) => setEx({ ...ex, extra_sponde: n })} />
-            <Stepper label={`Aggiungi Barella (+${ex.barella_seats} posti)`} value={ex.extra_barelle} onChange={(n) => setEx({ ...ex, extra_barelle: n })} />
+            {noExtras && <p className="text-sm font-semibold text-busy">Questo tavolo non dispone di fessure/spazio per sponde o barelle. Scegli un altro tavolo o unisci un tavolo compatibile.</p>}
+            <Stepper disabled={noExtras} label="Aggiungi Sponda (+1 posto)" value={ex.extra_sponde} onChange={(n) => setEx({ ...ex, extra_sponde: n })} />
+            <Stepper disabled={noExtras} label={`Aggiungi Barella (+${ex.barella_seats} posti)`} value={ex.extra_barelle} onChange={(n) => setEx({ ...ex, extra_barelle: n })} />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               Posti per barella:
               {[1, 2].map((n) => (
@@ -115,6 +129,8 @@ export function TableDialog({
           </div>
         ) : (
           <RoomGrid
+            cols={gridOf(room).cols}
+            rows={gridOf(room).rows}
             tables={roomTables}
             walls={wallsOf(room)}
             renderCell={(_x, _y, t) => {
@@ -126,12 +142,13 @@ export function TableDialog({
                   disabled={!!busy}
                   onClick={() => toggle(t.id)}
                   className={cn(
-                    "flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md p-1 text-center text-xs font-bold leading-tight transition",
+                    "relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md p-0.5 text-center font-bold leading-tight transition",
                     busy ? "bg-busy text-busy-foreground opacity-90" : "bg-free text-free-foreground",
                     sel && "ring-4 ring-primary ring-offset-2 ring-offset-paper",
                   )}
                 >
-                  <span className="text-sm">{t.name} - {t.seats}p</span>
+                  <span>{t.name} - {t.seats}p</span>
+                  {!t.allow_extras && <span className="absolute right-0.5 top-0 text-[0.8em]" title="Niente sponde/barelle">⛔</span>}
                   {busy && <span className="max-w-full truncate font-hand font-normal">{busy}</span>}
                 </button>
               );

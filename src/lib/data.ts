@@ -332,3 +332,27 @@ export function wallsOf(room: Pick<Room, "walls"> | undefined): string[] {
   return Array.isArray(w) ? (w.filter((k) => typeof k === "string") as string[]) : [];
 }
 export const toggleWall = (walls: string[], key: string) => (walls.includes(key) ? walls.filter((k) => k !== key) : [...walls, key]);
+
+// --- Dimensioni griglia e vincoli tra tavoli ---
+export const gridOf = (room: Partial<Pick<Room, "grid_cols" | "grid_rows">> | undefined) => ({
+  cols: Math.max(1, room?.grid_cols ?? 6),
+  rows: Math.max(1, room?.grid_rows ?? 5),
+});
+
+/** C'è una parete sulla linea retta tra due tavoli della stessa riga o colonna? */
+export function wallBetween(a: Pick<RTable, "x" | "y">, b: Pick<RTable, "x" | "y">, walls: string[]): boolean {
+  if (a.y === b.y) {
+    for (let x = Math.min(a.x, b.x) + 1; x <= Math.max(a.x, b.x); x++) if (walls.includes(`v:${x}:${a.y}`)) return true;
+  } else if (a.x === b.x) {
+    for (let y = Math.min(a.y, b.y) + 1; y <= Math.max(a.y, b.y); y++) if (walls.includes(`h:${a.x}:${y}`)) return true;
+  }
+  return false;
+}
+
+type JoinT = Pick<RTable, "id" | "x" | "y" | "room_id" | "no_join">;
+/** Due tavoli si possono unire? No se uno esclude l'altro o se c'è una parete tra loro (stessa sala). */
+export function canJoin(a: JoinT, b: JoinT, wallsByRoom: (roomId: string) => string[]): boolean {
+  if (a.no_join?.includes(b.id) || b.no_join?.includes(a.id)) return false;
+  if (a.room_id === b.room_id && wallBetween(a, b, wallsByRoom(a.room_id))) return false;
+  return true;
+}

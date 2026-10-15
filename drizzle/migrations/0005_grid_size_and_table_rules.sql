@@ -1,0 +1,2 @@
+ALTER TABLE public.rooms ADD COLUMN grid_cols integer NOT NULL DEFAULT 6, ADD COLUMN grid_rows integer NOT NULL DEFAULT 5;
+ALTER TABLE public.restaurant_tables ADD COLUMN allow_extras boolean NOT NULL DEFAULT true, ADD COLUMN no_join uuid[] NOT NULL DEFAULT '{}'::uuid[];
