@@ -295,6 +295,7 @@ export type Database = {
           grid_cols: number
           grid_rows: number
           id: string
+          locked: boolean
           name: string
           restaurant_id: string | null
           sort_order: number
@@ -307,6 +308,7 @@ export type Database = {
           grid_cols?: number
           grid_rows?: number
           id?: string
+          locked?: boolean
           name: string
           restaurant_id?: string | null
           sort_order?: number
@@ -319,6 +321,7 @@ export type Database = {
           grid_cols?: number
           grid_rows?: number
           id?: string
+          locked?: boolean
           name?: string
           restaurant_id?: string | null
           sort_order?: number
@@ -327,6 +330,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rooms_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_notes: {
+        Row: {
+          body: string
+          date: string
+          id: string
+          restaurant_id: string
+          shift: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          date: string
+          id?: string
+          restaurant_id?: string
+          shift: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          date?: string
+          id?: string
+          restaurant_id?: string
+          shift?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_notes_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"

@@ -43,6 +43,13 @@
       "when": 1792076717879,
       "tag": "0005_grid_size_and_table_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792077766645,
+      "tag": "0006_room_lock_and_service_notes",
+      "breakpoints": true
     }
   ]
 }
