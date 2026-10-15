@@ -64,6 +64,13 @@
       "when": 1792086228390,
       "tag": "0008_reservation_manual_no_show",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792090888206,
+      "tag": "0009_room_closed_shifts",
+      "breakpoints": true
     }
   ]
 }

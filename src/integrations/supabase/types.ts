@@ -300,6 +300,7 @@ export type Database = {
         Row: {
           capacity: number | null
           closed_periods: Json
+          closed_shifts: string[]
           created_at: string
           environment: string
           grid_cols: number
@@ -315,6 +316,7 @@ export type Database = {
         Insert: {
           capacity?: number | null
           closed_periods?: Json
+          closed_shifts?: string[]
           created_at?: string
           environment?: string
           grid_cols?: number
@@ -330,6 +332,7 @@ export type Database = {
         Update: {
           capacity?: number | null
           closed_periods?: Json
+          closed_shifts?: string[]
           created_at?: string
           environment?: string
           grid_cols?: number
