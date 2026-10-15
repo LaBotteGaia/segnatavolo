@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateReservation, timeSlots, shiftForTime } from "@/lib/data";
+import { validateReservation, timeSlots, shiftForTime, normalizeTime, commitTimeCheck } from "@/lib/data";
 
 const ok = { name: "Rossi", people: 2, date: "2026-10-15", time: "12:30", shift: "pranzo" as const };
 
