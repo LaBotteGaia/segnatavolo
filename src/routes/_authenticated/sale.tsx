@@ -312,3 +312,39 @@ function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) =>
     </div>
   );
 }
+
+const DAYS: [number, string][] = [[1, "Lun"], [2, "Mar"], [3, "Mer"], [4, "Gio"], [5, "Ven"], [6, "Sab"], [0, "Dom"]];
+
+/** Apertura settimanale e chiusure stagionali (ricorrenti ogni anno) della sala. */
+function RoomSchedule({ room, onChange }: { room: Room; onChange: (p: Partial<Room>) => void }) {
+  const days = room.open_days ?? [0, 1, 2, 3, 4, 5, 6];
+  const [draft, setDraft] = useState<ClosedPeriod[]>(periodsOf(room));
+  useEffect(() => setDraft(periodsOf(room)), [room.id, JSON.stringify(room.closed_periods)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const save = (list: ClosedPeriod[]) => { setDraft(list); if (list.every((p) => p.from && p.to)) onChange({ closed_periods: list }); };
+  return (
+    <div className="mb-4 space-y-3 rounded-md border bg-card p-3">
+      <div>
+        <div className="mb-1 text-xs text-muted-foreground">Giorni settimanali di apertura</div>
+        <div className="flex flex-wrap gap-1">
+          {DAYS.map(([d, l]) => (
+            <button key={d} type="button" onClick={() => onChange({ open_days: days.includes(d) ? days.filter((x) => x !== d) : [...days, d] })}
+              className={cn("rounded-md border px-2.5 py-1 text-sm", days.includes(d) ? "bg-primary text-primary-foreground" : "bg-paper text-muted-foreground line-through")}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="mb-1 text-xs text-muted-foreground">Periodi stagionali di chiusura (si ripetono ogni anno, es. 1 novembre → 31 marzo)</div>
+        {draft.map((p, i) => (
+          <div key={i} className="mb-1 flex items-center gap-2">
+            <span className="text-xs">dal</span>
+            <Input type="date" className="h-9" value={p.from ? `2026-${p.from}` : ""} onChange={(e) => save(draft.map((x, j) => (j === i ? { ...x, from: e.target.value.slice(5) } : x)))} />
+            <span className="text-xs">al</span>
+            <Input type="date" className="h-9" value={p.to ? `2026-${p.to}` : ""} onChange={(e) => save(draft.map((x, j) => (j === i ? { ...x, to: e.target.value.slice(5) } : x)))} />
+            <Button type="button" size="icon" variant="ghost" aria-label="Rimuovi periodo" onClick={() => save(draft.filter((_, j) => j !== i))}><Trash2 /></Button>
+          </div>
+        ))}
+        <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { from: "", to: "" }])}>❄️ Aggiungi chiusura stagionale</Button>
+      </div>
+    </div>
+  );
+}
