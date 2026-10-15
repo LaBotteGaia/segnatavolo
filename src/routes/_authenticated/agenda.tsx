@@ -20,6 +20,7 @@ import { NewReservationDialog, type NewReservationInput } from "@/components/age
 import { Plus, Printer } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
+import { WhatsNew } from "@/components/ChangelogDialog";
 import { APP_NAME } from "@/lib/extras";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
@@ -300,6 +301,7 @@ function AgendaPage() {
         </div>
         <div className="md:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
       </main>
+      <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} />
     </div>

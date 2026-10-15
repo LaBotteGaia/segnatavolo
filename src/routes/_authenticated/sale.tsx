@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
-import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween } from "@/lib/data";
+import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
 import { validSeats, validTableName } from "@/lib/extras";
@@ -44,6 +44,7 @@ function SalePage() {
   const [sel, setSel] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState("");
   const [drawWalls, setDrawWalls] = useState(false);
+  const [drawObs, setDrawObs] = useState(false);
   const room = rooms.find((r) => r.id === (roomId ?? rooms[0]?.id));
   const roomTables = tables.filter((t) => t.room_id === room?.id);
   const selected = tables.find((t) => t.id === sel);
@@ -79,8 +80,10 @@ function SalePage() {
   const cellClick = async (x: number, y: number) => {
     if (!room) return;
     const t = roomTables.find((tt) => tt.x === x && tt.y === y);
-    if (t) return setSel(t.id === sel ? null : t.id);
+    if (t) { if (drawObs && !locked) { toast.error("Qui c'è un tavolo: spostalo prima di inserire un ostacolo"); return; } return setSel(t.id === sel ? null : t.id); }
     if (locked) { toast("🔒 Sala protetta da modifiche: sbloccala per cambiare la mappa"); return; }
+    if (drawObs) { updateRoom(room, { walls: toggleWall(wallsOf(room), obstacleKey(x, y)) }); return; }
+    if (isObstacle(wallsOf(room), x, y)) { toast.error("🚫 Questa casella è un ostacolo: non può contenere un tavolo"); return; }
     if (selected && selected.room_id === room.id) {
       await supabase.from("restaurant_tables").update({ x, y }).eq("id", selected.id);
     } else {
@@ -151,7 +154,7 @@ function SalePage() {
                 </Button>
               </div>
               <div className={cn("mb-3 flex flex-wrap items-center gap-2 rounded-md border p-2", locked ? "border-primary/40 bg-primary/5" : "border-warning bg-warning/15")}>
-                <Button size="sm" variant={locked ? "default" : "outline"} onClick={() => { updateRoom(room, { locked: !locked }); setDrawWalls(false); }}>
+                <Button size="sm" variant={locked ? "default" : "outline"} onClick={() => { updateRoom(room, { locked: !locked }); setDrawWalls(false); setDrawObs(false); }}>
                   {locked ? "🔓 Sblocca Sala" : "🔒 Blocca Sala"}
                 </Button>
                 <span className="text-sm font-semibold">{locked ? "🔒 Sala protetta da modifiche" : "✏️ Sala sbloccata: modifiche attive"}</span>
@@ -186,9 +189,13 @@ function SalePage() {
               </div>
 
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Button size="sm" variant={drawWalls ? "default" : "outline"} onClick={() => { setDrawWalls((w) => !w); setSel(null); }}>
+                <Button size="sm" variant={drawWalls ? "default" : "outline"} onClick={() => { setDrawWalls((w) => !w); setDrawObs(false); setSel(null); }}>
                   🧱 Disegna Pareti {drawWalls ? "(attivo)" : ""}
                 </Button>
+                <Button size="sm" variant={drawObs ? "default" : "outline"} onClick={() => { setDrawObs((w) => !w); setDrawWalls(false); setSel(null); }}>
+                  🚫 Inserisci Ostacolo {drawObs ? "(attivo)" : ""}
+                </Button>
+                {drawObs && <span className="text-sm text-muted-foreground">Tocca una casella libera per segnare un ostacolo (colonna, pilastro, albero…); ritoccala per toglierlo.</span>}
                 {drawWalls && <span className="text-sm text-muted-foreground">Tocca un bordo tra le caselle per tracciare un muro; ritoccalo per toglierlo.</span>}
               </div>
               <div className="mb-2 flex flex-wrap items-center gap-1 text-sm">
@@ -216,7 +223,7 @@ function SalePage() {
                       drawWalls && "opacity-60",
                     )}
                   >
-                    {t ? `${t.name} - ${t.seats}p` : drawWalls ? "" : "+"}
+                    {t ? `${t.name} - ${t.seats}p` : drawWalls || drawObs || isObstacle(wallsOf(room), x, y) ? "" : "+"}
                     {t && !t.allow_extras && <span className="absolute right-0.5 top-0 text-[0.8em]" title="Niente sponde/barelle">⛔</span>}
                   </button>
                 )}
@@ -238,7 +245,7 @@ function SalePage() {
                         const byWall = wallBetween(selected, o, wallsOf(room));
                         const on = byWall || selected.no_join.includes(o.id) || o.no_join.includes(selected.id);
                         return (
-                          <button key={o.id} type="button" disabled={byWall} title={byWall ? "Parete tra i tavoli" : undefined}
+                          <button key={o.id} type="button" disabled={byWall} title={byWall ? "Parete o ostacolo tra i tavoli" : undefined}
                             onClick={() => {
                               const add = !on;
                               updateTable(selected, { no_join: add ? [...selected.no_join, o.id] : selected.no_join.filter((i) => i !== o.id) });

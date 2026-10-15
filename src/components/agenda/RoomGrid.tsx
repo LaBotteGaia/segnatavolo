@@ -66,6 +66,11 @@ export function RoomGrid({
         return (
           <div key={i} className="absolute p-0.5" style={{ left: pct(x, cols), top: pct(y, rows), width: pct(1, cols), height: pct(1, rows) }}>
             {renderCell(x, y, t)}
+            {walls.includes(`o:${x}:${y}`) && (
+              <svg aria-label="Ostacolo" viewBox="0 0 10 10" className="pointer-events-none absolute inset-1 text-foreground opacity-35">
+                <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            )}
           </div>
         );
       })}

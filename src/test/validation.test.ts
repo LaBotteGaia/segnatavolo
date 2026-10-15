@@ -81,3 +81,10 @@ describe("nuove regole", () => {
     expect(s[0]).toBe("07:30"); expect(s.at(-1)).toBe("10:30"); expect(s).toHaveLength(13);
   });
 });
+
+import { findCustomerByPhone, normPhone } from "@/lib/data";
+describe("anti-omonimia", () => {
+  const cs = [{ id: "1", name: "Mario Rossi", phone: "333 123-4567" }, { id: "2", name: "Mario Rossi", phone: "347 0000000" }] as never;
+  it("normalizza spazi e trattini", () => expect(normPhone("333 123-4567")).toBe("3331234567"));
+  it("trova il cliente dal telefono, non dal nome", () => expect(findCustomerByPhone(cs, "3470000000")?.id).toBe("2"));
+});
