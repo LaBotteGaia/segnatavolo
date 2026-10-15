@@ -72,9 +72,12 @@ export function ReservationRow({
         className={cn(ROW_GRID, "relative w-full py-2 text-left")}
       >
         <span className={cn("font-display font-semibold tabular-nums", dim)}>{r.time || "--:--"}</span>
-        <span className={cn("flex min-w-0 items-center gap-1 font-hand text-lg text-ink", dim)}>
-          <span className="truncate">{firstName(r.name) || "—"}</span>
-          {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
+        <span className={cn("flex min-w-0 flex-col", dim)}>
+          <span className="flex min-w-0 items-center gap-1 font-hand text-lg leading-tight text-ink">
+            <span className="truncate">{firstName(r.name) || "—"}</span>
+            {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
+          </span>
+          {label && <span className="truncate text-[11px] font-semibold leading-tight text-primary">{label}</span>}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
         <span className={cn("whitespace-nowrap text-sm", dim)}>{r.outside ? "☀️ Fuori" : "🏠 Dentro"}</span>
