@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { LoyaltyBox } from "./Extras";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,9 @@ import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
 export const ROW_GRID = "grid items-center gap-x-2 grid-cols-[3.4rem_minmax(0,1fr)_2.8rem_5.5rem_1.25rem]";
 
 export function ReservationRow({
-  r, others, onUpdate, onDelete, onCustomerPhone, onMove, onDuplicate, dayExtra = null,
+  r, others, onUpdate, onDelete, onCustomerPhone, onMove, onDuplicate, dayExtra = null, highlight = false,
 }: {
+  highlight?: boolean;
   r: Reservation;
   others: Reservation[];
   onUpdate: (patch: Partial<Reservation>) => void;
@@ -41,6 +43,8 @@ export function ReservationRow({
   const [dupOpen, setDupOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   useEffect(() => { if (!open) setConfirmDel(false); }, [open]);
+  const rowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (highlight) { setOpen(true); setTimeout(() => rowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150); } }, [highlight]);
   useEffect(() => setPeople(String(r.people)), [r.people]);
   useEffect(() => setNotes(r.notes), [r.notes]);
   useEffect(() => setTime(r.time), [r.time]);
@@ -64,7 +68,7 @@ export function ReservationRow({
   const lbl = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
 
   return (
-    <div className={cn("relative ruled-row", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
+    <div ref={rowRef} className={cn("relative ruled-row", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -93,6 +97,7 @@ export function ReservationRow({
             </div>
           )}
           <div className="font-display text-xl">{r.name || "—"}</div>
+          <LoyaltyBox customerId={r.customer_id} phone={r.phone} excludeId={r.id} isNew={r.is_new} />
 
           <div className="grid grid-cols-2 gap-3">
             <div>

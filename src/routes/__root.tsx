@@ -66,7 +66,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Agenda Prenotazioni" },
+      { title: "Segnatavolo" },
       { name: "description", content: "Agenda interna delle prenotazioni del ristorante." },
       { name: "theme-color", content: "#7a1f2b" },
       { name: "apple-mobile-web-app-capable", content: "yes" },

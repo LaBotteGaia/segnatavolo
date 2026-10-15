@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LoyaltyBox } from "./Extras";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
@@ -192,6 +193,7 @@ export function NewReservationDialog({
           <label className="flex items-center gap-2"><Checkbox checked={outside} onCheckedChange={(v) => setOutside(!!v)} /> Fuori</label>
           <label className="flex items-center gap-2"><Checkbox checked={isNew} disabled /> Nuovo cliente</label>
         </div>
+        {match && <LoyaltyBox customerId={match.id} phone={match.phone} />}
 
         {closed && (
           <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">

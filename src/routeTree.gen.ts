@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedFoglioRouteImport } from './routes/_authenticated/foglio'
 import { Route as AuthenticatedSaleRouteImport } from './routes/_authenticated/sale'
 import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
 
@@ -35,6 +36,11 @@ const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFoglioRoute = AuthenticatedFoglioRouteImport.update({
+  id: '/foglio',
+  path: '/foglio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSaleRoute = AuthenticatedSaleRouteImport.update({
   id: '/sale',
   path: '/sale',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/foglio': typeof AuthenticatedFoglioRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/invito/$token': typeof InvitoTokenRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/foglio': typeof AuthenticatedFoglioRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/invito/$token': typeof InvitoTokenRoute
 }
@@ -66,20 +74,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/foglio': typeof AuthenticatedFoglioRoute
   '/_authenticated/sale': typeof AuthenticatedSaleRoute
   '/invito/$token': typeof InvitoTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/agenda' | '/sale' | '/invito/$token'
+  fullPaths: '/' | '/auth' | '/agenda' | '/foglio' | '/sale' | '/invito/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/agenda' | '/sale' | '/invito/$token'
+  to: '/' | '/auth' | '/agenda' | '/foglio' | '/sale' | '/invito/$token'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/agenda'
+    | '/_authenticated/foglio'
     | '/_authenticated/sale'
     | '/invito/$token'
   fileRoutesById: FileRoutesById
@@ -121,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/foglio': {
+      id: '/_authenticated/foglio'
+      path: '/foglio'
+      fullPath: '/foglio'
+      preLoaderRoute: typeof AuthenticatedFoglioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sale': {
       id: '/_authenticated/sale'
       path: '/sale'
@@ -140,11 +157,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedFoglioRoute: typeof AuthenticatedFoglioRoute
   AuthenticatedSaleRoute: typeof AuthenticatedSaleRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedFoglioRoute: AuthenticatedFoglioRoute,
   AuthenticatedSaleRoute: AuthenticatedSaleRoute,
 }
 

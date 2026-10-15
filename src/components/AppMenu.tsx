@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
+import { Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNotifyPref } from "@/lib/notifications";
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership } from "@/lib/membership";
+import { APP_NAME, toCsv } from "@/lib/extras";
+import { VersionBadge } from "@/components/agenda/Extras";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
@@ -25,6 +27,22 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [restOpen, setRestOpen] = useState(false);
   const isMaster = me?.role === "master";
   const [notify, setNotify] = useNotifyPref();
+
+  const exportCsv = async () => {
+    const { data, error } = await supabase.from("reservations").select("*").order("date").order("time");
+    if (error || !data) { toast.error("Esportazione non riuscita"); return; }
+    const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables"]) ?? []).map((t) => [t.id, t.name]));
+    const rows = data.map((r) => ({ ...r, tavoli: r.table_ids.map((i) => byId.get(i) ?? "?"), turno: shiftName(r.shift as Shift), arrivato: r.arrived ? "Sì" : "No", fuori: r.outside ? "Sì" : "No", nuovo: r.is_new ? "Sì" : "No" }));
+    const csv = toCsv(rows, [
+      { key: "date", label: "Data" }, { key: "turno", label: "Turno" }, { key: "time", label: "Orario" }, { key: "name", label: "Nome" },
+      { key: "phone", label: "Telefono" }, { key: "people", label: "Coperti" }, { key: "tavoli", label: "Tavolo" }, { key: "notes", label: "Richieste particolari" },
+      { key: "fuori", label: "Fuori" }, { key: "nuovo", label: "Nuovo cliente" }, { key: "arrivato", label: "Arrivato" },
+    ]);
+    const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = `segnatavolo-backup-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Esportate ${data.length} prenotazioni`);
+  };
 
   const logout = async () => {
     await qc.cancelQueries();
@@ -44,6 +62,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
         <SheetContent side="right" className="flex w-80 flex-col gap-0 p-0">
           <SheetHeader className="border-b p-5 text-left">
             <SheetTitle className="sr-only">Menù</SheetTitle>
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{APP_NAME} <VersionBadge /></div>
             {me && (
               <div className="min-w-0">
                 <div className="truncate font-display text-xl text-primary">{me.name || me.email}</div>
@@ -62,6 +81,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
               <span className="flex-1 text-sm">🔔 Notifiche nuove prenotazioni</span>
               <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />
             </label>
+            <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>📥 Esporta Dati (Backup)</MenuItem>
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>

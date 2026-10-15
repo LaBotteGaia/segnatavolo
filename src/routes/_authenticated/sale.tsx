@@ -11,13 +11,15 @@ import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
 import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
+import { useEffect } from "react";
+import { validSeats, validTableName } from "@/lib/extras";
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
     meta: [
-      { title: "Gestione Sale — Prenotazioni" },
+      { title: "Gestione Sale — Segnatavolo" },
       { name: "description", content: "Crea le sale e disponi i tavoli sulla mappa." },
-      { property: "og:title", content: "Gestione Sale — Prenotazioni" },
+      { property: "og:title", content: "Gestione Sale — Segnatavolo" },
       { property: "og:description", content: "Crea le sale e disponi i tavoli sulla mappa." },
     ],
   }),
@@ -46,9 +48,10 @@ function SalePage() {
   const roomTables = tables.filter((t) => t.room_id === room?.id);
   const selected = tables.find((t) => t.id === sel);
 
+  const locked = room?.locked ?? true;
   const grid = gridOf(room);
   const resize = (dc: number, dr: number) => {
-    if (!room) return;
+    if (!room || locked) return;
     const cols = Math.min(60, grid.cols + dc), rows = Math.min(60, grid.rows + dr);
     if (cols < 1 || rows < 1) return;
     if (roomTables.some((t) => t.x >= cols || t.y >= rows)) { toast.error("Sposta prima i tavoli che stanno nell'ultima riga/colonna"); return; }
@@ -77,6 +80,7 @@ function SalePage() {
     if (!room) return;
     const t = roomTables.find((tt) => tt.x === x && tt.y === y);
     if (t) return setSel(t.id === sel ? null : t.id);
+    if (locked) { toast("🔒 Sala protetta da modifiche: sbloccala per cambiare la mappa"); return; }
     if (selected && selected.room_id === room.id) {
       await supabase.from("restaurant_tables").update({ x, y }).eq("id", selected.id);
     } else {
@@ -146,6 +150,13 @@ function SalePage() {
                   <Trash2 /> Elimina sala
                 </Button>
               </div>
+              <div className={cn("mb-3 flex flex-wrap items-center gap-2 rounded-md border p-2", locked ? "border-primary/40 bg-primary/5" : "border-warning bg-warning/15")}>
+                <Button size="sm" variant={locked ? "default" : "outline"} onClick={() => { updateRoom(room, { locked: !locked }); setDrawWalls(false); }}>
+                  {locked ? "🔓 Sblocca Sala" : "🔒 Blocca Sala"}
+                </Button>
+                <span className="text-sm font-semibold">{locked ? "🔒 Sala protetta da modifiche" : "✏️ Sala sbloccata: modifiche attive"}</span>
+              </div>
+              <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
               <div className="mb-4 flex flex-wrap items-end gap-4 rounded-md border bg-card p-3">
                 <div>
                   <div className="mb-1 text-xs text-muted-foreground">Ambiente</div>
@@ -187,12 +198,13 @@ function SalePage() {
                 <Button size="sm" variant="outline" onClick={() => resize(1, 0)}>+ Colonna</Button>
                 <Button size="sm" variant="outline" onClick={() => resize(-1, 0)}>- Colonna</Button>
               </div>
+              </fieldset>
               <RoomGrid
                 cols={grid.cols}
                 rows={grid.rows}
                 tables={roomTables}
                 walls={wallsOf(room)}
-                editWalls={drawWalls}
+                editWalls={drawWalls && !locked}
                 onToggleWall={(k) => updateRoom(room, { walls: toggleWall(wallsOf(room), k) })}
                 renderCell={(x, y, t) => (
                   <button
@@ -212,14 +224,8 @@ function SalePage() {
 
               {selected && selected.room_id === room.id && (
                 <div className="mt-4 flex flex-wrap items-end gap-3 rounded-md border bg-card p-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Nome tavolo</label>
-                    <Input className="w-28" value={selected.name} onChange={(e) => updateTable(selected, { name: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Posti</label>
-                    <Input className="w-20" type="number" min={1} value={selected.seats} onChange={(e) => updateTable(selected, { seats: Math.max(1, Number(e.target.value) || 1) })} />
-                  </div>
+                  <fieldset disabled={locked} className="contents">
+                  <TableFields key={selected.id} t={selected} onSave={(p) => updateTable(selected, p)} />
                   <div className="w-full space-y-2 border-t pt-3">
                     <div className="font-display text-lg">Regole e Vincoli Speciali</div>
                     <label className="flex items-center gap-2 text-sm">
@@ -248,7 +254,7 @@ function SalePage() {
                     <p className="text-xs text-muted-foreground">🧱 = parete disegnata tra i due tavoli: non abbinabili in automatico.</p>
                   </div>
                   <Button
-                    variant="destructive"
+                    variant="destructive" disabled={locked}
                     onClick={async () => {
                       await supabase.from("restaurant_tables").delete().eq("id", selected.id);
                       setSel(null);
@@ -258,12 +264,41 @@ function SalePage() {
                   >
                     <Trash2 /> Elimina tavolo
                   </Button>
+                  </fieldset>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) => void }) {
+  const [name, setName] = useState(t.name);
+  const [seats, setSeats] = useState(String(t.seats));
+  const [bad, setBad] = useState<{ name?: boolean; seats?: boolean }>({});
+  useEffect(() => { setName(t.name); setSeats(String(t.seats)); }, [t.name, t.seats]);
+  const save = () => {
+    const b = { name: !validTableName(name), seats: !validSeats(seats) };
+    setBad(b);
+    if (b.name || b.seats) { toast.error("Inserisci un valore valido prima di confermare"); return; }
+    if (name.trim() !== t.name || Number(seats) !== t.seats) { onSave({ name: name.trim(), seats: Number(seats) }); toast.success("Tavolo salvato"); }
+  };
+  const err = "border-destructive ring-1 ring-destructive";
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div>
+        <label className="text-xs text-muted-foreground">Nome tavolo</label>
+        <Input className={cn("w-28", bad.name && err)} value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-xs text-muted-foreground">Coperti</label>
+        <Input className={cn("w-20", bad.seats && err)} inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
+      </div>
+      <Button size="sm" onClick={save}>Conferma</Button>
+      {(bad.name || bad.seats) && <p className="w-full text-sm font-semibold text-destructive">Inserisci un valore valido prima di confermare</p>}
     </div>
   );
 }
