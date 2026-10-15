@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Phone, MessageCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { tableLabel, whatsappLink, useRooms, useTables, type Reservation } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
 
 export const ROW_GRID =
-  "grid items-center gap-x-2 grid-cols-[1.75rem_3.2rem_minmax(0,1fr)_2.2rem_minmax(0,6.5rem)_1.75rem] md:grid-cols-[1.75rem_3.5rem_minmax(0,1.3fr)_2.5rem_minmax(0,1.1fr)_minmax(0,1.4fr)_2.2rem_2.2rem_1.75rem]";
+  "grid items-center gap-x-2 grid-cols-[1.75rem_3.2rem_minmax(0,1fr)_2.6rem_1.75rem] md:grid-cols-[1.75rem_3.5rem_minmax(0,1.3fr)_2.5rem_minmax(0,1.1fr)_minmax(0,1.4fr)_2.2rem_2.2rem_1.75rem]";
 
 export function ReservationRow({
   r,
@@ -30,6 +31,8 @@ export function ReservationRow({
   const [time, setTime] = useState(r.time);
   const [phone, setPhone] = useState(r.phone ?? "");
   const [tableOpen, setTableOpen] = useState(false);
+  const [people, setPeople] = useState(String(r.people));
+  useEffect(() => setPeople(String(r.people)), [r.people]);
   useEffect(() => setNotes(r.notes), [r.notes]);
   useEffect(() => setTime(r.time), [r.time]);
   useEffect(() => setPhone(r.phone ?? ""), [r.phone]);
@@ -97,14 +100,19 @@ export function ReservationRow({
         <input
           type="number"
           min={1}
-          value={r.people}
-          onChange={(e) => onUpdate({ people: Math.max(1, Number(e.target.value) || 1) })}
+          value={people}
+          onChange={(e) => setPeople(e.target.value)}
+          onBlur={() => {
+            const n = Number(people);
+            if (Number.isInteger(n) && n >= 1) { if (n !== r.people) onUpdate({ people: n }); }
+            else { toast.error("Inserisci almeno 1 persona"); setPeople(String(r.people)); }
+          }}
           className={cn("w-full bg-transparent text-center font-display font-semibold outline-none", dim)}
         />
         <button
           onClick={() => setTableOpen(true)}
           className={cn(
-            "relative z-10 truncate rounded border px-1.5 py-0.5 text-left text-xs font-semibold",
+            "relative z-10 hidden truncate rounded border md:block px-1.5 py-0.5 text-left text-xs font-semibold",
             label ? "border-primary/40 text-primary" : "border-dashed text-muted-foreground",
           )}
         >
@@ -122,6 +130,15 @@ export function ReservationRow({
         </button>
       </div>
       {/* mobile second line */}
+      <button
+        onClick={() => setTableOpen(true)}
+        className={cn(
+          "relative z-10 mt-1 ml-9 flex w-[calc(100%-2.25rem)] items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold md:hidden",
+          label ? "border-primary/50 bg-primary/5 text-primary" : "border-dashed text-muted-foreground",
+        )}
+      >
+        <span className="shrink-0">Tavolo:</span><span className="truncate">{label || "Assegna"}</span>
+      </button>
       <div className={cn("mt-0.5 flex items-center gap-3 pl-9 md:hidden", dim)}>
         <div className="min-w-0 flex-1">{notesInput}</div>
         <label className="relative z-10 flex items-center gap-1 text-xs">

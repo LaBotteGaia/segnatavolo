@@ -18,7 +18,7 @@ import { TableDialog } from "./TableDialog";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
-  is_new: boolean; outside: boolean; notes: string; table_ids: string[]; customer?: Customer;
+  is_new: boolean; outside: boolean; notes: string; table_ids: string[]; customer?: Customer | undefined;
 };
 
 const field = "w-full rounded-md border bg-paper px-3 py-2";

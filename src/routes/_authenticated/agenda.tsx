@@ -15,7 +15,8 @@ import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership, roleLabel } from "@/lib/membership";
-import { NewReservationRow, type NewReservationInput } from "@/components/agenda/NewReservationRow";
+import { NewReservationDialog, type NewReservationInput } from "@/components/agenda/NewReservationDialog";
+import { Plus } from "lucide-react";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -47,6 +48,7 @@ function AgendaPage() {
   const { data: me } = useMembership();
   const isMaster = me?.role === "master";
   const [usersOpen, setUsersOpen] = useState(false);
+  const [newShift, setNewShift] = useState<Shift | null>(null);
   const { data: reservations = [] } = useReservations(date);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [mobileShift, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : "pranzo");
@@ -99,7 +101,7 @@ function AgendaPage() {
     }
   };
 
-  const create = async (shift: Shift, v: NewReservationInput) => {
+  const create = async (v: NewReservationInput): Promise<boolean> => {
     let customerId = v.customer?.id ?? null;
     if (!customerId) {
       const { data } = await supabase.from("customers").insert({ name: v.name, phone: v.phone || null }).select("id").single();
@@ -107,11 +109,14 @@ function AgendaPage() {
       qc.invalidateQueries({ queryKey: ["customers"] });
     }
     const { error } = await supabase.from("reservations").insert({
-      date, shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
-      is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId,
+      date: v.date, shift: v.shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
+      is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids,
     });
-    if (error) toast.error("Impossibile salvare la prenotazione");
-    qc.invalidateQueries({ queryKey: key });
+    if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
+    toast.success("Prenotazione salvata");
+    qc.invalidateQueries({ queryKey: ["reservations", v.date] });
+    if (v.date !== date) setDate(v.date);
+    return true;
   };
 
   const renderPage = (shift: Shift, side: "left" | "right") => {
@@ -125,7 +130,7 @@ function AgendaPage() {
         )}
       >
         <header className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b-2 border-primary/60 pb-2">
-          <h2 className="font-display text-3xl tracking-wide text-primary">{shift === "pranzo" ? "PRANZO" : "SERA"}</h2>
+          <h2 className="font-display text-3xl tracking-wide text-primary">{shift === "pranzo" ? "PRANZO" : "CENA"}</h2>
           <div className="flex gap-3 text-right text-xs leading-tight">
             <Counter label="Coperti" value={c.total} strong />
             <Counter label="Interni" value={c.inside} />
@@ -133,12 +138,13 @@ function AgendaPage() {
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
         </header>
+        <Button className="mb-3 w-full" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span title="Arrivato">✓</span>
           <span>Ora</span>
           <span>Nome</span>
           <span className="text-center">Pers.</span>
-          <span>Tavolo</span>
+          <span className="hidden md:block">Tavolo</span>
           <span className="hidden md:block">Richieste</span>
           <span className="hidden text-center md:block">Fuori</span>
           <span className="hidden text-center md:block">Nuovo</span>
@@ -155,7 +161,6 @@ function AgendaPage() {
           />
         ))}
         {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">Nessuna prenotazione</p>}
-        <NewReservationRow defaultTime={shift === "pranzo" ? "12:30" : "20:00"} onCreate={(v) => create(shift, v)} />
       </section>
     );
   };
@@ -212,7 +217,7 @@ function AgendaPage() {
               onClick={() => setMobileShift(s)}
               className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
             >
-              {s === "pranzo" ? "📖 Pranzo" : "🌙 Sera"}
+              {s === "pranzo" ? "📖 Pranzo" : "🌙 Cena"}
             </button>
           ))}
         </div>
@@ -226,6 +231,7 @@ function AgendaPage() {
         </div>
         <div className="md:hidden">{renderPage(mobileShift, "left")}</div>
       </main>
+      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? "pranzo"} onCreate={create} />
     </div>
   );
 }
