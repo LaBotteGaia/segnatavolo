@@ -16,6 +16,8 @@ export const Route = createFileRoute("/invito/$token")({
       { name: "description", content: "Completa la registrazione con il tuo invito." },
       { property: "og:title", content: "Invito staff — Segnatavolo" },
       { property: "og:description", content: "Completa la registrazione con il tuo invito." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: InvitePage,

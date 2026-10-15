@@ -13,6 +13,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Accesso riservato allo staff del ristorante." },
       { property: "og:title", content: "Accesso staff — Segnatavolo" },
       { property: "og:description", content: "Accesso riservato allo staff del ristorante." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
