@@ -55,7 +55,7 @@ export function useServiceNote(date: string, shift: string) {
   const qc = useQueryClient();
   const key = ["service-note", date, shift];
   useEffect(() => {
-    const ch = supabase.channel(`note-${date}-${shift}`)
+    const ch = supabase.channel(`note-${date}-${shift}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "service_notes" }, () => qc.invalidateQueries({ queryKey: key }))
       .subscribe();
     return () => { supabase.removeChannel(ch); };

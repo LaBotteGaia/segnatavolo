@@ -59,7 +59,7 @@ export function useReservations(date: string) {
   const qc = useQueryClient();
   useEffect(() => {
     const ch = supabase
-      .channel("res-" + date)
+      .channel(`res-${date}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => {
         qc.invalidateQueries({ queryKey: ["reservations", date] });
       })
