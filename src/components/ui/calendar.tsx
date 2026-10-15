@@ -136,6 +136,9 @@ function Calendar({
   );
 }
 
+/** Optional extra content rendered under each day number (e.g. availability dots). */
+export const CalendarDayExtra = React.createContext<((date: Date) => React.ReactNode) | null>(null);
+
 function CalendarDayButton({
   className,
   day,
@@ -145,6 +148,7 @@ function CalendarDayButton({
   const defaultClassNames = getDefaultClassNames();
 
   const ref = React.useRef<HTMLButtonElement>(null);
+  const extra = React.useContext(CalendarDayExtra);
   React.useEffect(() => {
     if (modifiers["focused"]) ref.current?.focus();
   }, [modifiers]);
@@ -170,7 +174,10 @@ function CalendarDayButton({
         className,
       )}
       {...props}
-    />
+    >
+      {props.children}
+      {extra?.(day.date)}
+    </Button>
   );
 }
 

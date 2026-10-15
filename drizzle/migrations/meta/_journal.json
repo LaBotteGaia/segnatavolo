@@ -15,6 +15,13 @@
       "when": 1791978554540,
       "tag": "0001_restaurants_members_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792068851292,
+      "tag": "0002_room_environment_capacity",
+      "breakpoints": true
     }
   ]
 }

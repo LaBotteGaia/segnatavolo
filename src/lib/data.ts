@@ -193,3 +193,50 @@ export function commitTimeCheck(typed: string, shift: Shift | string): TimeCommi
     };
   return { kind: "save", time: t };
 }
+
+/* ---------- Capienza e disponibilità ---------- */
+export type Environment = "interno" | "esterno";
+export type DotLevel = "white" | "green" | "yellow" | "red" | "black" | "off";
+
+/** Capienza di una sala: valore impostato oppure somma dei posti dei suoi tavoli. */
+export function roomCapacity(room: Pick<Room, "id" | "capacity">, tables: Pick<RTable, "room_id" | "seats">[]): number {
+  if (room.capacity !== null && room.capacity !== undefined) return room.capacity;
+  return tables.filter((t) => t.room_id === room.id).reduce((s, t) => s + t.seats, 0);
+}
+
+export function totalCapacities(rooms: Pick<Room, "id" | "capacity" | "environment">[], tables: Pick<RTable, "room_id" | "seats">[]) {
+  let inside = 0, outside = 0;
+  for (const r of rooms) {
+    const c = roomCapacity(r, tables);
+    if (r.environment === "esterno") outside += c;
+    else inside += c;
+  }
+  return { inside, outside };
+}
+
+/** Colore del pallino dato coperti prenotati e capienza. */
+export function dotLevel(people: number, capacity: number): DotLevel {
+  if (capacity <= 0) return "off";
+  if (people <= 0) return "white";
+  const p = (people / capacity) * 100;
+  if (p < 50) return "green";
+  if (p < 90) return "yellow";
+  if (p < 100) return "red";
+  return "black";
+}
+
+/** Pallini interno/esterno di un giorno, sul turno più occupato. */
+export function dayDots(rows: Pick<Reservation, "people" | "outside" | "shift">[], cap: { inside: number; outside: number }) {
+  const sum = (outside: boolean) =>
+    Math.max(0, ...(["pranzo", "sera"] as const).map((s) => rows.filter((r) => r.shift === s && r.outside === outside).reduce((a, r) => a + r.people, 0)));
+  return { inside: dotLevel(sum(false), cap.inside), outside: dotLevel(sum(true), cap.outside) };
+}
+
+export const monthReservationsQuery = (from: string, to: string) => ({
+  queryKey: ["reservations-month", from, to],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside").gte("date", from).lte("date", to);
+    if (error) throw error;
+    return data;
+  },
+});
