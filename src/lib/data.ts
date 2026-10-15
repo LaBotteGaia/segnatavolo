@@ -211,9 +211,13 @@ export function roomCapacity(room: Pick<Room, "id" | "capacity">, tables: Pick<R
   return tables.filter((t) => t.room_id === room.id).reduce((s, t) => s + t.seats, 0);
 }
 
-export function totalCapacities(rooms: Pick<Room, "id" | "capacity" | "environment">[], tables: Pick<RTable, "room_id" | "seats">[]) {
+/** La sala è disattivata per quel turno (es. dehors chiuso a cena)? */
+export const roomShiftOff = (room: { closed_shifts?: string[] | null } | undefined, shift: Shift | string) => !!room?.closed_shifts?.includes(shift);
+
+export function totalCapacities(rooms: (Pick<Room, "id" | "capacity" | "environment"> & { closed_shifts?: string[] | null })[], tables: Pick<RTable, "room_id" | "seats">[], shift?: Shift) {
   let inside = 0, outside = 0;
   for (const r of rooms) {
+    if (shift && roomShiftOff(r, shift)) continue;
     const c = roomCapacity(r, tables);
     if (r.environment === "esterno") outside += c;
     else inside += c;
@@ -233,10 +237,19 @@ export function dotLevel(people: number, capacity: number): DotLevel {
 }
 
 /** Pallini interno/esterno di un giorno, sul turno più occupato. */
-export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift"> & { no_show?: boolean })[], cap: { inside: number; outside: number }) {
-  const sum = (outside: boolean) =>
-    Math.max(0, ...(["pranzo", "sera"] as const).map((s) => rows.filter((r) => !r.no_show && r.shift === s && r.outside === outside).reduce((a, r) => a + r.people, 0)));
-  return { inside: dotLevel(sum(false), cap.inside), outside: dotLevel(sum(true), cap.outside) };
+type Cap = { inside: number; outside: number };
+const DOT_ORDER: DotLevel[] = ["off", "white", "green", "yellow", "red", "black"];
+/** Pallini interno/esterno di un giorno: livello del turno più pieno, con capienza specifica per turno se fornita. */
+export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift"> & { no_show?: boolean })[], cap: Cap | ((s: Shift) => Cap)) {
+  const capOf = typeof cap === "function" ? cap : () => cap;
+  const level = (outside: boolean) => {
+    const levels = (["pranzo", "sera"] as const).map((s) => {
+      const c = outside ? capOf(s).outside : capOf(s).inside;
+      return dotLevel(rows.filter((r) => !r.no_show && r.shift === s && r.outside === outside).reduce((a, r) => a + r.people, 0), c);
+    });
+    return levels.reduce((a, b) => (DOT_ORDER.indexOf(b) > DOT_ORDER.indexOf(a) ? b : a));
+  };
+  return { inside: level(false), outside: level(true) };
 }
 
 export const monthReservationsQuery = (from: string, to: string) => ({
