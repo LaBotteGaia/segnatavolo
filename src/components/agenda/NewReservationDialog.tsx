@@ -11,8 +11,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  findCustomer, reservationsQuery, tableLabel, extrasText, NO_EXTRAS, type TableExtras, timeSlots, useCustomers, useRooms, useTables,
+  findCustomer, findCustomerByPhone, normPhone, reservationsQuery, tableLabel, extrasText, NO_EXTRAS, type TableExtras, timeSlots, useCustomers, useRooms, useTables,
   validateReservation, activeShifts, rangesOf, isShiftClosed, isDayClosed, shiftName, type Customer, type ReservationErrors, type Shift,
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";

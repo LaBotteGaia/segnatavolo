@@ -9,9 +9,17 @@ import { cn } from "@/lib/utils";
 import { APP_VERSION, lastVisitText, saveServiceNote, searchFilter, useServiceNote, useVisitStats } from "@/lib/extras";
 import { shiftName, tableLabel, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
 import { useMembership } from "@/lib/membership";
+import { ChangelogDialog } from "@/components/ChangelogDialog";
 
 export function VersionBadge({ className }: { className?: string }) {
-  return <span className={cn("inline-block rounded border border-current/30 px-1.5 py-px font-mono text-[10px] opacity-70", className)}>{APP_VERSION}</span>;
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} title="Novità e storico versioni"
+        className={cn("inline-block rounded border border-current/30 px-1.5 py-px font-mono text-[10px] opacity-70 hover:opacity-100", className)}>{APP_VERSION}</button>
+      <ChangelogDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
 }
 
 export function LoyaltyBox({ customerId, phone, excludeId, isNew }: { customerId?: string | null; phone?: string | null; excludeId?: string; isNew?: boolean }) {

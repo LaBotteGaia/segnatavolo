@@ -5,7 +5,7 @@ import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.1.0-alpha";
+export const APP_VERSION = "v0.2.0-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
@@ -24,13 +24,14 @@ export function lastVisitText(last: string, today: Date = new Date()): string {
 }
 
 export function useVisitStats(customerId: string | null | undefined, phone: string | null | undefined, excludeId?: string) {
-  const ph = (phone ?? "").trim();
+  const raw = (phone ?? "").trim();
+  const ph = raw.replace(/[\s\-.\/()]/g, "");
   return useQuery({
     queryKey: ["visits", customerId ?? null, ph, excludeId ?? null],
     enabled: !!customerId || ph.length >= 5,
     queryFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
-      const ors = [customerId && `customer_id.eq.${customerId}`, ph.length >= 5 && `phone.eq.${ph}`].filter(Boolean).join(",");
+      const ors = [customerId && `customer_id.eq.${customerId}`, ph.length >= 5 && `phone.eq.${ph}`, ph.length >= 5 && raw !== ph && !/[,()]/.test(raw) && `phone.eq.${raw}`].filter(Boolean).join(",");
       let q = supabase.from("reservations").select("id,date").or(ors).lt("date", today);
       if (excludeId) q = q.neq("id", excludeId);
       const { data } = await q;
