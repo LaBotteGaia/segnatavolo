@@ -27,3 +27,18 @@ describe("sponde e barelle", () => {
   it("etichetta", () => expect(extrasText({ extra_sponde: 1, extra_barelle: 0 })).toBe(" (+1 Sponda)"));
   it("parete toggle", () => expect(toggleWall(toggleWall([], "h:1:2"), "h:1:2")).toEqual([]));
 });
+
+describe("sale disattivate per turno", () => {
+  const rooms = [
+    { id: "a", capacity: 30, environment: "interno", closed_shifts: [] as string[] },
+    { id: "d", capacity: 20, environment: "esterno", closed_shifts: ["sera"] },
+  ];
+  it("il dehors chiuso a cena non conta nella capienza della cena", () => {
+    expect(totalCapacities(rooms, [], "sera")).toEqual({ inside: 30, outside: 0 });
+    expect(totalCapacities(rooms, [], "pranzo")).toEqual({ inside: 30, outside: 20 });
+  });
+  it("i pallini usano la capienza del singolo turno", () => {
+    const cap = (s: "colazione" | "pranzo" | "sera") => totalCapacities(rooms, [], s);
+    expect(dayDots([{ shift: "pranzo", people: 19, outside: true }], cap).outside).toBe("red");
+  });
+});

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
@@ -76,19 +76,44 @@ function AgendaPage() {
   const mTo = format(endOfMonth(addDays(endOfMonth(month), 7)), "yyyy-MM-dd");
   const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo));
   const dotsByDay = useMemo(() => {
-    const cap = totalCapacities(rooms, tables);
+    const cap = (s: Shift) => totalCapacities(rooms, tables, s);
     const g = new Map<string, typeof monthRows>();
     for (const r of monthRows) g.set(r.date, [...(g.get(r.date) ?? []), r]);
     const out = new Map<string, ReturnType<typeof dayDots>>();
     for (const [d, rows] of g) { const dd = dayDots(rows, cap); out.set(d, outsideClosed(rooms, d) ? { ...dd, outside: "off" } : dd); }
     return out;
   }, [monthRows, rooms, tables]);
-  const emptyDots = useMemo(() => dayDots([], totalCapacities(rooms, tables)), [rooms, tables]);
+  const emptyDots = useMemo(() => dayDots([], (s: Shift) => totalCapacities(rooms, tables, s)), [rooms, tables]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
   const goTo = (r: Reservation) => { setMobileShift(r.shift as Shift); navigate({ search: { ...(r.date === todayStr() ? {} : { d: r.date }), h: r.id } }); };
   const dateObj = parseISO(date);
+
+  // Sfoglio con swipe: sinistra = avanti (turno successivo, poi giorno dopo), destra = indietro
+  const [flipDir, setFlipDir] = useState<0 | 1 | -1>(0);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const flip = (dir: 1 | -1) => {
+    const i = shifts.indexOf(mobileShift);
+    setFlipDir(dir);
+    if (dir === 1) {
+      if (i < shifts.length - 1) setMobileShift(shifts[i + 1]!);
+      else { setMobileShift(shifts[0]!); setDate(format(addDays(dateObj, 1), "yyyy-MM-dd")); }
+    } else {
+      if (i > 0) setMobileShift(shifts[i - 1]!);
+      else { setMobileShift(shifts[shifts.length - 1]!); setDate(format(addDays(dateObj, -1), "yyyy-MM-dd")); }
+    }
+  };
+  const onSwipeStart = (e: TouchEvent) => {
+    const el = e.target as HTMLElement;
+    touch.current = el.closest("input, textarea, select, [data-no-swipe]") ? null : { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
+  };
+  const onSwipeEnd = (e: TouchEvent) => {
+    const t = touch.current; touch.current = null;
+    if (!t || !shifts.length) return;
+    const dx = e.changedTouches[0]!.clientX - t.x, dy = e.changedTouches[0]!.clientY - t.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) flip(dx < 0 ? 1 : -1);
+  };
 
   const visible = reservations.filter((r) => !hidden.has(r.id));
   const byShift = (s: Shift) =>
@@ -297,7 +322,7 @@ function AgendaPage() {
             <Button
               variant="ghost"
               key={s}
-              onClick={() => setMobileShift(s)}
+              onClick={() => { setFlipDir(shifts.indexOf(s) > shifts.indexOf(mobileShift) ? 1 : shifts.indexOf(s) < shifts.indexOf(mobileShift) ? -1 : 0); setMobileShift(s); }}
               className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
             >
               {shiftEmoji(s)} {shiftName(s)}
@@ -316,7 +341,11 @@ function AgendaPage() {
           ))}
           {shifts.length === 0 && <p className="text-primary-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
         </div>
-        <div className="agenda-wide:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
+        <div className="overflow-hidden agenda-wide:hidden" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+          <div key={`${date}-${mobileShift}`} className={flipDir === 1 ? "animate-page-next" : flipDir === -1 ? "animate-page-prev" : undefined}>
+            {shifts.length > 0 && renderPage(mobileShift, "left")}
+          </div>
+        </div>
       </main>
       <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>

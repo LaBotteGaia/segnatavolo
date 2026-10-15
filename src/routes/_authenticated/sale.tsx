@@ -7,9 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
-import { useMembership } from "@/lib/membership";
+import { useMembership, useSettings } from "@/lib/membership";
 import { cn } from "@/lib/utils";
-import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
+import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
 import { validSeats, validTableName } from "@/lib/extras";
@@ -319,12 +319,28 @@ const DAYS: [number, string][] = [[1, "Lun"], [2, "Mar"], [3, "Mer"], [4, "Gio"]
 
 /** Apertura settimanale e chiusure stagionali (ricorrenti ogni anno) della sala. */
 function RoomSchedule({ room, onChange }: { room: Room; onChange: (p: Partial<Room>) => void }) {
+  const settings = useSettings();
   const days = room.open_days ?? [0, 1, 2, 3, 4, 5, 6];
   const [draft, setDraft] = useState<ClosedPeriod[]>(periodsOf(room));
   useEffect(() => setDraft(periodsOf(room)), [room.id, JSON.stringify(room.closed_periods)]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (list: ClosedPeriod[]) => { setDraft(list); if (list.every((p) => p.from && p.to)) onChange({ closed_periods: list }); };
   return (
     <div className="mb-4 space-y-3 rounded-md border bg-card p-3">
+      <div>
+        <div className="mb-1 text-xs text-muted-foreground">Turni in cui la sala è attiva</div>
+        <div className="flex flex-wrap gap-3">
+          {activeShifts(settings).map((s) => {
+            const off = (room.closed_shifts ?? []).includes(s);
+            return (
+              <label key={s} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" className="size-5" checked={!off}
+                  onChange={() => onChange({ closed_shifts: off ? (room.closed_shifts ?? []).filter((x) => x !== s) : [...(room.closed_shifts ?? []), s] })} />
+                {shiftName(s)}
+              </label>
+            );
+          })}
+        </div>
+      </div>
       <div>
         <div className="mb-1 text-xs text-muted-foreground">Giorni settimanali di apertura</div>
         <div className="flex flex-wrap gap-1">

@@ -76,6 +76,11 @@ export function isRoomClosed(room: Partial<Pick<Room, "open_days" | "closed_peri
   return periodsOf(room).some((p) => (p.from <= p.to ? md >= p.from && md <= p.to : md >= p.from || md <= p.to));
 }
 
+/** Sala chiusa per stagione quel giorno oppure disattivata per il turno. */
+export function isRoomClosedFor(room: (Partial<Pick<Room, "open_days" | "closed_periods">> & { closed_shifts?: string[] | null }) | undefined, date: string, shift: string): boolean {
+  return isRoomClosed(room, date) || !!room?.closed_shifts?.includes(shift);
+}
+
 /** Tutte le sale esterne sono chiuse quel giorno (o non ce ne sono)? */
 export function outsideClosed(rooms: Pick<Room, "environment" | "open_days" | "closed_periods">[], date: string) {
   const ext = rooms.filter((r) => r.environment === "esterno");

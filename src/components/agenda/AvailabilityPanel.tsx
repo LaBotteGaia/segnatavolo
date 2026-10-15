@@ -2,22 +2,34 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { rangesOf, shiftName, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
-import { fmt, interval, isRoomClosed, shiftAvailability, toMin } from "@/lib/rotation";
+import { Link } from "@tanstack/react-router";
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { fmt, interval, isRoomClosedFor, shiftAvailability, toMin } from "@/lib/rotation";
+
+/** Dati condivisi tra pannello e stampa: tavoli delle sale aperte nel turno, disponibilità e scala della timeline. */
+export function useShiftAvailability(date: string, shift: Shift, rows: Reservation[]) {
+  const settings = useSettings();
+  const { data: rooms = [] } = useRooms();
+  const { data: allTables = [] } = useTables();
+  const ranges = rangesOf(settings);
+  const cfg = { duration: settings.duration, buffer: settings.buffer };
+  const openRooms = rooms.filter((r) => !isRoomClosedFor(r, date, shift));
+  const tables = allTables.filter((t) => openRooms.some((r) => r.id === t.room_id))
+    .sort((a, b) => rooms.findIndex((r) => r.id === a.room_id) - rooms.findIndex((r) => r.id === b.room_id) || a.name.localeCompare(b.name, "it", { numeric: true }));
+  const av = shiftAvailability(tables, rows, shift, ranges, cfg);
+  const busyIds = new Set(rows.filter((r) => !r.no_show).flatMap((r) => r.table_ids));
+  const seats = tables.reduce((a, t) => a + t.seats, 0);
+  const booked = rows.filter((r) => !r.no_show || r.arrived).reduce((a, r) => a + r.people, 0);
+  return { rooms, openRooms, tables, av, ranges, cfg, busyIds, seats, booked };
+}
 
 /** Riepilogo disponibilità del turno: elenco testuale + timeline oraria. Toccando uno spazio libero si apre la nuova prenotazione. */
 export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPick }: {
   open: boolean; onOpenChange: (o: boolean) => void; date: string; shift: Shift; rows: Reservation[];
   onPick: (time: string, tableId: string) => void;
 }) {
-  const settings = useSettings();
-  const { data: rooms = [] } = useRooms();
-  const { data: allTables = [] } = useTables();
-  const ranges = rangesOf(settings);
-  const cfg = { duration: settings.duration, buffer: settings.buffer };
-  const openRooms = rooms.filter((r) => !isRoomClosed(r, date));
-  const tables = allTables.filter((t) => openRooms.some((r) => r.id === t.room_id))
-    .sort((a, b) => rooms.findIndex((r) => r.id === a.room_id) - rooms.findIndex((r) => r.id === b.room_id) || a.name.localeCompare(b.name, "it", { numeric: true }));
-  const av = shiftAvailability(tables, rows, shift, ranges, cfg);
+  const { rooms, openRooms, tables, av, ranges, cfg } = useShiftAvailability(date, shift, rows);
   const firstSlot = ranges[shift].from;
 
   // Timeline: dall'inizio turno a fine ultimo arrivo + durata standard
@@ -30,7 +42,7 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
   const last = toMin(ranges[shift].to);
 
   const chip = (id: string, text: string, time: string) => (
-    <button key={id} type="button" onClick={() => onPick(time, id)} className="rounded-md border bg-paper px-2 py-1 text-left text-sm hover:bg-accent">{text}</button>
+    <button key={id} type="button" onClick={() => onPick(time, id)} className="rounded-full border bg-paper px-2 py-0.5 text-left text-xs font-semibold hover:bg-accent sm:text-sm">{text}</button>
   );
 
   return (
@@ -38,31 +50,34 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
       <DialogContent className="max-h-[94vh] max-w-3xl overflow-y-auto bg-paper">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">📊 Situazione Tavoli · {shiftName(shift)}</DialogTitle>
-          <p className="text-sm text-muted-foreground">Tocca un tavolo o uno spazio verde per creare una prenotazione già compilata.</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">Tocca un tavolo o uno spazio verde per creare una prenotazione già compilata.</p>
+            <Button asChild size="sm" variant="outline"><Link to="/situazione" search={{ d: date, s: shift }}><Printer /> Stampa Situazione</Link></Button>
+          </div>
         </DialogHeader>
 
-        <section className="space-y-3">
-          <Group title="🟢 COMPLETAMENTE LIBERI (Tutto il turno)" empty={!av.free.length}>
-            {av.free.map((t) => chip(t.id, `${t.name} (${t.seats}p)`, firstSlot))}
+        <section className="space-y-2">
+          <Group title="🟢 Liberi tutto il turno" empty={!av.free.length}>
+            {av.free.map((t) => chip(t.id, `${t.name} [${t.seats}p]`, firstSlot))}
           </Group>
-          <Group title="🟡 LIBERI AL 1° TURNO (Fino a un certo orario)" empty={!av.first.length}>
-            {av.first.map(({ t, until }) => chip(t.id, `${t.name} (${t.seats}p): libero fino alle ${until}`, firstSlot))}
+          <Group title="🟡 Liberi al 1° turno (fino alle…)" empty={!av.first.length}>
+            {av.first.map(({ t, until }) => chip(t.id, `${t.name} [${t.seats}p] → ${until}`, firstSlot))}
           </Group>
-          <Group title="🔵 LIBERI AL 2° TURNO (Da un certo orario in poi)" empty={!av.second.length}>
-            {av.second.map(({ t, from }) => chip(t.id, `${t.name} (${t.seats}p): libero dalle ${from} in poi`, from))}
+          <Group title="🔵 Liberi al 2° turno (dalle…)" empty={!av.second.length}>
+            {av.second.map(({ t, from }) => chip(t.id, `${t.name} [${t.seats}p] ${from} →`, from))}
           </Group>
-          <Group title="🔴 COMPLETAMENTE OCCUPATI (Nessuna rotazione disponibile)" empty={!av.full.length}>
-            {av.full.map((t) => <span key={t.id} className="rounded-md border bg-muted px-2 py-1 text-sm text-muted-foreground">{t.name} ({t.seats}p)</span>)}
+          <Group title="🔴 Occupati" empty={!av.full.length}>
+            {av.full.map((t) => <span key={t.id} className="rounded-full border bg-muted px-2 py-0.5 text-xs text-muted-foreground sm:text-sm">{t.name} [{t.seats}p]</span>)}
           </Group>
           {rooms.length > openRooms.length && (
-            <p className="text-xs text-muted-foreground">❄️ Chiuse per stagione oggi: {rooms.filter((r) => !openRooms.includes(r)).map((r) => r.name).join(", ")}</p>
+            <p className="text-xs text-muted-foreground">🚫 Sale chiuse in questo turno: {rooms.filter((r) => !openRooms.includes(r)).map((r) => r.name).join(", ")}</p>
           )}
         </section>
 
         <section className="mt-2">
           <h3 className="mb-2 font-display text-lg">Planning orario</h3>
           <div className="overflow-x-auto">
-            <div className="min-w-[560px]">
+            <div className="min-w-[480px]">
               <div className="relative ml-20 h-5 text-[10px] text-muted-foreground">
                 {ticks.map((m) => <span key={m} className="absolute -translate-x-1/2" style={{ left: pct(m) }}>{m % 60 === 0 ? fmt(m) : "·"}</span>)}
               </div>
@@ -77,7 +92,7 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
                 return (
                   <div key={t.id} className="flex items-center border-b border-rule/60 py-0.5">
                     <span className="w-20 shrink-0 truncate pr-1 text-xs font-semibold">{t.name} <span className="text-muted-foreground">({t.seats}p)</span></span>
-                    <div className="relative h-8 flex-1 rounded-sm bg-free/15">
+                    <div className="relative h-6 flex-1 rounded-sm bg-free/15 sm:h-8">
                       {ticks.map((m) => <span key={m} className="absolute inset-y-0 border-l border-rule/40" style={{ left: pct(m) }} />)}
                       {slots.map((m) => (
                         <button key={m} type="button" title={`Prenota ${t.name} alle ${fmt(m)}`} onClick={() => onPick(fmt(m), t.id)}
@@ -85,7 +100,7 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
                       ))}
                       {its.map(({ r, i }) => (
                         <div key={r.id}>
-                          <div className={cn("absolute inset-y-0.5 overflow-hidden whitespace-nowrap rounded-sm bg-primary px-1 text-[10px] leading-7 text-primary-foreground", r.arrived && "opacity-60")}
+                          <div className={cn("absolute inset-y-0.5 overflow-hidden whitespace-nowrap rounded-sm bg-primary px-1 text-[10px] leading-5 text-primary-foreground sm:leading-7", r.arrived && "opacity-60")}
                             style={{ left: pct(i.start), width: `calc(${pct(i.end)} - ${pct(i.start)})` }}>{r.name} · {r.people}p</div>
                           {i.free > i.end && (
                             <div className="absolute inset-y-0.5 rounded-sm border border-dashed border-muted-foreground/60 bg-muted"
@@ -110,8 +125,8 @@ export function AvailabilityPanel({ open, onOpenChange, date, shift, rows, onPic
 function Group({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-sm font-bold">{title}</h4>
-      <div className="flex flex-wrap gap-1.5">{empty ? <span className="text-sm text-muted-foreground">Nessuno</span> : children}</div>
+      <h4 className="mb-0.5 text-xs font-bold sm:text-sm">{title}</h4>
+      <div className="flex flex-wrap gap-1">{empty ? <span className="text-sm text-muted-foreground">Nessuno</span> : children}</div>
     </div>
   );
 }

@@ -3,6 +3,16 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.5.0-alpha",
+    date: "15 ottobre 2026",
+    items: [
+      "Ogni sala si attiva per i singoli turni (Colazione, Pranzo, Cena): ad esempio un dehors aperto a pranzo e chiuso a cena.",
+      "Nel turno in cui è chiusa la sala appare \"Chiusa per il turno\", i suoi tavoli non si assegnano e la sua capienza non conta nei pallini del calendario.",
+      "Su smartphone sfogli l'agenda col dito: a sinistra avanti (Pranzo → Cena → giorno dopo), a destra indietro, con un rapido effetto pagina.",
+      "📊 Situazione Tavoli più compatta, a pillole, e nuovo pulsante \"🖨️ Stampa Situazione\" su un foglio A4 in bianco e nero.",
+    ],
+  },
+  {
     version: "v0.4.0-alpha",
     date: "15 ottobre 2026",
     items: [

@@ -46,6 +46,20 @@
   --color-busy: var(--busy);
   --color-busy-foreground: var(--busy-foreground);
   --color-ink: var(--ink);
+  --animate-page-next: page-next 220ms ease-out;
+  --animate-page-prev: page-prev 220ms ease-out;
+}
+
+@keyframes page-next {
+  from { opacity: 0.4; transform: translateX(18%) perspective(1200px) rotateY(-8deg); box-shadow: -20px 0 30px -20px oklch(0.15 0.03 40 / 0.5); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes page-prev {
+  from { opacity: 0.4; transform: translateX(-18%) perspective(1200px) rotateY(8deg); box-shadow: 20px 0 30px -20px oklch(0.15 0.03 40 / 0.5); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-next, .animate-page-prev { animation: none; }
 }
 
 :root {
