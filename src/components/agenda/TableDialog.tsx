@@ -17,8 +17,8 @@ export function TableDialog({
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  reservation: Reservation;
-  others: Reservation[];
+  reservation: Pick<Reservation, "id" | "name" | "people" | "shift" | "table_ids">;
+  others: Pick<Reservation, "id" | "name" | "table_ids">[];
   onConfirm: (ids: string[]) => void;
 }) {
   const { data: rooms } = useRooms();
