@@ -9,9 +9,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Accesso staff — Agenda Prenotazioni" },
+      { title: "Accesso staff — Segnatavolo" },
       { name: "description", content: "Accesso riservato allo staff del ristorante." },
-      { property: "og:title", content: "Accesso staff — Agenda Prenotazioni" },
+      { property: "og:title", content: "Accesso staff — Segnatavolo" },
       { property: "og:description", content: "Accesso riservato allo staff del ristorante." },
     ],
   }),

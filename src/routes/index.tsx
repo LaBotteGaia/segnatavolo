@@ -6,9 +6,9 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Agenda Prenotazioni" },
+      { title: "Segnatavolo" },
       { name: "description", content: "Agenda interna delle prenotazioni del ristorante." },
-      { property: "og:title", content: "Agenda Prenotazioni" },
+      { property: "og:title", content: "Segnatavolo" },
       { property: "og:description", content: "Agenda interna delle prenotazioni del ristorante." },
     ],
   }),

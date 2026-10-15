@@ -12,9 +12,9 @@ export const Route = createFileRoute("/invito/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Invito staff — Agenda Prenotazioni" },
+      { title: "Invito staff — Segnatavolo" },
       { name: "description", content: "Completa la registrazione con il tuo invito." },
-      { property: "og:title", content: "Invito staff — Agenda Prenotazioni" },
+      { property: "og:title", content: "Invito staff — Segnatavolo" },
       { property: "og:description", content: "Completa la registrazione con il tuo invito." },
     ],
   }),
