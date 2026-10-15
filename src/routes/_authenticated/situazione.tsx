@@ -66,9 +66,9 @@ function Situazione() {
           </thead>
           <tbody>
             <tr className="align-top">
-              <td className="border border-foreground p-1.5">{av.free.map((t) => <div key={t.id}>{t.name} [{t.seats}p]</div>)}{!av.free.length && "—"}</td>
-              <td className="border border-foreground p-1.5">{av.first.map(({ t, until }) => <div key={t.id}>{t.name} [{t.seats}p] → <b>{until}</b></div>)}{!av.first.length && "—"}</td>
-              <td className="border border-foreground p-1.5">{av.second.map(({ t, from }) => <div key={t.id}>{t.name} [{t.seats}p] dalle <b>{from}</b></div>)}{!av.second.length && "—"}</td>
+              <td className="border border-foreground p-1.5">{av.free.map((t) => `${t.name} [${t.seats}p]`).join(" • ")}{!av.free.length && "—"}</td>
+              <td className="border border-foreground p-1.5">{av.first.map(({ t, until }) => <span key={t.id} className="mr-2 inline-block">{t.name} [{t.seats}p] → <b>{until}</b></span>)}{!av.first.length && "—"}</td>
+              <td className="border border-foreground p-1.5">{av.second.map(({ t, from }) => <span key={t.id} className="mr-2 inline-block">{t.name} [{t.seats}p] dalle <b>{from}</b></span>)}{!av.second.length && "—"}</td>
             </tr>
           </tbody>
         </table>
