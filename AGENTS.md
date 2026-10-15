@@ -11,3 +11,4 @@
 
 - Multi-restaurant: data rows carry restaurant_id (defaults to my_restaurant_id()); RLS scopes to active membership in restaurant_members; rooms/tables writable only by role master. Invites are accepted via a token server function (admin createUser) so staff cannot self-register into a restaurant. Pages live under src/routes/_authenticated; data hooks in src/lib/data.ts.
 - Assigned tables are stored as uuid[] on reservations, so deleting a reservation frees its tables automatically.
+- Agenda layout uses the agenda-wide CSS variant for landscape screens from 768px and desktops from 1024px; keep toolbar and page visibility on the same variant to preserve orientation consistency.

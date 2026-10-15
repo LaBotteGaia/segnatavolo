@@ -1,0 +1,2 @@
+- [x] Riorganizzare barra verticale e intestazioni con data, inclusa stampa.
+- [x] Verificare navigazione, ricerca e calendario su smartphone e vista affiancata.

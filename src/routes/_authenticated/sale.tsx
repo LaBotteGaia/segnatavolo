@@ -22,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/sale")({
       { name: "description", content: "Crea le sale e disponi i tavoli sulla mappa." },
       { property: "og:title", content: "Gestione Sale — Segnatavolo" },
       { property: "og:description", content: "Crea le sale e disponi i tavoli sulla mappa." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

@@ -18,6 +18,8 @@ export const Route = createFileRoute("/_authenticated/foglio")({
       { name: "description", content: "Foglio di sala stampabile per servizio e cucina." },
       { property: "og:title", content: `Foglio di Sala — ${APP_NAME}` },
       { property: "og:description", content: "Foglio di sala stampabile per servizio e cucina." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => <RestaurantGate><Foglio /></RestaurantGate>,
@@ -38,7 +40,7 @@ function Foglio() {
         <Button onClick={() => window.print()}><Printer /> Stampa / PDF</Button>
       </div>
       <div className="mx-auto max-w-4xl bg-card p-6 print:max-w-none print:p-0">
-        <h1 className="font-display text-3xl">Foglio di Sala — {shiftName(s)}</h1>
+        <h1 className="font-display text-3xl">{shiftName(s).toUpperCase()} — {format(parseISO(d), "d MMMM", { locale: it })}</h1>
         <p className="mb-1 text-lg capitalize">{format(parseISO(d), "EEEE d MMMM yyyy", { locale: it })}</p>
         <p className="mb-3 font-semibold">Totale coperti: {c.total} (Interni {c.inside} · Fuori {c.outside})</p>
         {note && <p className="mb-3 rounded border p-2"><b>Note di servizio:</b> {note}</p>}

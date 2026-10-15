@@ -41,6 +41,8 @@ export const Route = createFileRoute("/_authenticated/agenda")({
       { name: "description", content: "Agenda giornaliera di pranzo e sera." },
       { property: "og:title", content: "Agenda — Segnatavolo" },
       { property: "og:description", content: "Agenda giornaliera di pranzo e sera." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (
@@ -198,15 +200,15 @@ function AgendaPage() {
     return (
       <section
         className={cn(
-          "paper-page min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5",
-          side === "left" ? "md:rounded-l-md spine-left" : side === "right" ? "md:rounded-r-md spine-right" : "",
+          "paper-page min-w-0 min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5",
+          side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           closed && "opacity-70",
         )}
       >
-        <header className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b-2 border-primary/60 pb-2">
-          <h2 className="font-display text-3xl tracking-wide text-primary">{shiftName(shift).toUpperCase()}</h2>
-          {closed && <span className="rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}
-          <div className="flex gap-3 text-right text-xs leading-tight">
+        <header className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
+          <h2 className="min-w-0 font-display text-3xl text-primary agenda-wide:text-2xl">{shiftName(shift).toUpperCase()}<span className="hidden agenda-wide:inline"> — {format(dateObj, "d MMMM", { locale: it })}</span></h2>
+          {closed && <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}
+          <div className="col-span-2 grid grid-cols-4 gap-2 text-right text-xs leading-tight">
             <Counter label="Coperti" value={c.total} strong />
             <Counter label="Interni" value={c.inside} />
             <Counter label="Fuori" value={c.outside} />
@@ -219,7 +221,7 @@ function AgendaPage() {
         </div>
         <ServiceNotes date={date} shift={shift} />
         <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
-        <Button className="mb-3 hidden w-full md:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
+        <Button className="mb-3 hidden w-full agenda-wide:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span>Ora</span>
           <span>Nome</span>
@@ -249,17 +251,22 @@ function AgendaPage() {
   return (
     <div className="min-h-screen pb-10">
       <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 text-primary-foreground backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1">
+        <div className="mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
+          <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
+          <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
+          <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
+            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+          </div>
+          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1">
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
               <ChevronLeft />
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex items-center gap-2 rounded-md px-2 py-1 font-display text-lg capitalize hover:bg-primary-foreground/10">
-                  <CalendarIcon className="h-4 w-4" />
-                  {format(dateObj, "EEEE d MMMM yyyy", { locale: it })}
-                </button>
+                <Button variant="ghost" aria-label="Apri calendario" className="h-auto min-w-0 gap-2 whitespace-normal px-1 py-2 font-display text-xl capitalize leading-tight hover:bg-primary-foreground/10 hover:text-primary-foreground agenda-wide:text-lg">
+                  <CalendarIcon className="hidden size-4 shrink-0 agenda-wide:block" />
+                  <span className="min-w-0">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</span>
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarDayExtra.Provider value={dayExtra}>
@@ -274,38 +281,34 @@ function AgendaPage() {
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
               <ChevronRight />
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setDate(todayStr())}>Oggi</Button>
-          </div>
-          <SearchBox onPick={goTo} />
-          <div className="ml-auto flex items-center gap-1">
-            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
         </div>
-        <Button className="mx-auto mt-2 flex w-full max-w-7xl md:hidden" onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
-        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
+        <Button className="mx-auto mt-2 flex w-full max-w-7xl agenda-wide:hidden" onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
+        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (
-            <button
+            <Button
+              variant="ghost"
               key={s}
               onClick={() => setMobileShift(s)}
               className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
             >
               {shiftEmoji(s)} {shiftName(s)}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
       <main className="mx-auto mt-4 max-w-7xl px-2 sm:px-4">
-        <div className="hidden gap-0 md:flex">
+        <div className="hidden gap-0 agenda-wide:flex">
           {shifts.map((s, i) => (
-            <div key={s} className="flex flex-1 gap-0">
+            <div key={s} className="flex min-w-0 flex-1 gap-0">
               {i > 0 && <div className="w-1 bg-desk" />}
               {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
             </div>
           ))}
           {shifts.length === 0 && <p className="text-primary-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
         </div>
-        <div className="md:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
+        <div className="agenda-wide:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
       </main>
       <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>

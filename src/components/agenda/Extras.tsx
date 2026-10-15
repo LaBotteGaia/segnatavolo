@@ -34,7 +34,7 @@ export function LoyaltyBox({ customerId, phone, excludeId, isNew }: { customerId
   );
 }
 
-export function SearchBox({ onPick }: { onPick: (r: Reservation) => void }) {
+export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => void; className?: string }) {
   const [q, setQ] = useState("");
   const [deb, setDeb] = useState("");
   const [open, setOpen] = useState(false);
@@ -55,7 +55,7 @@ export function SearchBox({ onPick }: { onPick: (r: Reservation) => void }) {
     },
   });
   return (
-    <div ref={box} className="relative min-w-0 flex-1 sm:max-w-xs">
+    <div ref={box} className={cn("relative min-w-0 flex-1", className)}>
       <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 opacity-60" />
       <input value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
         placeholder="Cerca per nome o telefono..." aria-label="Cerca prenotazioni"
