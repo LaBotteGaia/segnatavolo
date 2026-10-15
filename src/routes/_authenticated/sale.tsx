@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
-import { useMembership } from "@/lib/membership";
+import { useMembership, useSettings } from "@/lib/membership";
 import { cn } from "@/lib/utils";
 import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
