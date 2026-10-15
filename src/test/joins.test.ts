@@ -17,3 +17,14 @@ describe("vincoli unione tavoli", () => {
     expect(canJoin(t("a", 0, 0), t("b", 3, 3, ["a"]), () => [])).toBe(false);
   });
 });
+describe("ostacoli", () => {
+  it("ostacolo tra due tavoli sulla stessa riga impedisce l'unione", () => {
+    expect(canJoin(t("a", 0, 0), t("b", 2, 0), () => ["o:1:0"])).toBe(false);
+  });
+  it("ostacolo nella stessa colonna blocca", () => {
+    expect(wallBetween(t("a", 1, 0), t("b", 1, 3), ["o:1:2"])).toBe(true);
+  });
+  it("ostacolo altrove non blocca", () => {
+    expect(canJoin(t("a", 0, 0), t("b", 2, 0), () => ["o:1:1"])).toBe(true);
+  });
+});

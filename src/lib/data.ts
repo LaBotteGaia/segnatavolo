@@ -333,6 +333,18 @@ export function wallsOf(room: Pick<Room, "walls"> | undefined): string[] {
 }
 export const toggleWall = (walls: string[], key: string) => (walls.includes(key) ? walls.filter((k) => k !== key) : [...walls, key]);
 
+// --- Ostacoli: "o:x:y" nella stessa lista delle pareti = cella non utilizzabile (colonna, pilastro, albero…) ---
+export const obstacleKey = (x: number, y: number) => `o:${x}:${y}`;
+export const isObstacle = (walls: string[], x: number, y: number) => walls.includes(obstacleKey(x, y));
+
+// --- Telefono come chiave univoca del cliente ---
+export const normPhone = (p: string | null | undefined) => (p ?? "").replace(/[\s\-.\/()]/g, "");
+export function findCustomerByPhone(customers: Customer[] | undefined, phone: string) {
+  const n = normPhone(phone);
+  if (n.length < 5) return undefined;
+  return customers?.find((c) => normPhone(c.phone) === n);
+}
+
 // --- Dimensioni griglia e vincoli tra tavoli ---
 export const gridOf = (room: Partial<Pick<Room, "grid_cols" | "grid_rows">> | undefined) => ({
   cols: Math.max(1, room?.grid_cols ?? 6),
@@ -343,8 +355,10 @@ export const gridOf = (room: Partial<Pick<Room, "grid_cols" | "grid_rows">> | un
 export function wallBetween(a: Pick<RTable, "x" | "y">, b: Pick<RTable, "x" | "y">, walls: string[]): boolean {
   if (a.y === b.y) {
     for (let x = Math.min(a.x, b.x) + 1; x <= Math.max(a.x, b.x); x++) if (walls.includes(`v:${x}:${a.y}`)) return true;
+    for (let x = Math.min(a.x, b.x) + 1; x < Math.max(a.x, b.x); x++) if (walls.includes(obstacleKey(x, a.y))) return true;
   } else if (a.x === b.x) {
     for (let y = Math.min(a.y, b.y) + 1; y <= Math.max(a.y, b.y); y++) if (walls.includes(`h:${a.x}:${y}`)) return true;
+    for (let y = Math.min(a.y, b.y) + 1; y < Math.max(a.y, b.y); y++) if (walls.includes(obstacleKey(a.x, y))) return true;
   }
   return false;
 }
