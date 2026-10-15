@@ -53,6 +53,7 @@ export type Database = {
         Row: {
           arrived: boolean
           created_at: string
+          created_by: string | null
           customer_id: string | null
           date: string
           id: string
@@ -70,6 +71,7 @@ export type Database = {
         Insert: {
           arrived?: boolean
           created_at?: string
+          created_by?: string | null
           customer_id?: string | null
           date: string
           id?: string
@@ -87,6 +89,7 @@ export type Database = {
         Update: {
           arrived?: boolean
           created_at?: string
+          created_by?: string | null
           customer_id?: string | null
           date?: string
           id?: string
@@ -253,16 +256,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          settings: Json
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          settings?: Json
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          settings?: Json
         }
         Relationships: []
       }

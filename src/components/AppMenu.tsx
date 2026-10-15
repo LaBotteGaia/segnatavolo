@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutGrid, LogOut, Menu, Users } from "lucide-react";
+import { Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNotifyPref } from "@/lib/notifications";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership } from "@/lib/membership";
-import { totalCapacities, useRooms, useTables } from "@/lib/data";
+import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
@@ -21,6 +24,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [usersOpen, setUsersOpen] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
   const isMaster = me?.role === "master";
+  const [notify, setNotify] = useNotifyPref();
 
   const logout = async () => {
     await qc.cancelQueries();
@@ -53,6 +57,11 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
           </SheetHeader>
 
           <nav className="flex-1 overflow-y-auto p-3">
+            <label className="mb-3 flex items-center gap-3 rounded-md border px-3 py-2.5">
+              <Bell className="size-4" />
+              <span className="flex-1 text-sm">🔔 Notifiche nuove prenotazioni</span>
+              <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />
+            </label>
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>
@@ -73,7 +82,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
         </SheetContent>
       </Sheet>
       {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
-      {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} />}
+      {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
     </>
   );
 }
@@ -86,24 +95,38 @@ function MenuItem({ icon, children, onClick }: { icon: React.ReactNode; children
   );
 }
 
-function RestaurantDialog({ open, onOpenChange, id, name }: { open: boolean; onOpenChange: (o: boolean) => void; id: string; name: string }) {
+const ALL_TIMES = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, "0")}:${String((i % 4) * 15).padStart(2, "0")}`);
+const WEEKDAYS: [string, string][] = [["1", "Lunedì"], ["2", "Martedì"], ["3", "Mercoledì"], ["4", "Giovedì"], ["5", "Venerdì"], ["6", "Sabato"], ["0", "Domenica"]];
+
+function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: boolean; onOpenChange: (o: boolean) => void; id: string; name: string; settings: unknown }) {
   const qc = useQueryClient();
   const [value, setValue] = useState(name);
+  const [st, setSt] = useState<RestaurantSettings>(() => normalizeSettings(settings));
+  const setShift = (s: Shift, patch: Partial<RestaurantSettings["shifts"][Shift]>) =>
+    setSt((o) => ({ ...o, shifts: { ...o.shifts, [s]: { ...o.shifts[s], ...patch } } }));
+  const toggleWeekly = (day: string, s: Shift) =>
+    setSt((o) => {
+      const cur = o.weekly[day] ?? [];
+      return { ...o, weekly: { ...o.weekly, [day]: cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s] } };
+    });
+  const active = ALL_SHIFTS.filter((s) => st.shifts[s].enabled);
   const { data: rooms = [] } = useRooms();
   const { data: tables = [] } = useTables();
   const cap = totalCapacities(rooms, tables);
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!value.trim()) return;
-    const { error } = await supabase.from("restaurants").update({ name: value.trim() }).eq("id", id);
+    for (const s of active) if (st.shifts[s].from >= st.shifts[s].to) { toast.error(`${shiftName(s)}: l'orario di fine deve essere dopo l'inizio`); return; }
+    if (st.holidays.some((h) => !h.from || !h.to || h.from > h.to)) { toast.error("Controlla le date delle ferie"); return; }
+    const { error } = await supabase.from("restaurants").update({ name: value.trim(), settings: st }).eq("id", id);
     if (error) { toast.error("Salvataggio non riuscito"); return; }
     toast.success("Ristorante aggiornato");
     qc.invalidateQueries({ queryKey: ["membership"] });
     onOpenChange(false);
   };
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (o) setValue(name); onOpenChange(o); }}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={(o) => { if (o) { setValue(name); setSt(normalizeSettings(settings)); } onOpenChange(o); }}>
+      <DialogContent className="max-h-[92vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Gestione Ristorante</DialogTitle></DialogHeader>
         <form onSubmit={save} className="space-y-4">
           <div>
@@ -115,6 +138,66 @@ function RestaurantDialog({ open, onOpenChange, id, name }: { open: boolean; onO
             <div className="rounded-md border p-3"><div className="font-display text-2xl">{cap.outside}</div><div className="text-xs text-muted-foreground">Capienza esterna</div></div>
           </div>
           <p className="text-xs text-muted-foreground">La capienza si imposta per ogni sala in "Gestione Sale e Mappe".</p>
+
+          <section className="space-y-2">
+            <h3 className="font-display text-lg">Turni e orari</h3>
+            {ALL_SHIFTS.map((s) => (
+              <div key={s} className="rounded-md border p-3">
+                <label className="flex items-center justify-between font-semibold">
+                  {shiftName(s)}
+                  <Switch checked={st.shifts[s].enabled} onCheckedChange={(v) => setShift(s, { enabled: v })} aria-label={`Attiva ${shiftName(s)}`} />
+                </label>
+                {st.shifts[s].enabled && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {(["from", "to"] as const).map((k) => (
+                      <div key={k}>
+                        <div className="text-xs text-muted-foreground">{k === "from" ? "Inizio servizio" : "Fine servizio"}</div>
+                        <Select value={st.shifts[s][k]} onValueChange={(v) => setShift(s, { [k]: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{ALL_TIMES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="font-display text-lg">Chiusure settimanali</h3>
+            <p className="text-xs text-muted-foreground">Tocca i turni in cui il ristorante è chiuso.</p>
+            {WEEKDAYS.map(([d, label]) => {
+              const cur = st.weekly[d] ?? [];
+              const all = active.length > 0 && active.every((s) => cur.includes(s));
+              return (
+                <div key={d} className="flex flex-wrap items-center gap-1.5">
+                  <span className="w-24 text-sm font-semibold">{label}</span>
+                  <button type="button" onClick={() => setSt((o) => ({ ...o, weekly: { ...o.weekly, [d]: all ? [] : [...active] } }))}
+                    className={`rounded-full border px-2.5 py-1 text-xs ${all ? "border-destructive bg-destructive text-destructive-foreground" : ""}`}>Tutto il giorno</button>
+                  {active.map((s) => (
+                    <button key={s} type="button" onClick={() => toggleWeekly(d, s)}
+                      className={`rounded-full border px-2.5 py-1 text-xs ${cur.includes(s) ? "border-destructive bg-destructive/15 text-destructive" : ""}`}>{shiftName(s)}</button>
+                  ))}
+                </div>
+              );
+            })}
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="font-display text-lg">Ferie e chiusure straordinarie</h3>
+            {st.holidays.map((h, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-xs">dal</span>
+                <Input type="date" value={h.from} onChange={(e) => setSt((o) => ({ ...o, holidays: o.holidays.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)) }))} />
+                <span className="text-xs">al</span>
+                <Input type="date" value={h.to} onChange={(e) => setSt((o) => ({ ...o, holidays: o.holidays.map((x, j) => (j === i ? { ...x, to: e.target.value } : x)) }))} />
+                <Button type="button" size="icon" variant="ghost" aria-label="Rimuovi" onClick={() => setSt((o) => ({ ...o, holidays: o.holidays.filter((_, j) => j !== i) }))}><Trash2 /></Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={() => setSt((o) => ({ ...o, holidays: [...o.holidays, { from: "", to: "" }] }))}><Plus /> Aggiungi periodo</Button>
+          </section>
+
           <Button type="submit" className="w-full">Salva</Button>
         </form>
       </DialogContent>

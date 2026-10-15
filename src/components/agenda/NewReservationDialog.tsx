@@ -12,9 +12,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   findCustomer, reservationsQuery, tableLabel, timeSlots, useCustomers, useRooms, useTables,
-  validateReservation, type Customer, type ReservationErrors, type Shift,
+  validateReservation, activeShifts, rangesOf, isShiftClosed, isDayClosed, shiftName, type Customer, type ReservationErrors, type Shift,
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
+import { useMembership, useSettings } from "@/lib/membership";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -46,11 +47,17 @@ export function NewReservationDialog({
   const [tableOpen, setTableOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [force, setForce] = useState(false);
+  const settings = useSettings();
+  const ranges = rangesOf(settings);
+  const shifts = activeShifts(settings);
+  const isMaster = useMembership().data?.role === "master";
+  const closed = isShiftClosed(date, shift, settings);
 
   useEffect(() => {
     if (open) {
       setDate(initialDate); setShift(initialShift); setTime(""); setName(""); setPeople("2");
-      setPhone(""); setNotes(""); setOutside(false); setTableIds([]); setErrors({});
+      setPhone(""); setNotes(""); setOutside(false); setTableIds([]); setErrors({}); setForce(false);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -64,14 +71,15 @@ export function NewReservationDialog({
 
   const changeShift = (s: Shift) => {
     setShift(s);
-    if (!timeSlots(s).includes(time)) setTime("");
+    if (!timeSlots(s, ranges).includes(time)) setTime("");
     setTableIds([]);
   };
 
   const submit = async () => {
-    const e = validateReservation({ name, people, date, time, shift });
+    const e = validateReservation({ name, people, date, time, shift }, ranges);
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (closed && !(isMaster && force)) return;
     setBusy(true);
     const ok = await onCreate({
       date, shift, time, name: name.trim(), people: Number(people), phone: match ? match.phone ?? "" : phone.trim(),
@@ -91,11 +99,11 @@ export function NewReservationDialog({
           <DialogTitle className="font-display text-2xl">Nuova prenotazione</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
-          {(["pranzo", "sera"] as Shift[]).map((s) => (
+        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="grid gap-1 rounded-md bg-muted p-1">
+          {shifts.map((s) => (
             <button key={s} type="button" onClick={() => changeShift(s)}
               className={cn("rounded py-2 font-semibold", shift === s ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>
-              {s === "pranzo" ? "Pranzo" : "Cena"}
+              {shiftName(s)}
             </button>
           ))}
         </div>
@@ -112,6 +120,7 @@ export function NewReservationDialog({
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar mode="single" locale={it} selected={parseISO(date)}
+                  modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md line-through" }}
                   onSelect={(d) => { if (d) { setDate(format(d, "yyyy-MM-dd")); setTableIds([]); } }}
                   className="pointer-events-auto p-3" />
               </PopoverContent>
@@ -125,7 +134,7 @@ export function NewReservationDialog({
                 <SelectValue placeholder="Scegli…" />
               </SelectTrigger>
               <SelectContent>
-                {timeSlots(shift).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {timeSlots(shift, ranges).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>
             {err("time")}
@@ -182,7 +191,18 @@ export function NewReservationDialog({
           <label className="flex items-center gap-2"><Checkbox checked={isNew} disabled /> Nuovo cliente</label>
         </div>
 
-        <Button size="lg" onClick={submit} disabled={busy}>Conferma prenotazione</Button>
+        {closed && (
+          <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold text-destructive">Chiuso: il ristorante è chiuso a {shiftName(shift)} in questa data.</p>
+            {isMaster ? (
+              <label className="mt-2 flex items-center gap-2"><Checkbox checked={force} onCheckedChange={(v) => setForce(!!v)} /> Forza comunque la prenotazione (solo Master)</label>
+            ) : (
+              <p className="mt-1 text-muted-foreground">Scegli un'altra data o un altro turno.</p>
+            )}
+          </div>
+        )}
+
+        <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force))}>Conferma prenotazione</Button>
 
         <TableDialog open={tableOpen} onOpenChange={setTableOpen}
           reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds }}

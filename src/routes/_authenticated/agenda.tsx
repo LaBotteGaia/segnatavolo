@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { dayDots, monthReservationsQuery, shiftCounters, totalCapacities, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
+import { activeShifts, closedShifts, dayDots, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, totalCapacities, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
+import { useSettings } from "@/lib/membership";
+import { useNewReservationNotifications } from "@/lib/notifications";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { AppMenu } from "@/components/AppMenu";
@@ -47,7 +49,11 @@ function AgendaPage() {
   const [newShift, setNewShift] = useState<Shift | null>(null);
   const { data: reservations = [] } = useReservations(date);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
-  const [mobileShift, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : "pranzo");
+  const settings = useSettings();
+  const shifts = activeShifts(settings);
+  useNewReservationNotifications();
+  const [mobilePick, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : new Date().getHours() < 11 && settings.shifts.colazione.enabled ? "colazione" : "pranzo");
+  const mobileShift: Shift = shifts.includes(mobilePick) ? mobilePick : (shifts[0] ?? "pranzo");
   const [month, setMonth] = useState<Date>(() => parseISO(date));
   const { data: rooms = [] } = useRooms();
   const { data: tables = [] } = useTables();
@@ -131,18 +137,22 @@ function AgendaPage() {
     return true;
   };
 
-  const renderPage = (shift: Shift, side: "left" | "right") => {
+  const closedToday = closedShifts(date, settings);
+  const renderPage = (shift: Shift, side: "left" | "right" | "mid") => {
     const rows = byShift(shift);
     const c = shiftCounters(rows);
+    const closed = closedToday.includes(shift);
     return (
       <section
         className={cn(
           "paper-page min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5",
-          side === "left" ? "md:rounded-l-md spine-left" : "md:rounded-r-md spine-right",
+          side === "left" ? "md:rounded-l-md spine-left" : side === "right" ? "md:rounded-r-md spine-right" : "",
+          closed && "opacity-70",
         )}
       >
         <header className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b-2 border-primary/60 pb-2">
-          <h2 className="font-display text-3xl tracking-wide text-primary">{shift === "pranzo" ? "PRANZO" : "CENA"}</h2>
+          <h2 className="font-display text-3xl tracking-wide text-primary">{shiftName(shift).toUpperCase()}</h2>
+          {closed && <span className="rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}
           <div className="flex gap-3 text-right text-xs leading-tight">
             <Counter label="Coperti" value={c.total} strong />
             <Counter label="Interni" value={c.inside} />
@@ -152,14 +162,10 @@ function AgendaPage() {
         </header>
         <Button className="mb-3 hidden w-full md:flex" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
-          <span title="Arrivato">✓</span>
           <span>Ora</span>
           <span>Nome</span>
           <span className="text-center">Pers.</span>
-          <span className="hidden md:block">Tavolo</span>
-          <span className="hidden md:block">Richieste</span>
-          <span className="hidden text-center md:block">Fuori</span>
-          <span className="hidden text-center md:block">Nuovo</span>
+          <span>Zona</span>
           <span />
         </div>
         {rows.map((r) => (
@@ -193,8 +199,18 @@ function AgendaPage() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarDayExtra.Provider value={(d) => <DayDots dots={dotsByDay.get(format(d, "yyyy-MM-dd")) ?? emptyDots} />}>
-                  <Calendar mode="single" locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
+                <CalendarDayExtra.Provider value={(d) => {
+                  const ds = format(d, "yyyy-MM-dd");
+                  if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
+                  const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
+                  return (
+                    <span className="flex flex-col items-center gap-0.5">
+                      <DayDots dots={dotsByDay.get(ds) ?? emptyDots} />
+                      {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
+                    </span>
+                  );
+                }}>
+                  <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
                 </CalendarDayExtra.Provider>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
                   <span>Sx: interno · Dx: fuori</span>
@@ -212,14 +228,14 @@ function AgendaPage() {
           </div>
         </div>
         <Button className="mx-auto mt-2 flex w-full max-w-7xl md:hidden" onClick={() => setNewShift(mobileShift)}><Plus /> Nuova Prenotazione</Button>
-        <div className="mx-auto mt-2 grid max-w-7xl grid-cols-2 gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
-          {(["pranzo", "sera"] as Shift[]).map((s) => (
+        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
+          {shifts.map((s) => (
             <button
               key={s}
               onClick={() => setMobileShift(s)}
               className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
             >
-              {s === "pranzo" ? "📖 Pranzo" : "🌙 Cena"}
+              {shiftEmoji(s)} {shiftName(s)}
             </button>
           ))}
         </div>
@@ -227,13 +243,17 @@ function AgendaPage() {
 
       <main className="mx-auto mt-4 max-w-7xl px-2 sm:px-4">
         <div className="hidden gap-0 md:flex">
-          {renderPage("pranzo", "left")}
-          <div className="w-1 bg-desk" />
-          {renderPage("sera", "right")}
+          {shifts.map((s, i) => (
+            <div key={s} className="flex flex-1 gap-0">
+              {i > 0 && <div className="w-1 bg-desk" />}
+              {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
+            </div>
+          ))}
+          {shifts.length === 0 && <p className="text-primary-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
         </div>
-        <div className="md:hidden">{renderPage(mobileShift, "left")}</div>
+        <div className="md:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
       </main>
-      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? "pranzo"} onCreate={create} />
+      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRooms, useTables, type Reservation } from "@/lib/data";
+import { useRooms, useTables, shiftName, type Reservation } from "@/lib/data";
 
 export const GRID_COLS = 6;
 export const GRID_ROWS = 5;
@@ -60,7 +60,7 @@ export function TableDialog({
             )}
           </DialogTitle>
           <p className="font-hand text-lg text-muted-foreground">
-            {reservation.name || "Prenotazione"} · {reservation.people} persone · {reservation.shift === "pranzo" ? "Pranzo" : "Sera"}
+            {reservation.name || "Prenotazione"} · {reservation.people} persone · {shiftName(reservation.shift)}
           </p>
         </DialogHeader>
 
