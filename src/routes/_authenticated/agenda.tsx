@@ -98,6 +98,7 @@ function AgendaPage() {
   useEffect(() => { setMonth(parseISO(date)); }, [date]);
 
   const update = async (id: string, patch: Partial<Reservation>) => {
+    await qc.cancelQueries({ queryKey: key });
     qc.setQueryData<Reservation[]>(key, (old) => old?.map((r) => (r.id === id ? { ...r, ...patch } : r)));
     const { error } = await supabase.from("reservations").update(patch).eq("id", id);
     if (error) {
