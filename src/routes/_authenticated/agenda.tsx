@@ -90,6 +90,31 @@ function AgendaPage() {
   const goTo = (r: Reservation) => { setMobileShift(r.shift as Shift); navigate({ search: { ...(r.date === todayStr() ? {} : { d: r.date }), h: r.id } }); };
   const dateObj = parseISO(date);
 
+  // Sfoglio con swipe: sinistra = avanti (turno successivo, poi giorno dopo), destra = indietro
+  const [flipDir, setFlipDir] = useState<0 | 1 | -1>(0);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const flip = (dir: 1 | -1) => {
+    const i = shifts.indexOf(mobileShift);
+    setFlipDir(dir);
+    if (dir === 1) {
+      if (i < shifts.length - 1) setMobileShift(shifts[i + 1]!);
+      else { setMobileShift(shifts[0]!); setDate(format(addDays(dateObj, 1), "yyyy-MM-dd")); }
+    } else {
+      if (i > 0) setMobileShift(shifts[i - 1]!);
+      else { setMobileShift(shifts[shifts.length - 1]!); setDate(format(addDays(dateObj, -1), "yyyy-MM-dd")); }
+    }
+  };
+  const onSwipeStart = (e: React.TouchEvent) => {
+    const el = e.target as HTMLElement;
+    touch.current = el.closest("input, textarea, select, [data-no-swipe]") ? null : { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
+  };
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    const t = touch.current; touch.current = null;
+    if (!t || !shifts.length) return;
+    const dx = e.changedTouches[0]!.clientX - t.x, dy = e.changedTouches[0]!.clientY - t.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) flip(dx < 0 ? 1 : -1);
+  };
+
   const visible = reservations.filter((r) => !hidden.has(r.id));
   const byShift = (s: Shift) =>
     visible.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99") || a.created_at.localeCompare(b.created_at));
@@ -316,7 +341,11 @@ function AgendaPage() {
           ))}
           {shifts.length === 0 && <p className="text-primary-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
         </div>
-        <div className="agenda-wide:hidden">{shifts.length > 0 && renderPage(mobileShift, "left")}</div>
+        <div className="overflow-hidden agenda-wide:hidden" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+          <div key={`${date}-${mobileShift}`} className={flipDir === 1 ? "animate-page-next" : flipDir === -1 ? "animate-page-prev" : undefined}>
+            {shifts.length > 0 && renderPage(mobileShift, "left")}
+          </div>
+        </div>
       </main>
       <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
