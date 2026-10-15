@@ -13,6 +13,7 @@ import { roomCapacity, totalCapacities, useRooms, useTables, type RTable, type R
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
 import { validSeats, validTableName } from "@/lib/extras";
+import { periodsOf, type ClosedPeriod } from "@/lib/rotation";
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
