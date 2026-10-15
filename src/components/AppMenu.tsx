@@ -96,7 +96,7 @@ function RestaurantDialog({ open, onOpenChange, id, name }: { open: boolean; onO
     e.preventDefault();
     if (!value.trim()) return;
     const { error } = await supabase.from("restaurants").update({ name: value.trim() }).eq("id", id);
-    if (error) return toast.error("Salvataggio non riuscito");
+    if (error) { toast.error("Salvataggio non riuscito"); return; }
     toast.success("Ristorante aggiornato");
     qc.invalidateQueries({ queryKey: ["membership"] });
     onOpenChange(false);
