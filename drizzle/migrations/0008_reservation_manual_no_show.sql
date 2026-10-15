@@ -1,0 +1,2 @@
+ALTER TABLE public.reservations ADD COLUMN no_show boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.reservations.no_show IS 'Manual no-show; automatic no-shows are derived from service end and arrived state.';

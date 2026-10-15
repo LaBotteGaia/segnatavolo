@@ -1,2 +1,3 @@
-- [x] Riorganizzare barra verticale e intestazioni con data, inclusa stampa.
-- [x] Verificare navigazione, ricerca e calendario su smartphone e vista affiancata.
+- [ ] Ripristinare Arrivato sulle righe e segnalazione manuale No-Show.
+- [ ] Calcolare storico per telefono e mostrare avvisi in creazione, ricerca e dettagli.
+- [ ] Verificare regole e flusso completo su smartphone e desktop.
