@@ -165,9 +165,9 @@ const shiftArticle = (s: Shift) => (s === "pranzo" ? "il pranzo" : "la cena");
 /** "2100" → "21:00", "9:5" → "09:05"; anything unparseable is returned as typed. */
 export function normalizeTime(raw: string): string {
   const t = raw.trim();
-  const digits = /^\d{1,4}$/.test(t) ? (t.length <= 2 ? t + "00" : t.slice(0, -2) + ":" + t.slice(-2)) : t;
+  const digits = /^\d{1,4}$/.test(t) ? (t.length <= 2 ? t + ":00" : t.slice(0, -2) + ":" + t.slice(-2)) : t;
   const m = /^(\d{1,2}):(\d{1,2})$/.exec(digits);
-  return m ? `${m[1].padStart(2, "0")}:${m[2].padStart(2, "0")}` : t;
+  return m ? `${m[1]!.padStart(2, "0")}:${m[2]!.padStart(2, "0")}` : t;
 }
 
 export type TimeCommit =
@@ -176,13 +176,14 @@ export type TimeCommit =
   | { kind: "move"; time: string; shift: Shift; message: string; actionLabel: string };
 
 /** Check a time typed directly into an agenda row against the row's shift window. */
-export function commitTimeCheck(typed: string, shift: Shift): TimeCommit {
+export function commitTimeCheck(typed: string, shift: Shift | string): TimeCommit {
+  const sh: Shift = shift === "pranzo" ? "pranzo" : "sera";
   const t = normalizeTime(typed);
-  const w = SHIFT_RANGES[shift];
-  if (!t) return { kind: "revert", error: `Inserisci un orario: per ${shiftArticle(shift)} scegli un orario tra le ${w.from} e le ${w.to}` };
+  const w = SHIFT_RANGES[sh];
+  if (!t) return { kind: "revert", error: `Inserisci un orario: per ${shiftArticle(sh)} scegli un orario tra le ${w.from} e le ${w.to}` };
   const s = shiftForTime(t);
-  if (!s) return { kind: "revert", error: `Orario non valido: per ${shiftArticle(shift)} scegli un orario tra le ${w.from} e le ${w.to}` };
-  if (s !== shift)
+  if (!s) return { kind: "revert", error: `Orario non valido: per ${shiftArticle(sh)} scegli un orario tra le ${w.from} e le ${w.to}` };
+  if (s !== sh)
     return {
       kind: "move",
       time: t,
