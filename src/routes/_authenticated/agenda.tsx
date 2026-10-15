@@ -1,20 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { addDays, format, parseISO } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { addDays, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, ChevronLeft, ChevronRight, LayoutGrid, LogOut } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { shiftCounters, useReservations, type Reservation, type Shift } from "@/lib/data";
+import { dayDots, monthReservationsQuery, shiftCounters, totalCapacities, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
-import { UsersDialog } from "@/components/UsersDialog";
-import { useMembership, roleLabel } from "@/lib/membership";
+import { AppMenu } from "@/components/AppMenu";
 import { NewReservationDialog, type NewReservationInput } from "@/components/agenda/NewReservationDialog";
 import { Plus } from "lucide-react";
 
@@ -45,13 +44,25 @@ function AgendaPage() {
   const date = search.d ?? todayStr();
   const navigate = useNavigate({ from: "/agenda" });
   const qc = useQueryClient();
-  const { data: me } = useMembership();
-  const isMaster = me?.role === "master";
-  const [usersOpen, setUsersOpen] = useState(false);
   const [newShift, setNewShift] = useState<Shift | null>(null);
   const { data: reservations = [] } = useReservations(date);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [mobileShift, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : "pranzo");
+  const [month, setMonth] = useState<Date>(() => parseISO(date));
+  const { data: rooms = [] } = useRooms();
+  const { data: tables = [] } = useTables();
+  const mFrom = format(startOfMonth(addDays(startOfMonth(month), -7)), "yyyy-MM-dd");
+  const mTo = format(endOfMonth(addDays(endOfMonth(month), 7)), "yyyy-MM-dd");
+  const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo));
+  const dotsByDay = useMemo(() => {
+    const cap = totalCapacities(rooms, tables);
+    const g = new Map<string, typeof monthRows>();
+    for (const r of monthRows) g.set(r.date, [...(g.get(r.date) ?? []), r]);
+    const out = new Map<string, ReturnType<typeof dayDots>>();
+    for (const [d, rows] of g) out.set(d, dayDots(rows, cap));
+    return out;
+  }, [monthRows, rooms, tables]);
+  const emptyDots = useMemo(() => dayDots([], totalCapacities(rooms, tables)), [rooms, tables]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
@@ -62,6 +73,7 @@ function AgendaPage() {
     visible.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99") || a.created_at.localeCompare(b.created_at));
 
   const key = ["reservations", date];
+  useEffect(() => { setMonth(parseISO(date)); }, [date]);
 
   const update = async (id: string, patch: Partial<Reservation>) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -138,7 +150,7 @@ function AgendaPage() {
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
         </header>
-        <Button className="mb-3 w-full" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
+        <Button className="mb-3 hidden w-full md:flex" onClick={() => setNewShift(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span title="Arrivato">✓</span>
           <span>Ora</span>
@@ -181,7 +193,13 @@ function AgendaPage() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" locale={it} selected={dateObj} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
+                <CalendarDayExtra.Provider value={(d) => <DayDots dots={dotsByDay.get(format(d, "yyyy-MM-dd")) ?? emptyDots} />}>
+                  <Calendar mode="single" locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
+                </CalendarDayExtra.Provider>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
+                  <span>Sx: interno · Dx: fuori</span>
+                  <span><Dot level="green" /> libero</span><span><Dot level="yellow" /> limitato</span><span><Dot level="red" /> quasi pieno</span><span><Dot level="black" /> esaurito</span>
+                </div>
               </PopoverContent>
             </Popover>
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
@@ -190,26 +208,10 @@ function AgendaPage() {
             <Button size="sm" variant="secondary" onClick={() => setDate(todayStr())}>Oggi</Button>
           </div>
           <div className="ml-auto flex items-center gap-1">
-            {isMaster && (
-              <>
-                <Button size="sm" variant="secondary" onClick={() => setUsersOpen(true)}>👥 Utenti</Button>
-                <Button asChild size="sm" variant="secondary">
-                  <Link to="/sale"><LayoutGrid /> Configura Sale</Link>
-                </Button>
-              </>
-            )}
-            {me && (
-              <div className="ml-1 text-right text-xs leading-tight">
-                <div className="font-semibold">{me.name || me.email}</div>
-                <div className="opacity-75">{roleLabel(me.role)} · {me.restaurants?.name}</div>
-              </div>
-            )}
-            <Button size="sm" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={async () => { qc.clear(); await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); }} aria-label="Esci">
-              <LogOut /> Esci
-            </Button>
-            {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
+            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
         </div>
+        <Button className="mx-auto mt-2 flex w-full max-w-7xl md:hidden" onClick={() => setNewShift(mobileShift)}><Plus /> Nuova Prenotazione</Button>
         <div className="mx-auto mt-2 grid max-w-7xl grid-cols-2 gap-1 rounded-md bg-primary-foreground/10 p-1 md:hidden">
           {(["pranzo", "sera"] as Shift[]).map((s) => (
             <button
@@ -242,5 +244,27 @@ function Counter({ label, value, strong, accent }: { label: string; value: numbe
       <div className={cn("font-display text-xl", strong && "text-2xl", accent && "text-primary")}>{value}</div>
       <div className="uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+const DOT_CLASS: Record<DotLevel, string> = {
+  white: "bg-paper border border-muted-foreground/50",
+  green: "bg-free",
+  yellow: "bg-warning",
+  red: "bg-destructive",
+  black: "bg-foreground",
+  off: "bg-muted opacity-40",
+};
+
+function Dot({ level }: { level: DotLevel }) {
+  return <span className={cn("inline-block size-1.5 shrink-0 rounded-full", DOT_CLASS[level])} />;
+}
+
+function DayDots({ dots }: { dots: { inside: DotLevel; outside: DotLevel } }) {
+  return (
+    <span className="flex gap-0.5 !opacity-100" aria-hidden>
+      <Dot level={dots.inside} />
+      {dots.outside !== "off" && <Dot level={dots.outside} />}
+    </span>
   );
 }
