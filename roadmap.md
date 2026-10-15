@@ -1,3 +1,3 @@
-- [ ] Ripristinare Arrivato sulle righe e segnalazione manuale No-Show.
-- [ ] Calcolare storico per telefono e mostrare avvisi in creazione, ricerca e dettagli.
-- [ ] Verificare regole e flusso completo su smartphone e desktop.
+- [x] Ripristinare Arrivato sulle righe e segnalazione manuale No-Show.
+- [x] Calcolare storico per telefono e mostrare avvisi in creazione, ricerca e dettagli.
+- [x] Verificare regole e flusso completo su smartphone e desktop.
