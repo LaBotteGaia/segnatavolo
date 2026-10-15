@@ -44,6 +44,9 @@ function AgendaPage() {
   const date = search.d ?? todayStr();
   const navigate = useNavigate({ from: "/agenda" });
   const qc = useQueryClient();
+  const { data: me } = useMembership();
+  const isMaster = me?.role === "master";
+  const [usersOpen, setUsersOpen] = useState(false);
   const { data: reservations = [] } = useReservations(date);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [mobileShift, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : "pranzo");
