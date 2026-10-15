@@ -40,7 +40,7 @@ function CreateRestaurant() {
     setBusy(true);
     const { error } = await supabase.rpc("create_restaurant", { _name: name, _display_name: me });
     setBusy(false);
-    if (error) return toast.error("Impossibile creare il ristorante");
+    if (error) { toast.error("Impossibile creare il ristorante"); return; }
     qc.invalidateQueries();
   };
   return (

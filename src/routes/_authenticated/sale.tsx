@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RestaurantGate } from "@/components/RestaurantGate";
+import { useMembership } from "@/lib/membership";
 import { cn } from "@/lib/utils";
 import { useRooms, useTables, type RTable } from "@/lib/data";
 import { GRID_COLS, GRID_ROWS } from "@/components/agenda/TableDialog";
@@ -19,8 +21,18 @@ export const Route = createFileRoute("/_authenticated/sale")({
       { property: "og:description", content: "Crea le sale e disponi i tavoli sulla mappa." },
     ],
   }),
-  component: SalePage,
+  component: () => (
+    <RestaurantGate>
+      <MasterOnly />
+    </RestaurantGate>
+  ),
 });
+
+function MasterOnly() {
+  const { data: me } = useMembership();
+  if (me?.role !== "master") return <Navigate to="/agenda" />;
+  return <SalePage />;
+}
 
 function SalePage() {
   const qc = useQueryClient();

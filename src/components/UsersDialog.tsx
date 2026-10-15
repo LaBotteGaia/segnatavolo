@@ -45,7 +45,7 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
       .insert({ restaurant_id: me.restaurant_id, name: name.trim(), email: email.trim().toLowerCase(), role })
       .select()
       .single();
-    if (error || !data) return toast.error("Impossibile creare l'invito");
+    if (error || !data) { toast.error("Impossibile creare l'invito"); return; }
     setLastToken(data.token);
     setName("");
     setEmail("");

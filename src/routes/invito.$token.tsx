@@ -40,7 +40,7 @@ function InvitePage() {
     const res = await acceptInvite({ data: { token, password: pw } });
     if (!res.ok) {
       setBusy(false);
-      return toast.error(res.error);
+      toast.error(res.error); return;
     }
     await supabase.auth.signOut();
     const { error } = await supabase.auth.signInWithPassword({ email: res.email, password: pw });
