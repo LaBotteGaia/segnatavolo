@@ -18,22 +18,24 @@ import {
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
 import { useMembership, useSettings } from "@/lib/membership";
-import { outsideClosed } from "@/lib/rotation";
+import { outsideClosed, DURATION_PRESETS, WHOLE_EVENING, durLabel } from "@/lib/rotation";
+import { matchesSearch, phonesOf } from "@/lib/customers";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { reliabilityStats } from "@/lib/no-show";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
   is_new: boolean; outside: boolean; notes: string; table_ids: string[]; extras: TableExtras; customer?: Customer | undefined;
+  duration_min?: number | null; buffer_min?: number | null; tags?: string[];
 };
 
 const field = "w-full rounded-md border bg-paper px-3 py-2";
 const bad = "border-destructive ring-1 ring-destructive";
 
 export function NewReservationDialog({
-  open, onOpenChange, initialDate, initialShift, onCreate, initialTime = "", initialTables = [],
+  open, onOpenChange, initialDate, initialShift, onCreate, initialTime = "", initialTables = [], initialCustomerId,
 }: {
-  initialTime?: string; initialTables?: string[];
+  initialTime?: string; initialTables?: string[]; initialCustomerId?: string | undefined;
   open: boolean; onOpenChange: (o: boolean) => void; initialDate: string; initialShift: Shift;
   onCreate: (v: NewReservationInput) => Promise<boolean>;
 }) {
@@ -56,6 +58,10 @@ export function NewReservationDialog({
   const [focus, setFocus] = useState(false);
   const [force, setForce] = useState(false);
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const [adv, setAdv] = useState(false);
+  const [dur, setDur] = useState<number | null>(null);
+  const [buf, setBuf] = useState<number | null>(null);
+  const [tags, setTags] = useState("");
   const settings = useSettings();
   const { data: history = [] } = useCustomerHistory();
   const now = useServiceClock();
@@ -68,22 +74,27 @@ export function NewReservationDialog({
     if (open) {
       setDate(initialDate); setShift(initialShift); setTime(initialTime); setName(""); setPeople("2");
       setPhone(""); setNotes(""); setOutside(false); setTableIds(initialTables); setExtras(NO_EXTRAS); setErrors({}); setForce(false); setPickedId(null);
+      setAdv(false); setDur(null); setBuf(null); setTags("");
+      const c = initialCustomerId ? customers?.find((x) => x.id === initialCustomerId) : undefined;
+      if (c) { setName(c.name); setPickedId(c.id); setPhone(c.phone ?? ""); setNotes(c.notes ?? ""); }
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, initialCustomerId, !!customers]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date), enabled: open });
   const others = dayRes.filter((r) => r.shift === shift);
 
   // Identità cliente = telefono. Il nome da solo aggancia solo se non ci sono omonimi.
-  const byPhone = findCustomerByPhone(customers, phone);
+  const byPhone = findCustomerByPhone(customers, phone) ?? (normPhone(phone).length >= 5 ? customers?.find((c) => phonesOf(c).includes(normPhone(phone))) : undefined);
   const picked = customers?.find((c) => c.id === pickedId);
   const sameName = (customers ?? []).filter((c) => c.name.trim().toLowerCase() === name.trim().toLowerCase());
   const byName = sameName.length === 1 && !phone.trim() ? findCustomer(customers, name) : undefined;
   const match = byPhone ?? picked ?? byName;
   const isNew = name.trim().length > 0 && !match;
   const suggestions = name.trim() && !match
-    ? (customers ?? []).filter((c) => c.name.toLowerCase().includes(name.trim().toLowerCase())).slice(0, 8) : [];
-  useEffect(() => { if (byPhone && !name.trim()) setName(byPhone.name); }, [byPhone?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    ? (customers ?? []).filter((c) => matchesSearch(c, name)).slice(0, 8) : [];
+  useEffect(() => { if (byPhone && !name.trim()) setName(byPhone.name); }, [byPhone?.id]);
+  const fillNotes = (c?: Customer) => { if (c?.notes && !notes.trim()) setNotes(c.notes); };
+  useEffect(() => { fillNotes(match); }, [match?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const changeShift = (s: Shift) => {
     setShift(s);
@@ -101,6 +112,7 @@ export function NewReservationDialog({
     const ok = await onCreate({
       date, shift, time, name: name.trim(), people: Number(people), phone: normPhone(match ? match.phone || phone : phone),
       is_new: isNew, outside, notes: notes.trim(), table_ids: tableIds, extras, customer: match,
+      duration_min: dur, buffer_min: buf, tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
     });
     setBusy(false);
     if (ok) onOpenChange(false);
@@ -170,7 +182,7 @@ export function NewReservationDialog({
                   const stats = reliabilityStats(history, c.phone, ranges, now);
                   return (
                   <li key={c.id}>
-                    <button type="button" onMouseDown={() => { setName(c.name); setPickedId(c.id); if (c.phone) setPhone(c.phone); }} className="w-full px-3 py-2 text-left hover:bg-accent">
+                    <button type="button" onMouseDown={() => { setName(c.name); setPickedId(c.id); if (c.phone) setPhone(c.phone); fillNotes(c); }} className="w-full px-3 py-2 text-left hover:bg-accent">
                       <span className="font-hand text-lg">{c.name}</span>
                       <span className={cn("text-sm", stats.lastNoShow ? "text-destructive" : "text-muted-foreground")}> - {c.phone || "senza telefono"} (Ultima visita: {stats.last ? `${stats.lastNoShow ? "Mancata presentazione · " : ""}${format(parseISO(stats.last), "d MMM yyyy", { locale: it })}` : "mai"})</span>
                     </button>
@@ -207,6 +219,35 @@ export function NewReservationDialog({
           <label className="text-xs font-semibold text-muted-foreground">Richieste particolari</label>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Allergie, seggiolone…" className={cn(field, "font-hand")} />
         </div>
+
+        <button type="button" onClick={() => setAdv(!adv)} className="text-left text-sm font-semibold text-muted-foreground hover:text-foreground">
+          {adv ? "▴ Nascondi opzioni avanzate" : "⚙️ Mostra opzioni avanzate ▾"}
+        </button>
+        {adv && (
+          <div className="space-y-3 rounded-md border border-dashed p-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Permanenza al tavolo</label>
+              <div className="flex flex-wrap gap-1">
+                {[...DURATION_PRESETS, WHOLE_EVENING].map((d) => (
+                  <button key={d} type="button" onClick={() => setDur(dur === d ? null : d)}
+                    className={cn("rounded-md border px-2 py-1 text-xs font-semibold", (dur ?? settings.duration) === d ? "bg-primary text-primary-foreground" : "bg-paper")}>
+                    {d < 0 ? "Tutta la sera / No rotazione" : durLabel(d)}
+                  </button>
+                ))}
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-xs">Buffer pulizia
+                <select value={buf ?? settings.buffer} onChange={(e) => setBuf(Number(e.target.value))} className="rounded-md border bg-paper px-2 py-1">
+                  {[0, 5, 10, 15, 20, 30, 45].map((m) => <option key={m} value={m}>{m} min</option>)}
+                </select>
+              </label>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setTableOpen(true)}>+ Sponda / + Barella (dalla mappa tavoli)</Button>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Etichette (separate da virgola)</label>
+              <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Compleanno, VIP…" className={field} />
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-6">
           <label className="flex items-center gap-2"><Checkbox checked={outside} onCheckedChange={(v) => setOutside(!!v)} /> Fuori</label>
