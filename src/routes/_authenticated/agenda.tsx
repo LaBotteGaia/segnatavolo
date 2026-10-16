@@ -73,7 +73,7 @@ function AgendaPage() {
     if (!search.c) return;
     const id = search.c;
     setPrefill({ time: "", tables: [] }); setBookCustomer(id); setNewShift(new Date().getHours() >= 16 ? "sera" : "pranzo");
-    navigate({ search: (p) => ({ ...p, c: undefined }), replace: true });
+    navigate({ search: ({ c: _c, ...p }) => p, replace: true });
   }, [search.c]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mobilePick, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : new Date().getHours() < 11 && settings.shifts.colazione.enabled ? "colazione" : "pranzo");
   const mobileShift: Shift = shifts.includes(mobilePick) ? mobilePick : (shifts[0] ?? "pranzo");
