@@ -3,6 +3,17 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.6.0-alpha",
+    date: "16 ottobre 2026",
+    items: [
+      "👥 Rubrica Clienti nel menù ☰: ricerca istantanea, ➕ Nuovo Cliente, ordinamento per cognome, nome, visite o ultima visita, indice alfabetico A–Z.",
+      "Scheda cliente con Nome e Cognome separati, più telefoni ed email, note fisse/allergie copiate in ogni nuova prenotazione.",
+      "Abitudini del cliente: giorno e turno preferiti, mese più frequente, tavolo più assegnato, media coperti, visite e No-Show.",
+      "📅 Prenota dalla rubrica apre la nuova prenotazione con il cliente già agganciato.",
+      "Form prenotazione più snello: durata, buffer, sponde/barelle, Duplica ed etichette sotto \"⚙️ Mostra opzioni avanzate\".",
+    ],
+  },
+  {
     version: "v0.5.1-alpha",
     date: "16 ottobre 2026",
     items: [

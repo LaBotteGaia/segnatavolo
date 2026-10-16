@@ -28,11 +28,12 @@ import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string } => {
-    const d = s["d"], h = s["h"];
+  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string } => {
+    const d = s["d"], h = s["h"], c = s["c"];
     return {
       ...(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {}),
       ...(typeof h === "string" && h ? { h } : {}),
+      ...(typeof c === "string" && c ? { c } : {}),
     };
   },
   head: () => ({
@@ -60,13 +61,20 @@ function AgendaPage() {
   const [newShift, setNewShift] = useState<Shift | null>(null);
   const [prefill, setPrefill] = useState<{ time: string; tables: string[] }>({ time: "", tables: [] });
   const [availShift, setAvailShift] = useState<Shift | null>(null);
-  const openNew = (s: Shift, p: { time: string; tables: string[] } = { time: "", tables: [] }) => { setPrefill(p); setNewShift(s); };
+  const [bookCustomer, setBookCustomer] = useState<string | undefined>(undefined);
+  const openNew = (s: Shift, p: { time: string; tables: string[] } = { time: "", tables: [] }) => { setBookCustomer(undefined); setPrefill(p); setNewShift(s); };
   const { data: reservations = [] } = useReservations(date);
   const [onlyPending, setOnlyPending] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const settings = useSettings();
   const shifts = activeShifts(settings);
   useNewReservationNotifications();
+  useEffect(() => {
+    if (!search.c) return;
+    const id = search.c;
+    setPrefill({ time: "", tables: [] }); setBookCustomer(id); setNewShift(new Date().getHours() >= 16 ? "sera" : "pranzo");
+    navigate({ search: (p) => ({ ...p, c: undefined }), replace: true });
+  }, [search.c]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mobilePick, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : new Date().getHours() < 11 && settings.shifts.colazione.enabled ? "colazione" : "pranzo");
   const mobileShift: Shift = shifts.includes(mobilePick) ? mobilePick : (shifts[0] ?? "pranzo");
   const [month, setMonth] = useState<Date>(() => parseISO(date));
@@ -175,6 +183,7 @@ function AgendaPage() {
     const { error } = await supabase.from("reservations").insert({
       date: v.date, shift: v.shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
       is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids, ...v.extras,
+      duration_min: v.duration_min ?? null, buffer_min: v.buffer_min ?? null, tags: v.tags ?? [],
     });
     if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
     toast.success("Prenotazione salvata");
@@ -349,7 +358,7 @@ function AgendaPage() {
       </main>
       <WhatsNew />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
-      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} />
+      <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} />
       <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
         rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />
     </div>

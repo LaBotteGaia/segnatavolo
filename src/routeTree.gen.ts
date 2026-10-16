@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedFoglioRouteImport } from './routes/_authenticated/foglio'
+import { Route as AuthenticatedRubricaRouteImport } from './routes/_authenticated/rubrica'
 import { Route as AuthenticatedSaleRouteImport } from './routes/_authenticated/sale'
 import { Route as AuthenticatedSituazioneRouteImport } from './routes/_authenticated/situazione'
 import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
@@ -42,6 +43,11 @@ const AuthenticatedFoglioRoute = AuthenticatedFoglioRouteImport.update({
   path: '/foglio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRubricaRoute = AuthenticatedRubricaRouteImport.update({
+  id: '/rubrica',
+  path: '/rubrica',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSaleRoute = AuthenticatedSaleRouteImport.update({
   id: '/sale',
   path: '/sale',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/foglio': typeof AuthenticatedFoglioRoute
+  '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/foglio': typeof AuthenticatedFoglioRoute
+  '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/foglio': typeof AuthenticatedFoglioRoute
+  '/_authenticated/rubrica': typeof AuthenticatedRubricaRoute
   '/_authenticated/sale': typeof AuthenticatedSaleRoute
   '/_authenticated/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda'
     | '/foglio'
+    | '/rubrica'
     | '/sale'
     | '/situazione'
     | '/invito/$token'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda'
     | '/foglio'
+    | '/rubrica'
     | '/sale'
     | '/situazione'
     | '/invito/$token'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/agenda'
     | '/_authenticated/foglio'
+    | '/_authenticated/rubrica'
     | '/_authenticated/sale'
     | '/_authenticated/situazione'
     | '/invito/$token'
@@ -162,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFoglioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rubrica': {
+      id: '/_authenticated/rubrica'
+      path: '/rubrica'
+      fullPath: '/rubrica'
+      preLoaderRoute: typeof AuthenticatedRubricaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sale': {
       id: '/_authenticated/sale'
       path: '/sale'
@@ -189,6 +208,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedFoglioRoute: typeof AuthenticatedFoglioRoute
+  AuthenticatedRubricaRoute: typeof AuthenticatedRubricaRoute
   AuthenticatedSaleRoute: typeof AuthenticatedSaleRoute
   AuthenticatedSituazioneRoute: typeof AuthenticatedSituazioneRoute
 }
@@ -196,6 +216,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedFoglioRoute: AuthenticatedFoglioRoute,
+  AuthenticatedRubricaRoute: AuthenticatedRubricaRoute,
   AuthenticatedSaleRoute: AuthenticatedSaleRoute,
   AuthenticatedSituazioneRoute: AuthenticatedSituazioneRoute,
 }
