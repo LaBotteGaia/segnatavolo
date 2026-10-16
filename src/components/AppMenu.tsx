@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
+import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
+import { TutorialDialog } from "@/components/TutorialDialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNotifyPref } from "@/lib/notifications";
@@ -25,6 +26,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [open, setOpen] = useState(false);
   const [usersOpen, setUsersOpen] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const isMaster = me?.role === "master";
   const [notify, setNotify] = useNotifyPref();
 
@@ -85,6 +87,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
               <Users /> 👥 Rubrica Clienti
             </Link>
             <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>📥 Esporta Dati (Backup)</MenuItem>
+            <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>❓ Guida Rapida / Tutorial</MenuItem>
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>
@@ -104,6 +107,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
           </div>
         </SheetContent>
       </Sheet>
+      <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
       {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
       {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
     </>
