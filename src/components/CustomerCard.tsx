@@ -2,15 +2,25 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
-import { Plus, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { normPhone, rangesOf, shiftName, useTables, type Customer, type Shift } from "@/lib/data";
-import { useSettings } from "@/lib/membership";
+import { useMembership, useSettings } from "@/lib/membership";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
-import { customerRows, customerStats, fullName, firstOf, habits, lastOf } from "@/lib/customers";
+import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesOf } from "@/lib/customers";
+
+/** Prenotazioni collegate al cliente (per id o per uno dei suoi telefoni). */
+async function linkedReservations(c: Customer) {
+  const ph = phonesOf(c);
+  const filter = [`customer_id.eq.${c.id}`, ...(ph.length ? [`phone.in.(${ph.map((p) => `"${p}"`).join(",")})`] : [])].join(",");
+  const { data, error } = await supabase.from("reservations").select("id, phone").or(filter);
+  if (error) throw error;
+  return data ?? [];
+}
 
 const field = "w-full rounded-md border bg-paper px-3 py-2";
 const lbl = "text-xs font-semibold text-muted-foreground";
@@ -26,6 +36,8 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
   const { data: history = [] } = useCustomerHistory();
   const { data: tables = [] } = useTables();
   const settings = useSettings(); const now = useServiceClock();
+  const { data: me } = useMembership(); const isMaster = me?.role === "master";
+  const [del, setDel] = useState<{ count: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -46,14 +58,43 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
       emails: emails.map((e) => e.trim()).filter(Boolean), notes: notes.trim() || null,
     };
     setBusy(true);
+    let linked: { id: string; phone: string | null }[] = [];
+    if (customer) { try { linked = await linkedReservations(customer); } catch { /* ignora */ } }
     const { data, error } = customer
       ? await supabase.from("customers").update(row).eq("id", customer.id).select("*").single()
       : await supabase.from("customers").insert(row).select("*").single();
+    if (error) { setBusy(false); toast.error("Salvataggio non riuscito"); return; }
+    if (customer && linked.length) {
+      const keep = linked.filter((r) => ph.includes(normPhone(r.phone))).map((r) => r.id);
+      const fix = linked.filter((r) => !ph.includes(normPhone(r.phone))).map((r) => r.id);
+      const base = { name: row.name, customer_id: customer.id };
+      const res = await Promise.all([
+        keep.length ? supabase.from("reservations").update(base).in("id", keep) : null,
+        fix.length ? supabase.from("reservations").update({ ...base, phone: row.phone }).in("id", fix) : null,
+      ]);
+      if (res.some((r) => r?.error)) toast.error("Alcune prenotazioni non sono state aggiornate");
+    }
     setBusy(false);
-    if (error) { toast.error("Salvataggio non riuscito"); return; }
-    qc.invalidateQueries({ queryKey: ["customers"] });
+    qc.invalidateQueries();
     toast.success(customer ? "Scheda cliente aggiornata" : "Cliente aggiunto alla rubrica");
     if (!customer && data) onOpenChange(false);
+  };
+
+  const askDelete = async () => {
+    if (!customer) return;
+    try { setDel({ count: (await linkedReservations(customer)).length }); } catch { toast.error("Impossibile contare le prenotazioni"); }
+  };
+  const doDelete = async () => {
+    if (!customer) return;
+    setBusy(true);
+    try {
+      const ids = (await linkedReservations(customer)).map((r) => r.id);
+      if (ids.length) { const { error } = await supabase.from("reservations").delete().in("id", ids); if (error) throw error; }
+      const { error } = await supabase.from("customers").delete().eq("id", customer.id); if (error) throw error;
+      toast.success("Cliente e tutte le prenotazioni collegate eliminati con successo");
+      setDel(null); onOpenChange(false); qc.invalidateQueries();
+    } catch { toast.error("Eliminazione non riuscita"); }
+    setBusy(false);
   };
 
   const list = (vals: string[], set: (v: string[]) => void, ph: string, type: string, add: string, first: string) => (
@@ -105,6 +146,30 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
           {customer && onBook && <Button variant="outline" className="flex-1" onClick={() => onBook(customer)}>📅 Prenota</Button>}
           <Button className="flex-1" onClick={save} disabled={busy}>Salva</Button>
         </div>
+        {customer && isMaster && (
+          <Button variant="destructive" onClick={askDelete} disabled={busy}><Trash2 /> 🗑️ Elimina Cliente</Button>
+        )}
+        <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
+          <AlertDialogContent className="bg-paper">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive">⚠️ ATTENZIONE: ELIMINAZIONE DEFINITIVA</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2 text-sm">
+                  <p>Stai per eliminare definitivamente il cliente <b>{customer ? fullName(firstOf(customer), lastOf(customer)) || customer.name : ""}</b> dalla rubrica.</p>
+                  <p>Questa operazione cancellerà irrevocabilmente TUTTE le sue prenotazioni in agenda:</p>
+                  <ul className="list-disc pl-5"><li>Tutte le prenotazioni passate (storico visite)</li><li>Tutte le prenotazioni presenti e future già fissate</li></ul>
+                  <p className="font-semibold">Verranno eliminate {del?.count ?? 0} {del?.count === 1 ? "prenotazione collegata" : "prenotazioni collegate"}.</p>
+                  <p>Questa azione non può essere annullata. Vuoi davvero procedere?</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel autoFocus>Annulla</AlertDialogCancel>
+              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={busy}
+                onClick={(e) => { e.preventDefault(); void doDelete(); }}>Sì, elimina cliente e tutte le prenotazioni</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
