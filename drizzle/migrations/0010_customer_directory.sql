@@ -1,0 +1,3 @@
+ALTER TABLE public.customers ADD COLUMN first_name text NOT NULL DEFAULT '', ADD COLUMN last_name text NOT NULL DEFAULT '', ADD COLUMN extra_phones text[] NOT NULL DEFAULT '{}', ADD COLUMN emails text[] NOT NULL DEFAULT '{}';
+UPDATE public.customers SET first_name = split_part(trim(name),' ',1), last_name = trim(substr(trim(name), length(split_part(trim(name),' ',1))+1));
+ALTER TABLE public.reservations ADD COLUMN tags text[] NOT NULL DEFAULT '{}';
