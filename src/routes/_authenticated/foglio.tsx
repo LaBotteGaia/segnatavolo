@@ -4,7 +4,7 @@ import { it } from "date-fns/locale";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RestaurantGate } from "@/components/RestaurantGate";
-import { extrasText, shiftCounters, shiftName, tableLabel, useReservations, useRooms, useTables, type Shift } from "@/lib/data";
+import { compareTables, extrasText, shiftCounters, shiftName, tableLabel, useReservations, useRooms, useTables, type Shift } from "@/lib/data";
 import { useServiceNote, APP_NAME } from "@/lib/extras";
 
 export const Route = createFileRoute("/_authenticated/foglio")({
@@ -33,6 +33,16 @@ function Foglio() {
   const { data: note } = useServiceNote(d, s);
   const rows = res.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
   const c = shiftCounters(rows);
+  const cmp = compareTables(rooms);
+  const firstTable = (ids: string[]) => (tables ?? []).filter((t) => ids.includes(t.id)).sort(cmp)[0];
+  const groups = [
+    ...(rooms ?? []).map((room) => ({
+      key: room.id, title: room.name,
+      rows: rows.filter((r) => firstTable(r.table_ids)?.room_id === room.id)
+        .sort((a, b) => cmp(firstTable(a.table_ids)!, firstTable(b.table_ids)!) || (a.time || "99").localeCompare(b.time || "99")),
+    })),
+    { key: "none", title: "Tavolo da assegnare", rows: rows.filter((r) => !firstTable(r.table_ids)) },
+  ].filter((g) => g.rows.length);
   return (
     <div className="min-h-screen bg-background p-4 text-foreground print:p-0">
       <div className="mb-4 flex gap-2 print:hidden">
@@ -49,7 +59,9 @@ function Foglio() {
             <th className="p-1.5">Orario</th><th className="p-1.5">Tavolo</th><th className="p-1.5">Nome</th><th className="p-1.5">Coperti</th><th className="p-1.5">Richieste particolari / Intolleranze</th>
           </tr></thead>
           <tbody>
-            {rows.map((r) => (
+            {groups.map((g) => [
+              <tr key={g.key} className="border-b bg-muted/50"><td colSpan={5} className="p-1.5 font-display text-base font-bold">{g.title}</td></tr>,
+              ...g.rows.map((r) => (
               <tr key={r.id} className="border-b align-top">
                 <td className="p-1.5 tabular-nums">{r.time}</td>
                 <td className="p-1.5">{r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) : "—"}</td>
@@ -57,7 +69,7 @@ function Foglio() {
                 <td className="p-1.5 font-bold">{r.people}</td>
                 <td className={r.notes ? "bg-warning/30 p-1.5 font-bold" : "p-1.5"}>{r.notes}</td>
               </tr>
-            ))}
+            ))])}
             {!rows.length && <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Nessuna prenotazione</td></tr>}
           </tbody>
         </table>

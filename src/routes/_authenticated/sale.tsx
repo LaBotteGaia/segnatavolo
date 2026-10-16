@@ -72,6 +72,18 @@ function SalePage() {
     qc.invalidateQueries({ queryKey: ["tables"] });
   };
 
+  const moveRoom = async (r: Room, dir: -1 | 1) => {
+    const i = rooms.findIndex((x) => x.id === r.id), j = i + dir;
+    if (i < 0 || j < 0 || j >= rooms.length) return;
+    const next = [...rooms];
+    [next[i], next[j]] = [next[j], next[i]];
+    const ordered = next.map((x, k) => ({ ...x, sort_order: k }));
+    qc.setQueryData<Room[]>(["rooms"], ordered);
+    const results = await Promise.all(ordered.map((x) => supabase.from("rooms").update({ sort_order: x.sort_order }).eq("id", x.id)));
+    if (results.some((x) => x.error)) toast.error("Ordine delle sale non salvato");
+    refresh();
+  };
+
   const addRoom = async () => {
     if (!newRoom.trim()) return;
     const { data } = await supabase.from("rooms").insert({ name: newRoom.trim(), sort_order: rooms.length }).select().single();
@@ -132,6 +144,8 @@ function SalePage() {
           {room && (
             <>
               <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" disabled={rooms[0]?.id === room.id} onClick={() => moveRoom(room, -1)}>⬆️ Sposta su</Button>
+                <Button size="sm" variant="outline" disabled={rooms[rooms.length - 1]?.id === room.id} onClick={() => moveRoom(room, 1)}>⬇️ Sposta giù</Button>
                 <Input
                   key={room.id}
                   defaultValue={room.name}
