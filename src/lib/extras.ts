@@ -54,7 +54,7 @@ export function useCustomerHistory() {
     queryFn: async () => {
       const rows: HistoryRow[] = [];
       for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase.from("reservations").select("id,phone,date,shift,time,arrived,no_show").eq("restaurant_id", restaurantId ?? "").order("id").range(from, from + 999);
+        const { data, error } = await supabase.from("reservations").select("id,phone,date,shift,time,arrived,no_show,people,table_ids").eq("restaurant_id", restaurantId ?? "").order("id").range(from, from + 999);
         if (error) throw error;
         rows.push(...data);
         if (data.length < 1000) break;
