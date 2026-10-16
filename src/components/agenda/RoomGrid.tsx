@@ -58,7 +58,7 @@ export function RoomGrid({
       <button type="button" aria-label="Riduci" className="rounded border bg-card p-1" onClick={() => setZoom(cell / 1.2)}><Minus className="size-3.5" /></button>
       <button type="button" aria-label="Ingrandisci" className="rounded border bg-card p-1" onClick={() => setZoom(cell * 1.2)}><Plus className="size-3.5" /></button>
     </div>
-    <div ref={box} className="max-h-[65vh] overflow-auto rounded-md border border-rule/60 p-2">
+    <div ref={box} data-no-swipe className="max-h-[65vh] overflow-auto rounded-md border border-rule/60 p-2">
     <div className="relative select-none" style={{ width: cols * cell, height: rows * cell, fontSize: Math.max(9, cell / 4) }}>
       {Array.from({ length: rows * cols }).map((_, i) => {
         const x = i % cols, y = Math.floor(i / cols);
