@@ -114,6 +114,8 @@ function AgendaPage() {
   };
   const onSwipeStart = (e: TouchEvent) => {
     const el = e.target as HTMLElement;
+    // Niente sfoglio se c'è una finestra sovrapposta aperta (modali, drawer, tutorial) o se il tocco parte dalla mappa sala.
+    if (document.querySelector('[data-slot="dialog-content"], [data-slot="sheet-content"], [role="dialog"], [role="alertdialog"]')) { touch.current = null; return; }
     touch.current = el.closest("input, textarea, select, [data-no-swipe]") ? null : { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
   };
   const onSwipeEnd = (e: TouchEvent) => {
