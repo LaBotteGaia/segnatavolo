@@ -22,11 +22,26 @@ export const roomsQuery = () => ({
 export const tablesQuery = () => ({
   queryKey: ["tables"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("restaurant_tables").select("*").order("name");
+    const { data, error } = await supabase.from("restaurant_tables").select("*");
     if (error) throw error;
-    return data;
+    return [...data].sort((a, b) => compareTableNames(a.name, b.name));
   },
 });
+
+/** Ordine naturale dei tavoli: prima i nomi solo numerici (1, 2, 10), poi lettere/nomi in ordine alfabetico. */
+export function compareTableNames(a: string, b: string) {
+  const na = /^\s*\d+\s*$/.test(a), nb = /^\s*\d+\s*$/.test(b);
+  if (na && nb) return Number(a) - Number(b);
+  if (na !== nb) return na ? -1 : 1;
+  return a.trim().localeCompare(b.trim(), "it", { numeric: true, sensitivity: "base" });
+}
+
+/** Confronta tavoli: prima l'ordine delle sale configurato, poi l'ordine naturale del nome. */
+export function compareTables(rooms: { id: string }[] | undefined) {
+  const idx = new Map((rooms ?? []).map((r, i) => [r.id, i]));
+  return (a: { room_id: string; name: string }, b: { room_id: string; name: string }) =>
+    (idx.get(a.room_id) ?? 999) - (idx.get(b.room_id) ?? 999) || compareTableNames(a.name, b.name);
+}
 
 export const customersQuery = () => ({
   queryKey: ["customers"],
@@ -95,9 +110,8 @@ export function shiftCounters(rows: (Pick<Reservation, "people" | "outside" | "a
 export function tableLabel(ids: string[], tables: RTable[] | undefined, rooms: Room[] | undefined) {
   if (!ids.length || !tables) return "";
   const byRoom = new Map<string, string[]>();
-  for (const id of ids) {
-    const t = tables.find((x) => x.id === id);
-    if (!t) continue;
+  const picked = ids.map((id) => tables.find((x) => x.id === id)).filter((t): t is RTable => !!t).sort(compareTables(rooms));
+  for (const t of picked) {
     const list = byRoom.get(t.room_id) ?? [];
     list.push(t.name);
     byRoom.set(t.room_id, list);

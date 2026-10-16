@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { rangesOf, shiftName, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
+import { compareTables, rangesOf, shiftName, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
 import { Link } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
@@ -16,7 +16,7 @@ export function useShiftAvailability(date: string, shift: Shift, rows: Reservati
   const cfg = { duration: settings.duration, buffer: settings.buffer };
   const openRooms = rooms.filter((r) => !isRoomClosedFor(r, date, shift));
   const tables = allTables.filter((t) => openRooms.some((r) => r.id === t.room_id))
-    .sort((a, b) => rooms.findIndex((r) => r.id === a.room_id) - rooms.findIndex((r) => r.id === b.room_id) || a.name.localeCompare(b.name, "it", { numeric: true }));
+    .sort(compareTables(rooms));
   const av = shiftAvailability(tables, rows, shift, ranges, cfg);
   const busyIds = new Set(rows.filter((r) => !r.no_show).flatMap((r) => r.table_ids));
   const seats = tables.reduce((a, t) => a + t.seats, 0);

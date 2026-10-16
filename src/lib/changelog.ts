@@ -3,6 +3,15 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.5.1-alpha",
+    date: "16 ottobre 2026",
+    items: [
+      "In Gestione Sale e Mappe riordini le sale con \"⬆️ Sposta su\" e \"⬇️ Sposta giù\": l'ordine viene salvato e usato in tutta l'app.",
+      "I tavoli di ogni sala sono in ordine naturale: prima i numeri (1, 2, 3 … 10, 11), poi lettere e nomi in ordine alfabetico.",
+      "Foglio di Sala raggruppato per sala, Situazione Tavoli e scelta tavoli seguono lo stesso ordine.",
+    ],
+  },
+  {
     version: "v0.5.0-alpha",
     date: "15 ottobre 2026",
     items: [
