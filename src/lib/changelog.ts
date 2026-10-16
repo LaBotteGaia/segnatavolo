@@ -3,6 +3,15 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.8.0-alpha",
+    date: "16 ottobre 2026",
+    items: [
+      "Pallino di stato connessione accanto al numero di versione (menù ☰ e fondo agenda): 🟢 verde connesso, 🟡 giallo connessione lenta o in riconnessione, 🔴 rosso disconnesso.",
+      "Controllo automatico all'avvio, ogni 60 secondi, quando la finestra torna in primo piano e quando salta/torna internet.",
+      "Toccando il pallino si apre il dettaglio \"Stato Connessione Database\" con tempo di risposta in ms, eventuale errore e pulsante \"🔄 Testa connessione adesso\".",
+    ],
+  },
+  {
     version: "v0.7.0-alpha",
     date: "16 ottobre 2026",
     items: [

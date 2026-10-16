@@ -20,6 +20,7 @@ import { NewReservationDialog, type NewReservationInput } from "@/components/age
 import { Plus, Printer } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
+import { ConnectionDot } from "@/components/ConnectionDot";
 import { WhatsNew } from "@/components/ChangelogDialog";
 import { TutorialAutoOpen } from "@/components/TutorialDialog";
 import { APP_NAME } from "@/lib/extras";
@@ -361,7 +362,7 @@ function AgendaPage() {
       </main>
       <WhatsNew />
       <TutorialAutoOpen />
-      <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /></footer>
+      <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} />
       <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
         rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />

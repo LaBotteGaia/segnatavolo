@@ -17,6 +17,7 @@ import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership } from "@/lib/membership";
 import { APP_NAME, toCsv } from "@/lib/extras";
 import { VersionBadge } from "@/components/agenda/Extras";
+import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
@@ -64,7 +65,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
         <SheetContent side="right" className="flex w-80 flex-col gap-0 p-0">
           <SheetHeader className="border-b p-5 text-left">
             <SheetTitle className="sr-only">Menù</SheetTitle>
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{APP_NAME} <VersionBadge /></div>
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{APP_NAME} <VersionBadge /> <ConnectionDot /></div>
             {me && (
               <div className="min-w-0">
                 <div className="truncate font-display text-xl text-primary">{me.name || me.email}</div>
