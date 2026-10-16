@@ -3,6 +3,14 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.7.0-alpha",
+    date: "16 ottobre 2026",
+    items: [
+      "Lo swipe per sfogliare l'agenda si disattiva del tutto quando è aperta una finestra (prenotazione, mappa tavoli, cliente, guida) e non scatta mai partendo dalla mappa della sala.",
+      "❓ Guida Rapida a carosello in 5 schede (agenda, arrivi, mappa e sponde, rotazione, rubrica): si apre da sola al primo accesso e si riapre dal menù ☰, con pallini, Avanti/Indietro e \"Salta guida\".",
+    ],
+  },
+  {
     version: "v0.6.1-alpha",
     date: "16 ottobre 2026",
     items: [
