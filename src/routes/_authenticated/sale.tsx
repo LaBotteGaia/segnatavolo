@@ -76,7 +76,7 @@ function SalePage() {
     const i = rooms.findIndex((x) => x.id === r.id), j = i + dir;
     if (i < 0 || j < 0 || j >= rooms.length) return;
     const next = [...rooms];
-    [next[i], next[j]] = [next[j], next[i]];
+    next.splice(j, 0, next.splice(i, 1)[0]!);
     const ordered = next.map((x, k) => ({ ...x, sort_order: k }));
     qc.setQueryData<Room[]>(["rooms"], ordered);
     const results = await Promise.all(ordered.map((x) => supabase.from("rooms").update({ sort_order: x.sort_order }).eq("id", x.id)));
