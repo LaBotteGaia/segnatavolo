@@ -20,6 +20,7 @@ import { NewReservationDialog, type NewReservationInput } from "@/components/age
 import { Plus, Printer } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
+import { ConnectionDot } from "@/components/ConnectionDot";
 import { WhatsNew } from "@/components/ChangelogDialog";
 import { TutorialAutoOpen } from "@/components/TutorialDialog";
 import { APP_NAME } from "@/lib/extras";
