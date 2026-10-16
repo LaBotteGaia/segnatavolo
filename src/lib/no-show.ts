@@ -1,6 +1,6 @@
 import { normPhone, type Ranges, type Reservation } from "./data";
 
-export type HistoryRow = Pick<Reservation, "id" | "phone" | "date" | "shift" | "time" | "arrived"> & { no_show?: boolean };
+export type HistoryRow = Pick<Reservation, "id" | "phone" | "date" | "shift" | "time" | "arrived"> & { no_show?: boolean; people?: number; table_ids?: string[] };
 export type Reliability = { count: number; noShows: number; last: string | null; lastNoShow: boolean };
 
 /** Restaurant service dates and deadlines use the restaurant's Italian timezone. */

@@ -81,6 +81,9 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
               <span className="flex-1 text-sm">🔔 Notifiche nuove prenotazioni</span>
               <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />
             </label>
+            <Link to="/rubrica" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left font-semibold hover:bg-accent [&_svg]:size-4">
+              <Users /> 👥 Rubrica Clienti
+            </Link>
             <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>📥 Esporta Dati (Backup)</MenuItem>
             {isMaster && (
               <>

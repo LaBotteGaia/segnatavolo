@@ -43,6 +43,7 @@ export function ReservationRow({
   const [time, setTime] = useState(r.time);
   const [phone, setPhone] = useState(r.phone ?? "");
   const [people, setPeople] = useState(String(r.people));
+  const [adv, setAdv] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const [timeBad, setTimeBad] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -152,23 +153,6 @@ export function ReservationRow({
           </div>
 
           <div>
-            <div className={lbl}>Permanenza al tavolo</div>
-            <div className="flex flex-wrap gap-1">
-              {[...DURATION_PRESETS, WHOLE_EVENING].map((d) => (
-                <button key={d} type="button" onClick={() => onUpdate({ duration_min: d })}
-                  className={cn("rounded-md border px-2 py-1 text-xs font-semibold", dur === d ? "bg-primary text-primary-foreground" : "bg-paper")}>
-                  {d < 0 ? "Tutta la sera / No rotazione" : durLabel(d)}
-                </button>
-              ))}
-            </div>
-            <label className="mt-2 flex items-center gap-2 text-xs">Buffer pulizia
-              <select value={buf} onChange={(e) => onUpdate({ buffer_min: Number(e.target.value) })} className="rounded-md border bg-paper px-2 py-1">
-                {[0, 5, 10, 15, 20, 30, 45].map((m) => <option key={m} value={m}>{m} min</option>)}
-              </select>
-            </label>
-          </div>
-
-          <div>
             <div className={lbl}>Richieste particolari</div>
             <input value={notes} placeholder="Allergie, intolleranze, note…" onChange={(e) => setNotes(e.target.value)}
               onBlur={() => notes !== r.notes && onUpdate({ notes })}
@@ -185,10 +169,35 @@ export function ReservationRow({
             {r.no_show ? "Annulla No-Show manuale" : noShow ? "No-Show rilevato a fine servizio" : "Segna come No-Show"}
           </Button>}
 
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={() => setMoveOpen(true)}><CalendarDays /> 📅 Sposta data</Button>
-            <Button variant="outline" onClick={() => setDupOpen(true)}><Copy /> 📋 Duplica</Button>
+          <Button variant="outline" className="w-full" onClick={() => setMoveOpen(true)}><CalendarDays /> 📅 Sposta data</Button>
+
+          <button type="button" onClick={() => setAdv(!adv)} className="text-left text-sm font-semibold text-muted-foreground hover:text-foreground">
+            {adv ? "▴ Nascondi opzioni avanzate" : "⚙️ Mostra opzioni avanzate ▾"}
+          </button>
+          {adv && (
+            <div className="space-y-3 rounded-md border border-dashed p-3">
+          <div>
+            <div className={lbl}>Permanenza al tavolo</div>
+            <div className="flex flex-wrap gap-1">
+              {[...DURATION_PRESETS, WHOLE_EVENING].map((d) => (
+                <button key={d} type="button" onClick={() => onUpdate({ duration_min: d })}
+                  className={cn("rounded-md border px-2 py-1 text-xs font-semibold", dur === d ? "bg-primary text-primary-foreground" : "bg-paper")}>
+                  {d < 0 ? "Tutta la sera / No rotazione" : durLabel(d)}
+                </button>
+              ))}
+            </div>
+            <label className="mt-2 flex items-center gap-2 text-xs">Buffer pulizia
+              <select value={buf} onChange={(e) => onUpdate({ buffer_min: Number(e.target.value) })} className="rounded-md border bg-paper px-2 py-1">
+                {[0, 5, 10, 15, 20, 30, 45].map((m) => <option key={m} value={m}>{m} min</option>)}
+              </select>
+            </label>
           </div>
+
+              <Button variant="outline" size="sm" onClick={() => setTableOpen(true)}>+ Sponda / + Barella (dalla mappa tavoli)</Button>
+              <Button variant="outline" className="w-full" onClick={() => setDupOpen(true)}><Copy /> 📋 Duplica prenotazione</Button>
+              {r.tags?.length > 0 && <p className="text-xs">Etichette: {r.tags.join(", ")}</p>}
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2 border-t border-dashed pt-3">
             <Button variant="secondary" onClick={() => setOpen(false)}><ArrowLeft /> Torna all'agenda</Button>

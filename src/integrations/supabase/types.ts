@@ -17,7 +17,11 @@ export type Database = {
       customers: {
         Row: {
           created_at: string
+          emails: string[]
+          extra_phones: string[]
+          first_name: string
           id: string
+          last_name: string
           name: string
           notes: string | null
           phone: string | null
@@ -25,7 +29,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          emails?: string[]
+          extra_phones?: string[]
+          first_name?: string
           id?: string
+          last_name?: string
           name: string
           notes?: string | null
           phone?: string | null
@@ -33,7 +41,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          emails?: string[]
+          extra_phones?: string[]
+          first_name?: string
           id?: string
+          last_name?: string
           name?: string
           notes?: string | null
           phone?: string | null
@@ -72,6 +84,7 @@ export type Database = {
           restaurant_id: string | null
           shift: string
           table_ids: string[]
+          tags: string[]
           time: string
         }
         Insert: {
@@ -96,6 +109,7 @@ export type Database = {
           restaurant_id?: string | null
           shift: string
           table_ids?: string[]
+          tags?: string[]
           time?: string
         }
         Update: {
@@ -120,6 +134,7 @@ export type Database = {
           restaurant_id?: string | null
           shift?: string
           table_ids?: string[]
+          tags?: string[]
           time?: string
         }
         Relationships: [

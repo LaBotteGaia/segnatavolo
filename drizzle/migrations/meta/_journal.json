@@ -71,6 +71,13 @@
       "when": 1792090888206,
       "tag": "0009_room_closed_shifts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792161628251,
+      "tag": "0010_customer_directory",
+      "breakpoints": true
     }
   ]
 }
