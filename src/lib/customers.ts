@@ -79,3 +79,8 @@ export function habits(rows: (HistoryRow & { people?: number; table_ids?: string
     avgPeople: ppl.length ? Math.round((ppl.reduce((a, b) => a + b, 0) / ppl.length) * 10) / 10 : null,
   };
 }
+
+/** Una prenotazione appartiene al cliente se è collegata per id o per uno dei suoi telefoni. */
+export function isLinkedReservation(c: Pick<Customer, "id" | "phone" | "extra_phones">, r: { customer_id: string | null; phone: string | null }) {
+  return r.customer_id === c.id || (!!normPhone(r.phone) && phonesOf(c).includes(normPhone(r.phone)));
+}

@@ -3,6 +3,14 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.6.1-alpha",
+    date: "16 ottobre 2026",
+    items: [
+      "Modificando nome, cognome o telefoni nella scheda cliente si aggiornano subito tutte le sue prenotazioni in agenda e sul Foglio di Sala.",
+      "🗑️ Elimina Cliente (solo Master) con avviso di eliminazione definitiva: cancella il cliente e tutte le sue prenotazioni, liberando i tavoli.",
+    ],
+  },
+  {
     version: "v0.6.0-alpha",
     date: "16 ottobre 2026",
     items: [

@@ -14,3 +14,10 @@ describe("rubrica", () => {
   });
   it("lettera indice senza accenti", () => { expect(initialOf("Èrica")).toBe("E"); });
 });
+import { isLinkedReservation } from "@/lib/customers";
+describe("collegamento prenotazioni", () => {
+  const cu = { id: "c1", phone: "333 111", extra_phones: ["347-22"] };
+  it("per id", () => { expect(isLinkedReservation(cu, { customer_id: "c1", phone: null })).toBe(true); });
+  it("per telefono secondario normalizzato", () => { expect(isLinkedReservation(cu, { customer_id: null, phone: "34722" })).toBe(true); });
+  it("altro cliente no", () => { expect(isLinkedReservation(cu, { customer_id: "x", phone: "999" })).toBe(false); });
+});
