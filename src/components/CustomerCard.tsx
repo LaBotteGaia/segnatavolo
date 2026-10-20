@@ -147,7 +147,7 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
           <Button className="flex-1" onClick={save} disabled={busy}>Salva</Button>
         </div>
         {customer && isMaster && (
-          <Button variant="destructive" onClick={askDelete} disabled={busy}><Trash2 /> 🗑️ Elimina Cliente</Button>
+          <Button variant="destructive" onClick={askDelete} disabled={busy}><Trash2 /> Elimina Cliente</Button>
         )}
         <AlertDialog open={!!del} onOpenChange={(o) => !o && setDel(null)}>
           <AlertDialogContent className="bg-paper">

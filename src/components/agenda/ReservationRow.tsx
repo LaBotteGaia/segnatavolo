@@ -1,3 +1,7 @@
+import { formatInTimeZone } from "@/lib/audit";
+import { DateWarning } from "./DateWarning";
+import { reservationDateWarning } from "@/lib/date-warning";
+import { useLiveRow } from "@/lib/live-sync";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LoyaltyBox } from "./Extras";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +41,15 @@ export function ReservationRow({
   const { data: tables } = useTables();
   const settings = useSettings();
   const now = useServiceClock();
+  const liveChange = useLiveRow(r.id);
+  const [acknowledged, setAcknowledged] = useState<string | null>(null);
+  const [pendingTime, setPendingTime] = useState<Partial<Reservation> | null>(null);
+  const warning = reservationDateWarning(r.date, (pendingTime?.shift ?? r.shift) as Shift, pendingTime?.time ?? r.time, rangesOf(settings), now);
+  const confirmTime = (patch: Partial<Reservation>) => {
+    const w = reservationDateWarning(r.date, (patch.shift ?? r.shift) as Shift, patch.time ?? r.time, rangesOf(settings), now);
+    if (w && acknowledged !== w.key) { setPendingTime(patch); return; }
+    onUpdate(patch);
+  };
   const noShow = isNoShow(r, rangesOf(settings), now);
   const setArrived = (v: boolean) => onUpdate({ arrived: v, no_show: false });
   const [open, setOpen] = useState(false);
@@ -71,15 +84,15 @@ export function ReservationRow({
       toast.error(res.error); setTime(r.time); setTimeBad(true); return;
     }
     setTimeBad(false);
-    if (res.kind === "save") { if (res.time !== r.time) onUpdate({ time: res.time }); return; }
-    toast(res.message, { duration: 6000, action: { label: res.actionLabel, onClick: () => onUpdate({ time: res.time, shift: res.shift }) } });
+    if (res.kind === "save") { if (res.time !== r.time) confirmTime({ time: res.time }); return; }
+    toast(res.message, { duration: 6000, action: { label: res.actionLabel, onClick: () => confirmTime({ time: res.time, shift: res.shift }) } });
     setTime(r.time);
   };
 
   const lbl = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
 
   return (
-    <div ref={rowRef} className={cn("relative ruled-row scroll-mt-64 agenda-wide:scroll-mt-20", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
+    <div ref={rowRef} className={cn("relative ruled-row scroll-mt-64 agenda-wide:scroll-mt-20", liveChange && "live-row-flash", highlight && "rounded-sm ring-2 ring-primary bg-primary/10", mismatch && "rounded-sm ring-2 ring-warning ring-inset bg-warning/10")}>
       <div className={cn(ROW_GRID, "relative min-h-11")}>
         <div className="relative z-10 grid min-h-11 place-items-center">
           <Checkbox className="size-6 bg-paper" aria-label={`Arrivato: ${r.name}`} checked={r.arrived} onCheckedChange={(v) => setArrived(v === true)} />
@@ -111,12 +124,13 @@ export function ReservationRow({
         <div className="space-y-3 border-t border-dashed px-1 pb-4 pt-3 animate-in fade-in slide-in-from-top-1">
           {mismatch && (
             <div className="flex items-center gap-2 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm font-semibold">
-              <AlertTriangle className="size-4 shrink-0 text-destructive" /> ⚠️ {mismatchText(mismatch)}
+              <AlertTriangle className="size-4 shrink-0 text-destructive" /> {mismatchText(mismatch)}
             </div>
           )}
           <div className="font-display text-xl">{r.name || "—"}</div>
           <LoyaltyBox customerId={r.customer_id} phone={r.phone} />
 
+          <DateWarning warning={warning} acknowledged={!!warning && acknowledged === warning.key} onAcknowledge={(v) => { setAcknowledged(v ? warning?.key ?? null : null); if (v && pendingTime) { onUpdate(pendingTime); setPendingTime(null); } }} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className={lbl}>Orario</div>
@@ -141,8 +155,8 @@ export function ReservationRow({
               onBlur={() => { const normalized = phone.replace(/[\s\-.\/()]/g, ""); setPhone(normalized); if (normalized !== (r.phone ?? "")) { onUpdate({ phone: normalized }); onCustomerPhone(normalized); } }} />;
               return r.phone ? <div className="flex min-h-10 items-center rounded-md border bg-paper px-3"><MaskedPhone phone={r.phone}>{inp}</MaskedPhone></div> : inp(); })()}
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Button asChild variant="outline" disabled={!phone}><a href={`tel:${phone}`}><Phone /> 📞 Chiama</a></Button>
-              <Button asChild variant="outline" disabled={!phone}><a href={whatsappLink(phone, r)} target="_blank" rel="noreferrer"><MessageCircle /> 💬 WhatsApp</a></Button>
+              <Button asChild variant="outline" disabled={!phone}><a href={`tel:${phone}`}><Phone /> Chiama</a></Button>
+              <Button asChild variant="outline" disabled={!phone}><a href={whatsappLink(phone, r)} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp</a></Button>
             </div>
           </div>
 
@@ -171,7 +185,7 @@ export function ReservationRow({
             {r.no_show ? "Annulla No-Show manuale" : noShow ? "No-Show rilevato a fine servizio" : "Segna come No-Show"}
           </Button>}
 
-          <Button variant="outline" className="w-full" onClick={() => setMoveOpen(true)}><CalendarDays /> 📅 Sposta data</Button>
+          <Button variant="outline" className="w-full" onClick={() => setMoveOpen(true)}><CalendarDays /> Sposta data</Button>
 
           <button type="button" onClick={() => setAdv(!adv)} className="text-left text-sm font-semibold text-muted-foreground hover:text-foreground">
             {adv ? "▴ Nascondi opzioni avanzate" : "⚙️ Mostra opzioni avanzate ▾"}
@@ -196,11 +210,15 @@ export function ReservationRow({
           </div>
 
               <Button variant="outline" size="sm" onClick={() => setTableOpen(true)}>+ Sponda / + Barella (dalla mappa tavoli)</Button>
-              <Button variant="outline" className="w-full" onClick={() => setDupOpen(true)}><Copy /> 📋 Duplica prenotazione</Button>
+              <Button variant="outline" className="w-full" onClick={() => setDupOpen(true)}><Copy /> Duplica prenotazione</Button>
               {r.tags?.length > 0 && <p className="text-xs">Etichette: {r.tags.join(", ")}</p>}
             </div>
           )}
 
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>📝 Presa da: {r.created_by_name || "Operatore non registrato"} il {formatInTimeZone(r.created_at)}</p>
+            {r.updated_at && <p>✏️ Ultima modifica: {r.updated_by_name || "Operatore non registrato"} il {formatInTimeZone(r.updated_at)}</p>}
+          </div>
           <div className="flex items-center justify-between gap-2 border-t border-dashed pt-3">
             <Button variant="secondary" onClick={() => setOpen(false)}><ArrowLeft /> Torna all'agenda</Button>
             {confirmDel ? (

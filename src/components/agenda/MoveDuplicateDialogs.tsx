@@ -1,3 +1,6 @@
+import { DateWarning } from "./DateWarning";
+import { reservationDateWarning } from "@/lib/date-warning";
+import { useServiceClock } from "@/lib/extras";
 import { useEffect, useState, type ReactNode } from "react";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
@@ -37,10 +40,13 @@ export function MoveDialog({ open, onOpenChange, r, dayExtra, onConfirm }: {
   onConfirm: (v: { date: string; shift: Shift; time: string }) => void;
 }) {
   const settings = useSettings();
+  const now = useServiceClock();
+  const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>();
   const [shift, setShift] = useState<Shift>(r.shift as Shift);
   const [time, setTime] = useState(r.time);
-  useEffect(() => { if (open) { setDate(undefined); setShift(r.shift as Shift); setTime(r.time); } }, [open, r]);
+  const warning = date ? reservationDateWarning(format(date, "yyyy-MM-dd"), shift, time, rangesOf(settings), now) : null;
+  useEffect(() => { if (open) { setAcknowledged(null); setDate(undefined); setShift(r.shift as Shift); setTime(r.time); } }, [open, r]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto">
@@ -56,9 +62,10 @@ export function MoveDialog({ open, onOpenChange, r, dayExtra, onConfirm }: {
         {r.table_ids.length > 0 && (
           <p className="rounded-md border border-warning bg-warning/15 px-3 py-2 text-sm">⚠️ Nella nuova data i tavoli possono essere occupati: il tavolo tornerà "Da assegnare".</p>
         )}
+        <DateWarning warning={warning} acknowledged={!!warning && acknowledged === warning.key} onAcknowledge={(v) => setAcknowledged(v ? warning?.key ?? null : null)} />
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
-          <Button disabled={!date || !time} onClick={() => date && onConfirm({ date: format(date, "yyyy-MM-dd"), shift, time })}>
+          <Button disabled={!date || !time || (!!warning && acknowledged !== warning.key)} onClick={() => date && onConfirm({ date: format(date, "yyyy-MM-dd"), shift, time })}>
             {date ? `Sposta al ${format(date, "d MMM", { locale: it })}` : "Scegli una data"}
           </Button>
         </DialogFooter>
@@ -72,11 +79,14 @@ export function DuplicateDialog({ open, onOpenChange, r, dayExtra, onConfirm }: 
   onConfirm: (v: { dates: string[]; shift: Shift; time: string }) => Promise<void>;
 }) {
   const settings = useSettings();
+  const now = useServiceClock();
+  const [acknowledged, setAcknowledged] = useState<string[]>([]);
   const [dates, setDates] = useState<Date[]>([]);
   const [shift, setShift] = useState<Shift>(r.shift as Shift);
   const [time, setTime] = useState(r.time);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (open) { setDates([]); setShift(r.shift as Shift); setTime(r.time); } }, [open, r]);
+  const warnings = dates.map((d) => reservationDateWarning(format(d, "yyyy-MM-dd"), shift, time, rangesOf(settings), now)).filter((w) => w !== null);
+  useEffect(() => { if (open) { setAcknowledged([]); setDates([]); setShift(r.shift as Shift); setTime(r.time); } }, [open, r]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto">
@@ -92,9 +102,10 @@ export function DuplicateDialog({ open, onOpenChange, r, dayExtra, onConfirm }: 
         <p className={cn("text-sm", dates.length ? "font-semibold text-primary" : "text-muted-foreground")}>
           {dates.length ? `${dates.length} ${dates.length === 1 ? "data selezionata" : "date selezionate"}` : "Nessuna data selezionata"}
         </p>
+        {warnings.map((w) => <DateWarning key={w.key} warning={w} acknowledged={acknowledged.includes(w.key)} onAcknowledge={(v) => setAcknowledged((old) => v ? [...old, w.key] : old.filter((key) => key !== w.key))} />)}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
-          <Button disabled={!dates.length || !time || busy} onClick={async () => {
+          <Button disabled={warnings.some((w) => !acknowledged.includes(w.key)) || !dates.length || !time || busy} onClick={async () => {
             setBusy(true);
             await onConfirm({ dates: dates.map((d) => format(d, "yyyy-MM-dd")).sort(), shift, time });
             setBusy(false);

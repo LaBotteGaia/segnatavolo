@@ -40,6 +40,7 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
 
   const createInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) { toast.error("Inserisci il nome o nickname di sala"); return; }
     const { data, error } = await supabase
       .from("restaurant_invites")
       .insert({ restaurant_id: me.restaurant_id, name: name.trim(), email: email.trim().toLowerCase(), role })
@@ -69,7 +70,7 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
           <h3 className="font-semibold">Invita nuovo utente</h3>
           <form onSubmit={createInvite} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <div>
-              <Label htmlFor="in">Nome</Label>
+              <Label htmlFor="in">Nome o Nickname di Sala</Label>
               <Input id="in" required value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>

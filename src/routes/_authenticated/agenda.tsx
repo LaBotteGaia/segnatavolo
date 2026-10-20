@@ -1,3 +1,4 @@
+import { EmergencyButton } from "@/components/EmergencyButton";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -142,6 +143,7 @@ function AgendaPage() {
       toast.error("Salvataggio non riuscito");
       qc.invalidateQueries({ queryKey: key });
     }
+    qc.invalidateQueries({ queryKey: key });
     qc.invalidateQueries({ queryKey: ["customer-history"] });
     qc.invalidateQueries({ queryKey: ["search"] });
     qc.invalidateQueries({ queryKey: ["reservations-month"] });
@@ -262,8 +264,9 @@ function AgendaPage() {
         </header>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>
-          <Button asChild size="sm" variant="outline"><Link to="/foglio" search={{ d: date, s: shift }}><Printer /> 🖨️ Foglio di Sala</Link></Button>
+          <Button asChild size="sm" variant="outline"><Link to="/foglio" search={{ d: date, s: shift }}><Printer /> Foglio di Sala</Link></Button>
         </div>
+        <EmergencyButton date={date} shifts={[shift]} className="mb-2 h-auto w-full justify-start py-2" />
         <ServiceNotes date={date} shift={shift} />
         <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
         <Button className="mb-3 hidden w-full agenda-wide:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
@@ -301,7 +304,7 @@ function AgendaPage() {
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
           <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
-            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+            <AppMenu emergencyDate={date} emergencyShifts={shifts} triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
           <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1">
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">

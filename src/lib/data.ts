@@ -1,5 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -71,20 +70,6 @@ export function useCustomers() {
   return useQuery(customersQuery());
 }
 export function useReservations(date: string) {
-  const qc = useQueryClient();
-  useEffect(() => {
-    const ch = supabase
-      .channel(`res-${date}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => {
-        qc.invalidateQueries({ queryKey: ["reservations", date] });
-        qc.invalidateQueries({ queryKey: ["reservations-month"] });
-        qc.invalidateQueries({ queryKey: ["search"] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [date, qc]);
   return useQuery(reservationsQuery(date));
 }
 

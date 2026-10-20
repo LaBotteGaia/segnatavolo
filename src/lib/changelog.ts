@@ -3,6 +3,18 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.7.0-alpha",
+    date: "20 ottobre 2026",
+    items: [
+      "Sincronizzazione condivisa di prenotazioni e rubrica con breve evidenziazione delle righe aggiornate.",
+      "Avvisi per date o orari trascorsi e prenotazioni oltre sei mesi: presa visione prima di confermare.",
+      "Nome o Nickname di Sala obbligatorio e indicazione di chi ha preso e modificato la prenotazione.",
+      "Protezione delle micro-disconnessioni: copia locale dell’agenda per un minuto, stato connessione e supporto offline nell’app pubblicata.",
+      "Esporta Piano di Sala (Emergenza): file HTML locale, stampabile in bianco e nero, con mappe, tavoli e assegnazioni.",
+      "Icone ridondanti rimosse; versione richiesta v0.7.0-alpha senza rimuovere le funzioni già presenti.",
+    ],
+  },
+  {
     version: "v0.9.0-alpha",
     date: "20 ottobre 2026",
     items: [
@@ -21,7 +33,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: "v0.7.0-alpha",
+    version: "v0.7.0-alpha (16 ottobre)",
     date: "16 ottobre 2026",
     items: [
       "Lo swipe per sfogliare l'agenda si disattiva del tutto quando è aperta una finestra (prenotazione, mappa tavoli, cliente, guida) e non scatta mai partendo dalla mappa della sala.",
