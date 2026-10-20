@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { CustomerCard } from "@/components/CustomerCard";
 import { AppMenu } from "@/components/AppMenu";
+import { MaskedPhone } from "@/components/MaskedPhone";
 import { rangesOf, useCustomers, type Customer } from "@/lib/data";
 import { useSettings } from "@/lib/membership";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
@@ -80,7 +81,7 @@ function Rubrica() {
                 <button type="button" onClick={() => setCard({ c })} className="min-w-0 flex-1 text-left">
                   <div className="truncate font-semibold">{displayName(c)}</div>
                   <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                    <span>{c.phone || "senza telefono"}</span>
+                    <MaskedPhone phone={c.phone} />
                     <span className="rounded-full bg-muted px-2 text-xs">{s?.visits ?? 0} {s?.visits === 1 ? "visita" : "visite"}</span>
                     {!!s?.noShows && <span className="rounded-full bg-destructive/15 px-2 text-xs font-semibold text-destructive">⚠️ {s.noShows} No-Show</span>}
                   </div>

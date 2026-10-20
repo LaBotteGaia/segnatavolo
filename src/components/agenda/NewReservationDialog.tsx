@@ -20,6 +20,7 @@ import { TableDialog } from "./TableDialog";
 import { useMembership, useSettings } from "@/lib/membership";
 import { outsideClosed, DURATION_PRESETS, WHOLE_EVENING, durLabel } from "@/lib/rotation";
 import { matchesSearch, phonesOf } from "@/lib/customers";
+import { maskPhone } from "@/lib/privacy";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { reliabilityStats } from "@/lib/no-show";
 
@@ -184,7 +185,7 @@ export function NewReservationDialog({
                   <li key={c.id}>
                     <button type="button" onMouseDown={() => { setName(c.name); setPickedId(c.id); if (c.phone) setPhone(c.phone); fillNotes(c); }} className="w-full px-3 py-2 text-left hover:bg-accent">
                       <span className="font-hand text-lg">{c.name}</span>
-                      <span className={cn("text-sm", stats.lastNoShow ? "text-destructive" : "text-muted-foreground")}> - {c.phone || "senza telefono"} (Ultima visita: {stats.last ? `${stats.lastNoShow ? "Mancata presentazione · " : ""}${format(parseISO(stats.last), "d MMM yyyy", { locale: it })}` : "mai"})</span>
+                      <span className={cn("text-sm", stats.lastNoShow ? "text-destructive" : "text-muted-foreground")}> - {c.phone ? (settings.privacy ? maskPhone(c.phone) : c.phone) : "senza telefono"} (Ultima visita: {stats.last ? `${stats.lastNoShow ? "Mancata presentazione · " : ""}${format(parseISO(stats.last), "d MMM yyyy", { locale: it })}` : "mai"})</span>
                     </button>
                   </li>
                 ); })}

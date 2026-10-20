@@ -1,3 +1,4 @@
+import { maskPhone } from "@/lib/privacy";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -82,6 +83,7 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
                 {format(parseISO(r.date), "EEE d MMM yyyy", { locale: it })} · {shiftName(r.shift as Shift)} {r.time}
                 {r.table_ids.length ? ` · ${tableLabel(r.table_ids, tables, rooms)}` : " · Tavolo da assegnare"}
               </div>
+              {r.phone && <div className="text-xs text-muted-foreground">📞 {settings.privacy ? maskPhone(r.phone) : r.phone}</div>}
               {reliabilityStats(history, r.phone, rangesOf(settings), now).noShows > 0 && <NoShowAlert />}
             </button>
           ))}
