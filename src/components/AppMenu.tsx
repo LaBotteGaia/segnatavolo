@@ -209,6 +209,12 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           </section>
 
           <section className="space-y-2">
+            <h3 className="font-display text-lg">Privacy</h3>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="size-5" checked={st.privacy} onChange={(e) => setSt((o) => ({ ...o, privacy: e.target.checked }))} /> Modalità Privacy al banco (Maschera numeri telefonici)</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="size-5" checked={st.printPhones} onChange={(e) => setSt((o) => ({ ...o, printPhones: e.target.checked }))} /> Mostra numeri completi sul Foglio di Sala stampato</label>
+          </section>
+
+          <section className="space-y-2">
             <h3 className="font-display text-lg">Chiusure settimanali</h3>
             <p className="text-xs text-muted-foreground">Tocca i turni in cui il ristorante è chiuso.</p>
             {WEEKDAYS.map(([d, label]) => {

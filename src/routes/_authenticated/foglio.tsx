@@ -1,3 +1,5 @@
+import { useSettings } from "@/lib/membership";
+import { maskPhone } from "@/lib/privacy";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
@@ -29,6 +31,7 @@ function Foglio() {
   const { d, s } = Route.useSearch();
   const { data: res = [] } = useReservations(d);
   const { data: rooms } = useRooms();
+  const settings = useSettings();
   const { data: tables } = useTables();
   const { data: note } = useServiceNote(d, s);
   const rows = res.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
@@ -65,7 +68,7 @@ function Foglio() {
               <tr key={r.id} className="border-b align-top">
                 <td className="p-1.5 tabular-nums">{r.time}</td>
                 <td className="p-1.5">{r.table_ids.length ? tableLabel(r.table_ids, tables, rooms) + extrasText(r) : "—"}</td>
-                <td className="p-1.5">{r.name}{r.outside ? " (Fuori)" : ""}</td>
+                <td className="p-1.5">{r.name}{r.outside ? " (Fuori)" : ""}{r.phone && <div className="text-xs tabular-nums">📞 {settings.printPhones ? r.phone : maskPhone(r.phone)}</div>}</td>
                 <td className="p-1.5 font-bold">{r.people}</td>
                 <td className={r.notes ? "bg-warning/30 p-1.5 font-bold" : "p-1.5"}>{r.notes}</td>
               </tr>

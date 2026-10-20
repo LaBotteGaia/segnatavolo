@@ -16,6 +16,7 @@ import { DURATION_PRESETS, WHOLE_EVENING, durLabel, rotationNote } from "@/lib/r
 import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
 import { isNoShow } from "@/lib/no-show";
 import { useServiceClock } from "@/lib/extras";
+import { MaskedPhone } from "@/components/MaskedPhone";
 
 export const ROW_GRID = "grid items-center gap-x-1 grid-cols-[2rem_3rem_minmax(0,1fr)_2.3rem_4.5rem_1rem]";
 
@@ -136,8 +137,9 @@ export function ReservationRow({
 
           <div>
             <div className={lbl}>Telefono</div>
-            <Input value={phone} type="tel" className="bg-paper" onChange={(e) => setPhone(e.target.value)}
-              onBlur={() => { const normalized = phone.replace(/[\s\-.\/()]/g, ""); setPhone(normalized); if (normalized !== (r.phone ?? "")) { onUpdate({ phone: normalized }); onCustomerPhone(normalized); } }} />
+            {(() => { const inp = () => <Input value={phone} type="tel" className="bg-paper" onChange={(e) => setPhone(e.target.value)}
+              onBlur={() => { const normalized = phone.replace(/[\s\-.\/()]/g, ""); setPhone(normalized); if (normalized !== (r.phone ?? "")) { onUpdate({ phone: normalized }); onCustomerPhone(normalized); } }} />;
+              return r.phone ? <div className="flex min-h-10 items-center rounded-md border bg-paper px-3"><MaskedPhone phone={r.phone}>{inp}</MaskedPhone></div> : inp(); })()}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Button asChild variant="outline" disabled={!phone}><a href={`tel:${phone}`}><Phone /> 📞 Chiama</a></Button>
               <Button asChild variant="outline" disabled={!phone}><a href={whatsappLink(phone, r)} target="_blank" rel="noreferrer"><MessageCircle /> 💬 WhatsApp</a></Button>

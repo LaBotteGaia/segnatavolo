@@ -286,6 +286,10 @@ export type RestaurantSettings = {
   /** durata standard tavolo e margine riallestimento, in minuti */
   duration: number;
   buffer: number;
+  /** Modalità Privacy al banco: maschera i telefoni a schermo */
+  privacy: boolean;
+  /** Numeri completi sul Foglio di Sala stampato */
+  printPhones: boolean;
 };
 
 export const DEFAULT_SETTINGS: RestaurantSettings = {
@@ -298,13 +302,15 @@ export const DEFAULT_SETTINGS: RestaurantSettings = {
   holidays: [],
   duration: 90,
   buffer: 15,
+  privacy: true,
+  printPhones: false,
 };
 
 export function normalizeSettings(raw: unknown): RestaurantSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<RestaurantSettings>;
   const shifts = { ...DEFAULT_SETTINGS.shifts };
   for (const s of ALL_SHIFTS) if (r.shifts?.[s]) shifts[s] = { ...shifts[s], ...r.shifts[s] };
-  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15 };
+  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true };
 }
 
 export const rangesOf = (st: RestaurantSettings): Ranges =>
