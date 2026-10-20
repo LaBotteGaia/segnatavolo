@@ -8,9 +8,10 @@ export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
 function notifyRow(id: string) {
-  changes.set(id, Date.now());
+  const timestamp = Date.now();
+  changes.set(id, timestamp);
   listeners.forEach((fn) => fn());
-  setTimeout(() => { changes.delete(id); listeners.forEach((fn) => fn()); }, 1800);
+  setTimeout(() => { if (changes.get(id) === timestamp) { changes.delete(id); listeners.forEach((fn) => fn()); } }, 1800);
 }
 export function useLiveRow(id: string) {
   return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; }, () => changes.get(id) ?? 0, () => 0);
@@ -26,7 +27,7 @@ export function LiveSync() {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setUserId(session?.user.id ?? null);
       if (event === "SIGNED_OUT") {
-        for (const key of Object.keys(sessionStorage)) if (key.startsWith("segnatavolo-cache-")) sessionStorage.removeItem(key);
+        try { for (const key of Object.keys(sessionStorage)) if (key.startsWith("segnatavolo-cache-")) sessionStorage.removeItem(key); } catch { /* Storage may be unavailable. */ }
         changes.clear(); qc.clear();
       }
     });
@@ -38,7 +39,7 @@ export function LiveSync() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
       if (saved && Date.now() - saved.at <= OFFLINE_TTL) {
-        for (const row of saved.rows) if (!qc.getQueryData(row.key)) qc.setQueryData(row.key, row.data, { updatedAt: row.at });
+        for (const row of saved.rows) if (Date.now() - row.at <= OFFLINE_TTL && !qc.getQueryData(row.key)) qc.setQueryData(row.key, row.data, { updatedAt: row.at });
       }
     } catch { /* Browser storage is optional. */ }
     const persist = () => {
@@ -46,7 +47,7 @@ export function LiveSync() {
       try { sessionStorage.setItem(storageKey, JSON.stringify({ at: Date.now(), rows })); } catch { /* Quota/private browsing. */ }
     };
     const unsubscribe = qc.getQueryCache().subscribe((event) => { if (event.type === "updated" && event.action.type === "success") persist(); });
-    const refresh = () => LIVE_QUERY_KEYS.forEach((key) => { void qc.invalidateQueries({ queryKey: [key] }); });
+    const refresh = () => [...LIVE_QUERY_KEYS, "rooms", "tables"].forEach((key) => { void qc.invalidateQueries({ queryKey: [key] }); });
     const change = (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
       const row = payload.eventType === "DELETE" ? payload.old : payload.new;
       if (payload.eventType !== "DELETE" && row["restaurant_id"] !== me.restaurant_id) return;

@@ -136,6 +136,6 @@
   background-image: linear-gradient(to right, oklch(0.2 0.02 40 / 0.18), transparent 2.5rem);
 }
 
-@keyframes live-row-flash { from { background-color: var(--warning); } to { background-color: transparent; } }
+@keyframes live-row-flash { from { background-color: var(--accent); } to { background-color: transparent; } }
 .live-row-flash { animation: live-row-flash 1.8s ease-out; }
 @media (prefers-reduced-motion: reduce) { .live-row-flash { animation: none; background-color: var(--accent); } }
