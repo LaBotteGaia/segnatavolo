@@ -1,3 +1,7 @@
 - [x] Ripristinare Arrivato sulle righe e segnalazione manuale No-Show.
 - [x] Calcolare storico per telefono e mostrare avvisi in creazione, ricerca e dettagli.
 - [x] Verificare regole e flusso completo su smartphone e desktop.
+- [ ] Sincronizzazione condivisa prenotazioni/clienti e feedback sulle righe.
+- [ ] Avvisi date con presa visione, audit operatore e icone singole.
+- [ ] Protezione offline e download del piano di emergenza.
+- [ ] Versione v0.7.0-alpha richiesta, changelog e verifica end-to-end.
