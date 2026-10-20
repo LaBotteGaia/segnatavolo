@@ -1,3 +1,5 @@
+import { EmergencyButton } from "@/components/EmergencyButton";
+import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,13 +22,14 @@ import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 
-export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
+export function AppMenu({ triggerClassName, emergencyDate, emergencyShifts }: { triggerClassName?: string; emergencyDate?: string; emergencyShifts?: Shift[] }) {
   const { data: me } = useMembership();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [usersOpen, setUsersOpen] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
+  const [operatorOpen, setOperatorOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const isMaster = me?.role === "master";
   const [notify, setNotify] = useNotifyPref();
@@ -81,14 +84,16 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
           <nav className="flex-1 overflow-y-auto p-3">
             <label className="mb-3 flex items-center gap-3 rounded-md border px-3 py-2.5">
               <Bell className="size-4" />
-              <span className="flex-1 text-sm">🔔 Notifiche nuove prenotazioni</span>
+              <span className="flex-1 text-sm">Notifiche nuove prenotazioni</span>
               <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />
             </label>
             <Link to="/rubrica" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left font-semibold hover:bg-accent [&_svg]:size-4">
-              <Users /> 👥 Rubrica Clienti
+              <Users /> Rubrica Clienti
             </Link>
-            <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>📥 Esporta Dati (Backup)</MenuItem>
-            <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>❓ Guida Rapida / Tutorial</MenuItem>
+            <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup)</MenuItem>
+            <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>Guida Rapida / Tutorial</MenuItem>
+            <EmergencyButton date={emergencyDate} shifts={emergencyShifts} className="my-2 h-auto w-full justify-start py-2" />
+            <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Nome operatore</MenuItem>
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>
@@ -108,6 +113,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
           </div>
         </SheetContent>
       </Sheet>
+      {me && <OperatorNameDialog open={operatorOpen} onOpenChange={setOperatorOpen} name={me.name} />}
       <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
       {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
       {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
@@ -117,9 +123,9 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
 
 function MenuItem({ icon, children, onClick }: { icon: React.ReactNode; children: React.ReactNode; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent [&_svg]:size-4">
+    <Button variant="ghost" onClick={onClick} className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left [&_svg]:size-4">
       {icon} {children}
-    </button>
+    </Button>
   );
 }
 

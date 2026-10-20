@@ -1,3 +1,5 @@
+import { DateWarning } from "./DateWarning";
+import { reservationDateWarning } from "@/lib/date-warning";
 import { useEffect, useState } from "react";
 import { LoyaltyBox } from "./Extras";
 import { useQuery } from "@tanstack/react-query";
@@ -67,6 +69,8 @@ export function NewReservationDialog({
   const { data: history = [] } = useCustomerHistory();
   const now = useServiceClock();
   const ranges = rangesOf(settings);
+  const warning = reservationDateWarning(date, shift, time, ranges, now);
+  const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const shifts = activeShifts(settings);
   const isMaster = useMembership().data?.role === "master";
   const closed = isShiftClosed(date, shift, settings);
@@ -75,6 +79,7 @@ export function NewReservationDialog({
     if (open) {
       setDate(initialDate); setShift(initialShift); setTime(initialTime); setName(""); setPeople("2");
       setPhone(""); setNotes(""); setOutside(false); setTableIds(initialTables); setExtras(NO_EXTRAS); setErrors({}); setForce(false); setPickedId(null);
+      setAcknowledged(null);
       setAdv(false); setDur(null); setBuf(null); setTags("");
       const c = initialCustomerId ? customers?.find((x) => x.id === initialCustomerId) : undefined;
       if (c) { setName(c.name); setPickedId(c.id); setPhone(c.phone ?? ""); setNotes(c.notes ?? ""); }
@@ -109,6 +114,7 @@ export function NewReservationDialog({
     setErrors(e);
     if (Object.keys(e).length) return;
     if (closed && !(isMaster && force)) return;
+    if (warning && acknowledged !== warning.key) return;
     setBusy(true);
     const ok = await onCreate({
       date, shift, time, name: name.trim(), people: Number(people), phone: normPhone(match ? match.phone || phone : phone),
@@ -269,7 +275,8 @@ export function NewReservationDialog({
           </div>
         )}
 
-        <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force))}>Conferma prenotazione</Button>
+        <DateWarning warning={warning} acknowledged={!!warning && acknowledged === warning.key} onAcknowledge={(v) => setAcknowledged(v ? warning?.key ?? null : null)} />
+        <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force)) || (!!warning && acknowledged !== warning.key)}>Conferma prenotazione</Button>
 
         <TableDialog date={date} open={tableOpen} onOpenChange={setTableOpen}
           reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time }}

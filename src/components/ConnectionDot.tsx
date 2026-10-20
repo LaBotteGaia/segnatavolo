@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { useConnectionStatus, type ConnState } from "@/lib/connection";
 
 const DOT: Record<ConnState, string> = {
-  online: "bg-green-500",
-  degraded: "bg-yellow-400",
-  offline: "bg-red-500",
+  online: "bg-free",
+  degraded: "bg-warning",
+  offline: "bg-destructive",
 };
 
 const LABEL: Record<ConnState, string> = {
-  online: "✅ Connesso a Supabase Cloud (Dati sincronizzati in tempo reale)",
+  online: "✅ Connesso a Lovable Cloud (Dati sincronizzati in tempo reale)",
   degraded: "⚠️ Riconnessione in corso o connessione lenta",
   offline: "❌ Disconnesso dal Database. Le nuove prenotazioni potrebbero non essere salvate sul cloud.",
 };

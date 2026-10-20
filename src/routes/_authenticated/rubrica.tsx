@@ -63,7 +63,7 @@ function Rubrica() {
             <Search className="size-4 text-muted-foreground" />
             <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Cerca nome, cognome, telefono o email…" className="w-full bg-transparent py-2 outline-none" />
           </label>
-          <Button onClick={() => setCard({ c: null })}><Plus /> ➕ Nuovo Cliente</Button>
+          <Button onClick={() => setCard({ c: null })}><Plus /> Nuovo Cliente</Button>
           <Select value={sort} onValueChange={(v) => setSort(v as SortMode)}>
             <SelectTrigger className="w-full bg-paper sm:w-auto"><SelectValue /></SelectTrigger>
             <SelectContent>{(Object.keys(SORT_LABELS) as SortMode[]).map((k) => <SelectItem key={k} value={k}>{SORT_LABELS[k]}</SelectItem>)}</SelectContent>

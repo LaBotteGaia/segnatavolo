@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OperatorName } from "@/components/OperatorName";
 import { useMembership } from "@/lib/membership";
 
 export function RestaurantGate({ children }: { children: ReactNode }) {
@@ -19,6 +20,7 @@ export function RestaurantGate({ children }: { children: ReactNode }) {
         <Button onClick={() => supabase.auth.signOut()}>Esci</Button>
       </Shell>
     );
+  if (!m.name.trim()) return <Shell><h1 className="mb-4 font-display text-2xl text-primary">Il tuo nome di sala</h1><OperatorName /></Shell>;
   return <>{children}</>;
 }
 
@@ -37,6 +39,7 @@ function CreateRestaurant() {
   const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim() || !me.trim()) return;
     setBusy(true);
     const { error } = await supabase.rpc("create_restaurant", { _name: name, _display_name: me });
     setBusy(false);
@@ -53,7 +56,7 @@ function CreateRestaurant() {
           <Input id="rn" required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="mn">Il tuo nome</Label>
+          <Label htmlFor="mn">Nome o Nickname di Sala</Label>
           <Input id="mn" required value={me} onChange={(e) => setMe(e.target.value)} />
         </div>
         <Button type="submit" className="w-full" disabled={busy}>Crea ristorante</Button>

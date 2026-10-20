@@ -9,7 +9,7 @@ import { useMembership, useSettings } from "./membership";
 import { reliabilityStats, type HistoryRow } from "./no-show";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.9.0-alpha";
+export const APP_VERSION = "v0.7.0-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
@@ -43,12 +43,6 @@ export function useServiceClock() {
 export function useCustomerHistory() {
   const qc = useQueryClient();
   const restaurantId = useMembership().data?.restaurant_id;
-  useEffect(() => {
-    if (!restaurantId) return;
-    const ch = supabase.channel(`history-${restaurantId}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations", filter: `restaurant_id=eq.${restaurantId}` }, () => qc.invalidateQueries({ queryKey: ["customer-history"] })).subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [restaurantId, qc]);
   return useQuery({
     queryKey: ["customer-history", restaurantId], enabled: !!restaurantId,
     queryFn: async () => {
