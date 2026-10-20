@@ -78,6 +78,13 @@
       "when": 1792161628251,
       "tag": "0010_customer_directory",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792520765284,
+      "tag": "0011_reservation_audit_and_live_sync",
+      "breakpoints": true
     }
   ]
 }

@@ -68,6 +68,7 @@ export type Database = {
           buffer_min: number | null
           created_at: string
           created_by: string | null
+          created_by_name: string
           customer_id: string | null
           date: string
           duration_min: number | null
@@ -86,6 +87,8 @@ export type Database = {
           table_ids: string[]
           tags: string[]
           time: string
+          updated_at: string | null
+          updated_by_name: string | null
         }
         Insert: {
           arrived?: boolean
@@ -93,6 +96,7 @@ export type Database = {
           buffer_min?: number | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string
           customer_id?: string | null
           date: string
           duration_min?: number | null
@@ -111,6 +115,8 @@ export type Database = {
           table_ids?: string[]
           tags?: string[]
           time?: string
+          updated_at?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           arrived?: boolean
@@ -118,6 +124,7 @@ export type Database = {
           buffer_min?: number | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string
           customer_id?: string | null
           date?: string
           duration_min?: number | null
@@ -136,6 +143,8 @@ export type Database = {
           table_ids?: string[]
           tags?: string[]
           time?: string
+          updated_at?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -425,6 +434,7 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
+      set_operator_name: { Args: { _name: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
