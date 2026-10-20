@@ -1,3 +1,4 @@
+import { useSettings } from "@/lib/membership";
 import { maskPhone } from "@/lib/privacy";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
@@ -30,6 +31,7 @@ function Foglio() {
   const { d, s } = Route.useSearch();
   const { data: res = [] } = useReservations(d);
   const { data: rooms } = useRooms();
+  const settings = useSettings();
   const { data: tables } = useTables();
   const { data: note } = useServiceNote(d, s);
   const rows = res.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));

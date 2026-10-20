@@ -3,6 +3,15 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.9.0-alpha",
+    date: "20 ottobre 2026",
+    items: [
+      "Modalità Privacy al banco: i telefoni a schermo appaiono mascherati (es. \"348 ••• ••89\") in agenda, rubrica, ricerca e nuova prenotazione.",
+      "Toccando il numero o l'icona 👁️ si svela per 10 secondi; Chiama e WhatsApp usano sempre il numero completo.",
+      "In Gestione Ristorante: interruttore della Modalità Privacy (attiva di default) e opzione per stampare i numeri completi sul Foglio di Sala.",
+    ],
+  },
+  {
     version: "v0.8.0-alpha",
     date: "16 ottobre 2026",
     items: [
