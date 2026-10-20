@@ -6,7 +6,7 @@ import { fmt, interval, isRoomClosedFor } from "./rotation";
 export const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 
 export function emergencyHtml({ name, date, shifts, rows, rooms, tables, settings }: {
-  name: string; date: string; shifts?: Shift[]; rows: Reservation[]; rooms: Room[]; tables: RTable[]; settings: RestaurantSettings;
+  name: string; date: string; shifts?: Shift[] | undefined; rows: Reservation[]; rooms: Room[]; tables: RTable[]; settings: RestaurantSettings;
 }) {
   const esc = escapeHtml;
   const orderedTables = [...tables].sort(compareTables(rooms));

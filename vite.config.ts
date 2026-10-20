@@ -21,7 +21,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,png,webmanifest}"],
         navigateFallback: undefined,
         runtimeCaching: [
-          { urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/~oauth") && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_server"), handler: "NetworkFirst", options: { cacheName: "segnatavolo-pages", networkTimeoutSeconds: 3, cacheableResponse: { statuses: [200] }, expiration: { maxEntries: 20, maxAgeSeconds: 60 } } },
+          { urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/~oauth") && !url.pathname.startsWith("/auth") && !url.pathname.startsWith("/invito") && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_server"), handler: "NetworkFirst", options: { cacheName: "segnatavolo-pages", networkTimeoutSeconds: 3, cacheableResponse: { statuses: [200] }, expiration: { maxEntries: 20, maxAgeSeconds: 60 } } },
           { urlPattern: ({ url, sameOrigin }) => sameOrigin && /^\/assets\/.*-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(url.pathname), handler: "CacheFirst", options: { cacheName: "segnatavolo-assets", expiration: { maxEntries: 100, maxAgeSeconds: 60 } } },
         ],
       },

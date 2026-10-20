@@ -7,7 +7,7 @@ import { downloadEmergency } from "@/lib/emergency";
 import { useMembership, useSettings } from "@/lib/membership";
 import type { Reservation, Room, RTable, Shift } from "@/lib/data";
 
-export function EmergencyButton({ date = format(new Date(), "yyyy-MM-dd"), shifts, className }: { date?: string; shifts?: Shift[]; className?: string }) {
+export function EmergencyButton({ date = format(new Date(), "yyyy-MM-dd"), shifts, className }: { date?: string | undefined; shifts?: Shift[] | undefined; className?: string }) {
   const qc = useQueryClient(); const { data: me } = useMembership(); const settings = useSettings();
   const save = () => {
     const rows = qc.getQueryData<Reservation[]>(["reservations", date]);
