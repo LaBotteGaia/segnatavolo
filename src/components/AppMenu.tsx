@@ -3,7 +3,7 @@ import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Trash2, Users } from "lucide-react";
+import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users } from "lucide-react";
 import { TutorialDialog } from "@/components/TutorialDialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership } from "@/lib/membership";
-import { APP_NAME, toCsv } from "@/lib/extras";
+import { APP_NAME, APP_VERSION, toCsv } from "@/lib/extras";
+import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, LEGAL_URL, SERVER_REGION_LINE } from "@/lib/legal";
 import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
@@ -32,6 +33,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [operatorOpen, setOperatorOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [binOpen, setBinOpen] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
   const isMaster = me?.role === "master";
   const [notify, setNotify] = useNotifyPref();
 
@@ -94,7 +96,8 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
             <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup)</MenuItem>
             <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>Guida Rapida / Tutorial</MenuItem>
             <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setBinOpen(true); }}>Cestino del giorno</MenuItem>
-            <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Nome operatore</MenuItem>
+            <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Profilo operatore</MenuItem>
+            <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setLegalOpen(true); }}>Informazioni legali e Privacy</MenuItem>
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>
@@ -117,9 +120,31 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
       {me && <OperatorNameDialog open={operatorOpen} onOpenChange={setOperatorOpen} name={me.name} />}
       <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
       <RecycleBinDialog open={binOpen} onOpenChange={setBinOpen} />
+      <LegalDialog open={legalOpen} onOpenChange={setLegalOpen} />
       {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
       {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
     </>
+  );
+}
+
+function LegalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Informazioni legali e Privacy</DialogTitle></DialogHeader>
+        <div className="space-y-4 text-sm">
+          <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" className="block rounded-md border p-3 font-semibold text-primary underline">
+            {LEGAL_LINK_LABEL}
+          </a>
+          <dl className="space-y-2">
+            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Versione app</dt><dd className="font-semibold">{APP_NAME} {APP_VERSION}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Copyright</dt><dd className="font-semibold">{COPYRIGHT_LINE}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Server dati</dt><dd className="text-right font-semibold">{SERVER_REGION_LINE}</dd></div>
+          </dl>
+          <p className="text-xs text-muted-foreground">Per eliminare il tuo account operatore apri "Profilo operatore" dal menù.</p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
