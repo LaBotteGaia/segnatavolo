@@ -15,6 +15,7 @@ import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { activeShifts, closedShifts, dayDots, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, totalCapacities, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
+import { affluenceLevel, affluenceTip, bookableCapacity, type Affluence } from "@/lib/affluence";
 import { useSettings } from "@/lib/membership";
 import { useNewReservationNotifications } from "@/lib/notifications";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
@@ -429,3 +430,10 @@ function DayDots({ dots }: { dots: { inside: DotLevel; outside: DotLevel } }) {
     </span>
   );
 }
+
+const AFF_CLASS: Record<Affluence, string> = {
+  green: "bg-free",
+  yellow: "bg-warning",
+  red: "bg-destructive",
+  closed: "bg-muted-foreground/25",
+};
