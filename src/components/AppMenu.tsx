@@ -1,4 +1,4 @@
-import { EmergencyButton } from "@/components/EmergencyButton";
+import { RecycleBinDialog } from "@/components/RecycleBinDialog";
 import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -22,7 +22,7 @@ import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 
-export function AppMenu({ triggerClassName, emergencyDate, emergencyShifts }: { triggerClassName?: string; emergencyDate?: string; emergencyShifts?: Shift[] }) {
+export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -31,11 +31,12 @@ export function AppMenu({ triggerClassName, emergencyDate, emergencyShifts }: { 
   const [restOpen, setRestOpen] = useState(false);
   const [operatorOpen, setOperatorOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [binOpen, setBinOpen] = useState(false);
   const isMaster = me?.role === "master";
   const [notify, setNotify] = useNotifyPref();
 
   const exportCsv = async () => {
-    const { data, error } = await supabase.from("reservations").select("*").order("date").order("time");
+    const { data, error } = await supabase.from("reservations").select("*").is("deleted_at", null).order("date").order("time");
     if (error || !data) { toast.error("Esportazione non riuscita"); return; }
     const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables"]) ?? []).map((t) => [t.id, t.name]));
     const rows = data.map((r) => ({ ...r, tavoli: r.table_ids.map((i) => byId.get(i) ?? "?"), turno: shiftName(r.shift as Shift), arrivato: r.arrived ? "Sì" : "No", fuori: r.outside ? "Sì" : "No", nuovo: r.is_new ? "Sì" : "No" }));
@@ -92,7 +93,7 @@ export function AppMenu({ triggerClassName, emergencyDate, emergencyShifts }: { 
             </Link>
             <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup)</MenuItem>
             <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>Guida Rapida / Tutorial</MenuItem>
-            <EmergencyButton date={emergencyDate} shifts={emergencyShifts} className="my-2 h-auto w-full justify-start py-2" />
+            <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setBinOpen(true); }}>Cestino del giorno</MenuItem>
             <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Nome operatore</MenuItem>
             {isMaster && (
               <>
@@ -115,6 +116,7 @@ export function AppMenu({ triggerClassName, emergencyDate, emergencyShifts }: { 
       </Sheet>
       {me && <OperatorNameDialog open={operatorOpen} onOpenChange={setOperatorOpen} name={me.name} />}
       <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
+      <RecycleBinDialog open={binOpen} onOpenChange={setBinOpen} />
       {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
       {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
     </>

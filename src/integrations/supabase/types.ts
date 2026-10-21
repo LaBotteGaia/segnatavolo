@@ -71,6 +71,7 @@ export type Database = {
           created_by_name: string
           customer_id: string | null
           date: string
+          deleted_at: string | null
           duration_min: number | null
           extra_barelle: number
           extra_sponde: number
@@ -99,6 +100,7 @@ export type Database = {
           created_by_name?: string
           customer_id?: string | null
           date: string
+          deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
@@ -127,6 +129,7 @@ export type Database = {
           created_by_name?: string
           customer_id?: string | null
           date?: string
+          deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
@@ -423,6 +426,10 @@ export type Database = {
         Args: { _display_name: string; _name: string }
         Returns: string
       }
+      create_service_walkin: {
+        Args: { _name?: string; _people: number; _table: string }
+        Returns: string
+      }
       get_invite: {
         Args: { _token: string }
         Returns: {
@@ -434,6 +441,10 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
+      restore_service_reservation: {
+        Args: { _id: string; _without_tables?: boolean }
+        Returns: boolean
+      }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
     }
     Enums: {

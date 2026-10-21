@@ -16,5 +16,5 @@ export function EmergencyButton({ date = format(new Date(), "yyyy-MM-dd"), shift
     downloadEmergency({ name: me.restaurants?.name ?? "Segnatavolo", date, shifts, rows, rooms, tables, settings });
     toast.success("Piano di sala salvato sul dispositivo");
   };
-  return <Button variant="outline" size="sm" className={className} onClick={save}><Save /> <span className="min-w-0 whitespace-normal text-left">Esporta Piano di Sala (Emergenza)</span></Button>;
+  return <Button variant="outline" size="sm" className={className} onClick={save}><Save /> <span className="min-w-0 whitespace-normal text-left">Backup Emergenza Offline (HTML)</span></Button>;
 }

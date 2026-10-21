@@ -54,7 +54,7 @@ export const customersQuery = () => ({
 export const reservationsQuery = (date: string) => ({
   queryKey: ["reservations", date],
   queryFn: async () => {
-    const { data, error } = await supabase.from("reservations").select("*").eq("date", date);
+    const { data, error } = await supabase.from("reservations").select("*").is("deleted_at", null).eq("date", date);
     if (error) throw error;
     return data;
   },
@@ -254,7 +254,7 @@ export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift">
 export const monthReservationsQuery = (from: string, to: string) => ({
   queryKey: ["reservations-month", from, to],
   queryFn: async () => {
-    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside, no_show").gte("date", from).lte("date", to);
+    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside, no_show").is("deleted_at", null).gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },

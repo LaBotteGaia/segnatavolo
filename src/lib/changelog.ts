@@ -3,6 +3,16 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.8.0-alpha",
+    date: "21 ottobre 2026",
+    items: [
+      "Sala & Servizio: un solo pannello per disponibilità tavoli, stampa Foglio di Sala e backup HTML offline del turno selezionato.",
+      "Accomoda al volo: coperti e tavolo libero, riferimento facoltativo, ora e turno automatici, già Arrivato con rotazione 90+15 minuti.",
+      "ANNULLA immediato per 8 secondi e Cestino del giorno condiviso: ripristino con tavolo originario o avviso se ora occupato.",
+      "Conservate sincronizzazione, audit operatore, cache di 60 secondi, privacy, sale e ostacoli.",
+    ],
+  },
+  {
     version: "v0.7.0-alpha",
     date: "20 ottobre 2026",
     items: [
@@ -24,7 +34,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: "v0.8.0-alpha",
+    version: "v0.8.0-alpha (16 ottobre)",
     date: "16 ottobre 2026",
     items: [
       "Pallino di stato connessione accanto al numero di versione (menù ☰ e fondo agenda): 🟢 verde connesso, 🟡 giallo connessione lenta o in riconnessione, 🔴 rosso disconnesso.",
