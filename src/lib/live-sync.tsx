@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "./membership";
 
-export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "customers", "customer-history", "search"];
+export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "customers", "customer-history", "search", "recycle-bin"];
 export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
@@ -51,7 +51,7 @@ export function LiveSync() {
     const change = (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
       const row = payload.eventType === "DELETE" ? payload.old : payload.new;
       if (payload.eventType !== "DELETE" && row["restaurant_id"] !== me.restaurant_id) return;
-      if (typeof row["id"] === "string" && payload.eventType !== "DELETE") notifyRow(row["id"]);
+      if (typeof row["id"] === "string" && payload.eventType !== "DELETE" && !row["deleted_at"]) notifyRow(row["id"]);
       refresh();
     };
     const channel = supabase.channel(`service-${me.restaurant_id}-${crypto.randomUUID()}`)

@@ -62,7 +62,7 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
     queryKey: ["search", deb], enabled: !!filter,
     queryFn: async () => {
       if (!filter) return [];
-      const { data } = await supabase.from("reservations").select("*").or(filter).order("date", { ascending: false }).limit(20);
+      const { data } = await supabase.from("reservations").select("*").is("deleted_at", null).or(filter).order("date", { ascending: false }).limit(20);
       return data ?? [];
     },
   });

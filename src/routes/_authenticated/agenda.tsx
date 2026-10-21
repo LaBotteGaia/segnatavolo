@@ -1,5 +1,8 @@
-import { EmergencyButton } from "@/components/EmergencyButton";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ServiceHub } from "@/components/agenda/ServiceHub";
+import { WalkInDialog } from "@/components/agenda/WalkInDialog";
+import { UNDO_DURATION } from "@/lib/service-actions";
+import { refreshService, restoreReservation } from "@/lib/recycle-bin";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
@@ -18,7 +21,7 @@ import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { AppMenu } from "@/components/AppMenu";
 import { NewReservationDialog, type NewReservationInput } from "@/components/agenda/NewReservationDialog";
-import { Plus, Printer } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
@@ -62,6 +65,7 @@ function AgendaPage() {
   const navigate = useNavigate({ from: "/agenda" });
   const qc = useQueryClient();
   const [newShift, setNewShift] = useState<Shift | null>(null);
+  const [walkinOpen, setWalkinOpen] = useState(false);
   const [prefill, setPrefill] = useState<{ time: string; tables: string[] }>({ time: "", tables: [] });
   const [availShift, setAvailShift] = useState<Shift | null>(null);
   const [bookCustomer, setBookCustomer] = useState<string | undefined>(undefined);
@@ -95,7 +99,6 @@ function AgendaPage() {
     return out;
   }, [monthRows, rooms, tables]);
   const emptyDots = useMemo(() => dayDots([], (s: Shift) => totalCapacities(rooms, tables, s)), [rooms, tables]);
-  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
   const goTo = (r: Reservation) => { setMobileShift(r.shift as Shift); navigate({ search: { ...(r.date === todayStr() ? {} : { d: r.date }), h: r.id } }); };
@@ -149,27 +152,33 @@ function AgendaPage() {
     qc.invalidateQueries({ queryKey: ["reservations-month"] });
   };
 
-  const remove = (r: Reservation) => {
+  const remove = async (r: Reservation) => {
     setHidden((h) => new Set(h).add(r.id));
-    const t = setTimeout(async () => {
-      timers.current.delete(r.id);
-      await supabase.from("reservations").delete().eq("id", r.id);
-      await qc.invalidateQueries({ queryKey: key });
-      qc.invalidateQueries({ queryKey: ["customer-history"] });
-      setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
-    }, 5000);
-    timers.current.set(r.id, t);
-    toast(`Prenotazione di ${r.name || "—"} eliminata`, {
-      duration: 5000,
+    const deletion = Promise.resolve(supabase.from("reservations").update({ deleted_at: new Date().toISOString() }).eq("id", r.id).select("id").single());
+    const undo = async (withoutTables = false) => {
+      try {
+        const result = await deletion; if (result.error) return;
+        const restored = await restoreReservation(r.id, withoutTables);
+        if (!restored) {
+          toast.warning("Il tavolo originario è ora occupato. Ripristinare senza tavolo assegnato?", { duration: 15000, action: { label: "Senza tavolo", onClick: () => { void undo(true); } } });
+          return;
+        }
+        setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
+        await refreshService(qc); toast.success("Prenotazione ripristinata");
+      } catch { toast.error("Ripristino non riuscito: usa il Cestino del giorno"); }
+    };
+    const toastId = toast(`🗑️ Prenotazione di ${r.name || "—"} eliminata`, {
+      duration: UNDO_DURATION,
+      className: "border-2 border-destructive bg-paper text-foreground",
       action: {
-        label: "Annulla",
-        onClick: () => {
-          clearTimeout(timers.current.get(r.id));
-          timers.current.delete(r.id);
-          setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
-        },
+        label: "ANNULLA",
+        onClick: () => { void undo(); },
       },
     });
+    const { error } = await deletion;
+    if (error) { toast.dismiss(toastId); toast.error("Eliminazione non riuscita: prenotazione conservata"); }
+    await refreshService(qc);
+    setHidden((h) => { const n = new Set(h); n.delete(r.id); return n; });
   };
 
   const saveCustomerPhone = async (r: Reservation, phone: string) => {
@@ -264,12 +273,8 @@ function AgendaPage() {
         </header>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>
-          <Button asChild size="sm" variant="outline"><Link to="/foglio" search={{ d: date, s: shift }}><Printer /> Foglio di Sala</Link></Button>
         </div>
-        <EmergencyButton date={date} shifts={[shift]} className="mb-2 h-auto w-full justify-start py-2" />
         <ServiceNotes date={date} shift={shift} />
-        <Button variant="outline" className="mb-2 w-full border-primary/50 font-semibold" onClick={() => setAvailShift(shift)}>📊 Situazione Tavoli / Disponibilità</Button>
-        <Button className="mb-3 hidden w-full agenda-wide:flex" onClick={() => openNew(shift)}><Plus /> Nuova Prenotazione</Button>
         <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span title="Arrivato" className="text-center">✓</span>
           <span>Ora</span>
@@ -304,7 +309,7 @@ function AgendaPage() {
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
           <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
-            <AppMenu emergencyDate={date} emergencyShifts={shifts} triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
           </div>
           <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1">
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
@@ -332,7 +337,11 @@ function AgendaPage() {
             </Button>
           </div>
         </div>
-        <Button className="mx-auto mt-2 flex w-full max-w-7xl agenda-wide:hidden" onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
+        <div className="mx-auto mt-2 flex max-w-7xl flex-wrap items-center gap-2">
+          <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
+          <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
+          <ServiceHub date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
+        </div>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (
             <Button
@@ -367,6 +376,7 @@ function AgendaPage() {
       <TutorialAutoOpen />
       <footer className="mt-6 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} />
+      <WalkInDialog open={walkinOpen} onOpenChange={setWalkinOpen} onSaved={(d, s) => { setMobileShift(s); setDate(d); }} />
       <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
         rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />
     </div>

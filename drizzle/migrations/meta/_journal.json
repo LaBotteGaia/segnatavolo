@@ -85,6 +85,13 @@
       "when": 1792520765284,
       "tag": "0011_reservation_audit_and_live_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792574881108,
+      "tag": "0012_service_walkin_recycle_bin",
+      "breakpoints": true
     }
   ]
 }

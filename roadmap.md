@@ -5,3 +5,7 @@
 - [x] Avvisi date con presa visione, audit operatore e icone singole.
 - [x] Protezione delle micro-disconnessioni e download del piano di emergenza (avvio offline completo verificabile dopo pubblicazione).
 - [x] Versione v0.7.0-alpha richiesta, changelog e verifica end-to-end.
+- [x] v0.8.0-alpha: unico hub Sala & Servizio e rimozione duplicati.
+- [x] Passanti rapidi con disponibilità corrente, arrivo automatico e rotazione 90+15.
+- [x] Cestino condiviso del giorno, annulla per 8 secondi e ripristino con controllo tavoli.
+- [x] Test delle regole e verifica autenticata dei nuovi flussi.
