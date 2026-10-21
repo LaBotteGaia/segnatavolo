@@ -81,6 +81,26 @@ export function isRoomClosedFor(room: (Partial<Pick<Room, "open_days" | "closed_
   return isRoomClosed(room, date) || !!room?.closed_shifts?.includes(shift);
 }
 
+/* ---------- Doppio turno (due rotazioni complete sulla stessa sala) ---------- */
+export type DoubleShiftRule = { from: string; to: string; days: number[]; shifts: string[] };
+export const doubleShiftRulesOf = (room: { double_shifts?: unknown } | undefined): DoubleShiftRule[] =>
+  Array.isArray(room?.double_shifts)
+    ? (room!.double_shifts as DoubleShiftRule[]).filter((r) => r && Array.isArray(r.days) && Array.isArray(r.shifts))
+    : [];
+
+/** La sala ha un doppio turno attivo per quella data (yyyy-MM-dd) e turno? Periodi che scavalcano l'anno inclusi; from/to vuote = tutto l'anno; days vuoto = tutti i giorni. */
+export function doubleShiftActive(room: { double_shifts?: unknown } | undefined, date: string, shift: string): boolean {
+  const [y, m, d] = date.split("-").map(Number);
+  const dow = new Date(y!, m! - 1, d!).getDay();
+  const md = date.slice(5);
+  return doubleShiftRulesOf(room).some(
+    (r) =>
+      r.shifts.includes(shift) &&
+      (r.days.length === 0 || r.days.includes(dow)) &&
+      (!r.from || !r.to ? true : r.from <= r.to ? md >= r.from && md <= r.to : md >= r.from || md <= r.to),
+  );
+}
+
 /** Tutte le sale esterne sono chiuse quel giorno (o non ce ne sono)? */
 export function outsideClosed(rooms: Pick<Room, "environment" | "open_days" | "closed_periods">[], date: string) {
   const ext = rooms.filter((r) => r.environment === "esterno");

@@ -13,7 +13,7 @@ import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTa
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
 import { validSeats, validTableName } from "@/lib/extras";
-import { periodsOf, type ClosedPeriod } from "@/lib/rotation";
+import { doubleShiftRulesOf, periodsOf, type ClosedPeriod, type DoubleShiftRule } from "@/lib/rotation";
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
@@ -377,6 +377,61 @@ function RoomSchedule({ room, onChange }: { room: Room; onChange: (p: Partial<Ro
         ))}
         <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { from: "", to: "" }])}>❄️ Aggiungi chiusura stagionale</Button>
       </div>
+      <DoubleShiftRules room={room} onChange={onChange} />
+    </div>
+  );
+}
+
+/** Regole di doppio turno: la capienza della sala raddoppia nelle date/turni indicati. */
+function DoubleShiftRules({ room, onChange }: { room: Room; onChange: (p: Partial<Room>) => void }) {
+  const settings = useSettings();
+  const rules = doubleShiftRulesOf(room);
+  const save = (list: DoubleShiftRule[]) => onChange({ double_shifts: list as unknown as Room["double_shifts"] });
+  const setRule = (i: number, patch: Partial<DoubleShiftRule>) => save(rules.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  return (
+    <div className="border-t pt-3">
+      <div className="mb-1 text-xs text-muted-foreground">Doppio turno: la sala lavora su due rotazioni complete, quindi la sua capienza conta doppia nel calcolo dell'affluenza</div>
+      {rules.map((r, i) => {
+        const allYear = !r.from && !r.to;
+        return (
+          <div key={i} className="mb-2 space-y-2 rounded-md border bg-paper p-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1 text-sm">
+                <input type="checkbox" checked={allYear} onChange={(e) => setRule(i, e.target.checked ? { from: "", to: "" } : { from: "06-01", to: "09-15" })} />
+                Tutto l'anno
+              </label>
+              {!allYear && (
+                <>
+                  <span className="text-xs">dal</span>
+                  <Input type="date" className="h-9" value={r.from ? `2026-${r.from}` : ""} onChange={(e) => setRule(i, { from: e.target.value.slice(5) })} />
+                  <span className="text-xs">al</span>
+                  <Input type="date" className="h-9" value={r.to ? `2026-${r.to}` : ""} onChange={(e) => setRule(i, { to: e.target.value.slice(5) })} />
+                </>
+              )}
+              <Button type="button" size="icon" variant="ghost" aria-label="Rimuovi regola" onClick={() => save(rules.filter((_, j) => j !== i))}><Trash2 /></Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="mr-1 text-xs text-muted-foreground">Giorni:</span>
+              {DAYS.map(([d, l]) => (
+                <button key={d} type="button" onClick={() => setRule(i, { days: r.days.includes(d) ? r.days.filter((x) => x !== d) : [...r.days, d] })}
+                  className={cn("rounded-md border px-2 py-0.5 text-xs", r.days.includes(d) ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>{l}</button>
+              ))}
+              {r.days.length === 0 && <span className="text-xs text-muted-foreground">(nessun giorno selezionato = tutti i giorni)</span>}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs text-muted-foreground">Turni:</span>
+              {activeShifts(settings).map((s) => (
+                <label key={s} className="flex items-center gap-1 text-sm">
+                  <input type="checkbox" checked={r.shifts.includes(s)}
+                    onChange={() => setRule(i, { shifts: r.shifts.includes(s) ? r.shifts.filter((x) => x !== s) : [...r.shifts, s] })} />
+                  {shiftName(s)}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <Button type="button" size="sm" variant="outline" onClick={() => save([...rules, { from: "", to: "", days: [5, 6, 0], shifts: ["sera"] }])}>🔁 Aggiungi regola doppio turno</Button>
     </div>
   );
 }

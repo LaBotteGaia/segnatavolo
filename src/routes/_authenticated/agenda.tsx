@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { activeShifts, closedShifts, dayDots, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, totalCapacities, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
+import { activeShifts, closedShifts, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, shiftPlural, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
 import { affluenceLevel, affluenceTip, bookableCapacity, type Affluence } from "@/lib/affluence";
 import { useSettings } from "@/lib/membership";
 import { useNewReservationNotifications } from "@/lib/notifications";
@@ -29,7 +29,6 @@ import { ConnectionDot } from "@/components/ConnectionDot";
 import { WhatsNew } from "@/components/ChangelogDialog";
 import { TutorialAutoOpen } from "@/components/TutorialDialog";
 import { APP_NAME } from "@/lib/extras";
-import { outsideClosed } from "@/lib/rotation";
 import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
@@ -91,16 +90,8 @@ function AgendaPage() {
   const mFrom = format(startOfMonth(addDays(startOfMonth(month), -7)), "yyyy-MM-dd");
   const mTo = format(endOfMonth(addDays(endOfMonth(month), 7)), "yyyy-MM-dd");
   const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo));
-  const dotsByDay = useMemo(() => {
-    const cap = (s: Shift) => totalCapacities(rooms, tables, s);
-    const g = new Map<string, typeof monthRows>();
-    for (const r of monthRows) g.set(r.date, [...(g.get(r.date) ?? []), r]);
-    const out = new Map<string, ReturnType<typeof dayDots>>();
-    for (const [d, rows] of g) { const dd = dayDots(rows, cap); out.set(d, outsideClosed(rooms, d) ? { ...dd, outside: "off" } : dd); }
-    return out;
-  }, [monthRows, rooms, tables]);
-  const emptyDots = useMemo(() => dayDots([], (s: Shift) => totalCapacities(rooms, tables, s)), [rooms, tables]);
-  void dotsByDay; void emptyDots;
+  const [calPick, setCalShift] = useState<Shift>("pranzo");
+  const calShift: Shift = shifts.includes(calPick) ? calPick : (shifts[0] ?? "pranzo");
   const bookedByDay = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of monthRows) if (!r.no_show) m.set(`${r.date}|${r.shift}`, (m.get(`${r.date}|${r.shift}`) ?? 0) + r.people);
@@ -219,19 +210,13 @@ function AgendaPage() {
                   const ds = format(d, "yyyy-MM-dd");
                   if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
+                  const cap = bookableCapacity(ds, calShift, rooms, tables, settings);
+                  const booked = bookedByDay.get(`${ds}|${calShift}`) ?? 0;
+                  const tip = affluenceTip(calShift, booked, cap);
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <span className="flex gap-0.5 !opacity-100">
-                        {(["pranzo", "sera"] as const).map((s) => {
-                          const cap = bookableCapacity(ds, s, rooms, tables, settings);
-                          const booked = bookedByDay.get(`${ds}|${s}`) ?? 0;
-                          const tip = affluenceTip(s, booked, cap);
-                          return (
-                            <span key={s} title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 2500 }); } }}
-                              className={cn("inline-flex size-2 shrink-0 items-center justify-center rounded-full", AFF_CLASS[affluenceLevel(booked, cap)])} />
-                          );
-                        })}
-                      </span>
+                      <span title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 2500 }); } }}
+                        className={cn("inline-flex size-2 shrink-0 items-center justify-center rounded-full", AFF_CLASS[affluenceLevel(booked, cap)])} />
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
@@ -340,12 +325,22 @@ function AgendaPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
+                <div className="border-b p-3 pb-2">
+                  <div className="grid gap-1 rounded-md bg-muted p-1" style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }}>
+                    {shifts.map((s) => (
+                      <button key={s} type="button" onClick={() => setCalShift(s)}
+                        className={cn("rounded px-3 py-2 text-sm font-semibold", calShift === s ? "bg-paper text-primary shadow-sm" : "text-muted-foreground")}>
+                        {shiftEmoji(s)} {shiftName(s)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-center font-display text-lg text-primary">{shiftPlural(calShift)} di {format(month, "MMMM yyyy", { locale: it }).replace(/^\w/, (c) => c.toUpperCase())}</div>
+                </div>
                 <CalendarDayExtra.Provider value={dayExtra}>
                   <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
                 </CalendarDayExtra.Provider>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
-                  <span>Sx: interno · Dx: fuori</span>
-                  <span><Dot level="green" /> libero</span><span><Dot level="yellow" /> limitato</span><span><Dot level="red" /> quasi pieno</span><span><Dot level="black" /> esaurito</span>
+                  <span><Dot level="green" /> libero</span><span><Dot level="yellow" /> limitato</span><span><Dot level="red" /> quasi pieno</span><span><Dot level="off" /> chiuso</span>
                 </div>
               </PopoverContent>
             </Popover>
@@ -420,15 +415,6 @@ const DOT_CLASS: Record<DotLevel, string> = {
 
 function Dot({ level }: { level: DotLevel }) {
   return <span className={cn("inline-block size-1.5 shrink-0 rounded-full", DOT_CLASS[level])} />;
-}
-
-function DayDots({ dots }: { dots: { inside: DotLevel; outside: DotLevel } }) {
-  return (
-    <span className="flex gap-0.5 !opacity-100" aria-hidden>
-      <Dot level={dots.inside} />
-      {dots.outside !== "off" && <Dot level={dots.outside} />}
-    </span>
-  );
 }
 
 const AFF_CLASS: Record<Affluence, string> = {

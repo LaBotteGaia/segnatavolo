@@ -1,0 +1,2 @@
+ALTER TABLE public.rooms ADD COLUMN double_shifts jsonb NOT NULL DEFAULT '[]'::jsonb;
+COMMENT ON COLUMN public.rooms.double_shifts IS 'Regole di doppio turno: [{from,to (MM-DD, vuote = tutto l''anno), days (0=dom), shifts}] — raddoppiano i posti della sala nel calcolo capienza.';

@@ -164,6 +164,7 @@ export function validateReservation(v: { name: string; people: string | number |
 }
 
 export const shiftName = (s: Shift | string) => (s === "pranzo" ? "Pranzo" : s === "colazione" ? "Colazione" : "Cena");
+export const shiftPlural = (s: Shift | string) => (s === "pranzo" ? "Pranzi" : s === "colazione" ? "Colazioni" : "Cene");
 export const shiftEmoji = (s: Shift | string) => (s === "pranzo" ? "📖" : s === "colazione" ? "☕" : "🌙");
 const shiftOf = (s: Shift) => (s === "pranzo" ? "del Pranzo" : s === "colazione" ? "della Colazione" : "della Cena");
 const shiftArticle = (s: Shift) => (s === "pranzo" ? "il pranzo" : s === "colazione" ? "la colazione" : "la cena");
