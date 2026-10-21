@@ -430,6 +430,7 @@ export type Database = {
         Args: { _name?: string; _people: number; _table: string }
         Returns: string
       }
+      delete_own_account: { Args: never; Returns: undefined }
       get_invite: {
         Args: { _token: string }
         Returns: {

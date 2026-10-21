@@ -3,6 +3,17 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.9.0-alpha",
+    date: "21 ottobre 2026",
+    items: [
+      "Conformità legale e Google Play: link \"Termini di Servizio e Privacy\" nella schermata di accesso e nuova voce \"Informazioni legali e Privacy\" nel menù ☰.",
+      "La sezione legale mostra versione dell'app, copyright Osteria La BotteGaia e server dati in Unione Europea (conforme GDPR).",
+      "Elimina il mio account operatore (in \"Profilo operatore\"): conferma con avviso chiaro, revoca immediata dell'accesso e uscita automatica; l'audit delle prenotazioni storiche resta conservato.",
+      "Un Master non può eliminarsi se è l'unico Master del ristorante: prima va nominato un sostituto.",
+      "Conservate sincronizzazione, audit, passanti rapidi, cestino, cache offline, privacy, sale e ostacoli.",
+    ],
+  },
+  {
     version: "v0.8.0-alpha",
     date: "21 ottobre 2026",
     items: [
@@ -25,7 +36,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: "v0.9.0-alpha",
+    version: "v0.9.0-alpha (20 ottobre)",
     date: "20 ottobre 2026",
     items: [
       "Modalità Privacy al banco: i telefoni a schermo appaiono mascherati (es. \"348 ••• ••89\") in agenda, rubrica, ricerca e nuova prenotazione.",

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { LEGAL_URL } from "@/lib/legal";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -76,6 +77,13 @@ function AuthPage() {
             {mode === "in" ? "Apri un nuovo ristorante? Registrati come Master" : "Hai già un account? Entra"}
           </button>
         </div>
+        <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
+          Accedendo o registrandoti dichiari di accettare i{" "}
+          <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline">
+            Termini di Servizio e Privacy
+          </a>
+          .
+        </p>
       </form>
     </div>
   );
