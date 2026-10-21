@@ -39,11 +39,12 @@ export function scopeAssist<Q extends { eq: (col: string, val: string) => Q }>(q
 }
 
 function subscribe(cb: () => void) {
+  const onStorage = () => { cached = undefined; cb(); };
   window.addEventListener(EVENT, cb);
-  window.addEventListener("storage", cb);
+  window.addEventListener("storage", onStorage);
   return () => {
     window.removeEventListener(EVENT, cb);
-    window.removeEventListener("storage", cb);
+    window.removeEventListener("storage", onStorage);
   };
 }
 
