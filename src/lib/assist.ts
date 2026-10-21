@@ -8,18 +8,22 @@ export type AssistTarget = { id: string; name: string };
 const KEY = "segnatavolo_assist";
 const EVENT = "segnatavolo-assist-change";
 
+let cached: AssistTarget | null | undefined;
+
 export function getAssist(): AssistTarget | null {
+  if (cached !== undefined) return cached;
   try {
     const raw = sessionStorage.getItem(KEY);
-    if (!raw) return null;
+    if (!raw) return (cached = null);
     const v = JSON.parse(raw) as AssistTarget;
-    return v && typeof v.id === "string" && v.id ? v : null;
+    return (cached = v && typeof v.id === "string" && v.id ? v : null);
   } catch {
-    return null;
+    return (cached = null);
   }
 }
 
 export function setAssist(target: AssistTarget | null) {
+  cached = target;
   if (target) sessionStorage.setItem(KEY, JSON.stringify(target));
   else sessionStorage.removeItem(KEY);
   window.dispatchEvent(new Event(EVENT));
