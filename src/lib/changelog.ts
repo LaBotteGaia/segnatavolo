@@ -3,6 +3,17 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.12.0-alpha",
+    date: "21 ottobre 2026",
+    items: [
+      "Super Admin / Assistenza Piattaforma: nuovo pannello riservato /admin con l'elenco dei ristoranti registrati (nome, data di registrazione, sale e membri attivi).",
+      "\"Accedi come Assistenza\": l'amministratore vede e corregge l'agenda, le sale e le prenotazioni del ristorante scelto come se fosse un utente del locale.",
+      "Banner fisso arancione in cima a ogni schermata durante l'assistenza, con pulsante \"Torna al Pannello Admin\".",
+      "Accesso riservato: solo gli account Super Admin possono aprire il pannello; gli altri vengono riportati all'agenda.",
+      "Conservate sincronizzazione, audit, passanti rapidi, cestino, cache offline, privacy, sale e ostacoli.",
+    ],
+  },
+  {
     version: "v0.11.0-alpha",
     date: "21 ottobre 2026",
     items: [

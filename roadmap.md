@@ -10,3 +10,6 @@
 - [x] Cestino condiviso del giorno, annulla per 8 secondi e ripristino con controllo tavoli.
 - [x] Test delle regole e verifica autenticata dei nuovi flussi.- [x] v0.9.0-alpha: link Termini e Privacy in accesso e sezione legale nel menù.
 - [x] Eliminazione account operatore con conferma, revoca immediata e audit storico conservato.
+- [x] v0.10.0-alpha: pallini affluenza Pranzo/Cena nel calendario con riepilogo e margine di riserva.
+- [x] v0.11.0-alpha: calendario con selettore turno, titolo dinamico, pallino singolo e regole Doppio Turno per sala.
+- [x] v0.12.0-alpha: Super Admin con pannello /admin, modalità Assistenza sui ristoranti e banner dedicato.
