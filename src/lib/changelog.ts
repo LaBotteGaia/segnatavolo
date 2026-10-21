@@ -3,6 +3,16 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.10.0-alpha",
+    date: "21 ottobre 2026",
+    items: [
+      "Calendario con due indicatori di affluenza per ogni giorno: sinistra Pranzo, destra Cena (verde < 65%, giallo 65–89%, rosso ≥ 90%, grigio se chiuso).",
+      "Passando sopra o toccando un indicatore compare il riepilogo, es. \"Pranzo: 28/40 coperti - 70%\".",
+      "Capienza calcolata solo sulle sale aperte in quella data e turno (giorni, stagioni e turni disattivati esclusi).",
+      "Nuova impostazione \"Coperti di Riserva (Margine di Sala)\" (predefinito 4 posti) sottratta dalla capienza prenotabile.",
+    ],
+  },
+  {
     version: "v0.9.0-alpha",
     date: "21 ottobre 2026",
     items: [
