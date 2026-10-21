@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership, useSettings } from "@/lib/membership";
+import { assistId } from "@/lib/assist";
 import { cn } from "@/lib/utils";
 import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
@@ -86,7 +87,8 @@ function SalePage() {
 
   const addRoom = async () => {
     if (!newRoom.trim()) return;
-    const { data } = await supabase.from("rooms").insert({ name: newRoom.trim(), sort_order: rooms.length }).select().single();
+      const assist = assistId();
+      const { data } = await supabase.from("rooms").insert({ name: newRoom.trim(), sort_order: rooms.length, ...(assist ? { restaurant_id: assist } : {}) }).select().single();
     setNewRoom("");
     if (data) setRoomId(data.id);
     refresh();

@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { activeShifts, closedShifts, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, shiftPlural, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
 import { affluenceLevel, affluenceTip, bookableCapacity, type Affluence } from "@/lib/affluence";
 import { useSettings } from "@/lib/membership";
+import { assistId } from "@/lib/assist";
 import { useNewReservationNotifications } from "@/lib/notifications";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
@@ -188,8 +189,9 @@ function AgendaPage() {
 
   const create = async (v: NewReservationInput): Promise<boolean> => {
     let customerId = v.customer?.id ?? null;
+    const assist = assistId();
     if (!customerId) {
-      const { data } = await supabase.from("customers").insert({ name: v.name, phone: v.phone || null }).select("id").single();
+      const { data } = await supabase.from("customers").insert({ name: v.name, phone: v.phone || null, ...(assist ? { restaurant_id: assist } : {}) }).select("id").single();
       customerId = data?.id ?? null;
       qc.invalidateQueries({ queryKey: ["customers"] });
     }
@@ -197,6 +199,7 @@ function AgendaPage() {
       date: v.date, shift: v.shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
       is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids, ...v.extras,
       duration_min: v.duration_min ?? null, buffer_min: v.buffer_min ?? null, tags: v.tags ?? [],
+      ...(assist ? { restaurant_id: assist } : {}),
     });
     if (error) { toast.error("Impossibile salvare la prenotazione"); return false; }
     toast.success("Prenotazione salvata");
@@ -236,9 +239,11 @@ function AgendaPage() {
   };
 
   const duplicate = async (r: Reservation, v: { dates: string[]; shift: Shift; time: string }) => {
+    const assist = assistId();
     const rows = v.dates.map((d) => ({
       date: d, shift: v.shift, time: v.time, name: r.name, people: r.people, phone: r.phone,
       is_new: false, outside: r.outside, notes: r.notes, customer_id: r.customer_id, table_ids: [] as string[],
+      ...(assist ? { restaurant_id: assist } : {}),
     }));
     const { error } = await supabase.from("reservations").insert(rows);
     if (error) { toast.error("Duplicazione non riuscita"); return false; }

@@ -3,7 +3,7 @@ import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users } from "lucide-react";
+import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users, Wrench } from "lucide-react";
 import { TutorialDialog } from "@/components/TutorialDialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,7 @@ import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, LEGAL_URL, SERVER_REGION_LINE } from 
 import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
+import { assistId, scopeAssist, useIsSuperAdmin } from "@/lib/assist";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
@@ -35,12 +36,13 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [binOpen, setBinOpen] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
   const isMaster = me?.role === "master";
+  const { data: isSuperAdmin } = useIsSuperAdmin();
   const [notify, setNotify] = useNotifyPref();
 
   const exportCsv = async () => {
-    const { data, error } = await supabase.from("reservations").select("*").is("deleted_at", null).order("date").order("time");
+    const { data, error } = await scopeAssist(supabase.from("reservations").select("*")).is("deleted_at", null).order("date").order("time");
     if (error || !data) { toast.error("Esportazione non riuscita"); return; }
-    const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables"]) ?? []).map((t) => [t.id, t.name]));
+    const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables", assistId() ?? "own"]) ?? []).map((t) => [t.id, t.name]));
     const rows = data.map((r) => ({ ...r, tavoli: r.table_ids.map((i) => byId.get(i) ?? "?"), turno: shiftName(r.shift as Shift), arrivato: r.arrived ? "Sì" : "No", fuori: r.outside ? "Sì" : "No", nuovo: r.is_new ? "Sì" : "No" }));
     const csv = toCsv(rows, [
       { key: "date", label: "Data" }, { key: "turno", label: "Turno" }, { key: "time", label: "Orario" }, { key: "name", label: "Nome" },
@@ -98,6 +100,11 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
             <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setBinOpen(true); }}>Cestino del giorno</MenuItem>
             <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Profilo operatore</MenuItem>
             <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setLegalOpen(true); }}>Informazioni legali e Privacy</MenuItem>
+            {isSuperAdmin && (
+              <Link to="/admin" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left font-semibold text-amber-700 hover:bg-amber-50 [&_svg]:size-4">
+                <Wrench /> Pannello Admin
+              </Link>
+            )}
             {isMaster && (
               <>
                 <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { normPhone, rangesOf, shiftName, useTables, type Customer, type Shift } from "@/lib/data";
 import { useMembership, useSettings } from "@/lib/membership";
+import { scopeAssist } from "@/lib/assist";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesOf } from "@/lib/customers";
 
@@ -17,7 +18,7 @@ import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesO
 async function linkedReservations(c: Customer) {
   const ph = phonesOf(c);
   const filter = [`customer_id.eq.${c.id}`, ...(ph.length ? [`phone.in.(${ph.map((p) => `"${p}"`).join(",")})`] : [])].join(",");
-  const { data, error } = await supabase.from("reservations").select("id, phone").or(filter);
+  const { data, error } = await scopeAssist(supabase.from("reservations").select("id, phone")).or(filter);
   if (error) throw error;
   return data ?? [];
 }

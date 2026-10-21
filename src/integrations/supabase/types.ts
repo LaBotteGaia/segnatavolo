@@ -61,6 +61,24 @@ export type Database = {
           },
         ]
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           arrived: boolean
@@ -444,6 +462,7 @@ export type Database = {
         }[]
       }
       is_master: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
       restore_service_reservation: {
         Args: { _id: string; _without_tables?: boolean }
