@@ -3,7 +3,7 @@ import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users } from "lucide-react";
+import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users, Wrench } from "lucide-react";
 import { TutorialDialog } from "@/components/TutorialDialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

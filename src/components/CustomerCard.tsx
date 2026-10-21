@@ -17,7 +17,7 @@ import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesO
 async function linkedReservations(c: Customer) {
   const ph = phonesOf(c);
   const filter = [`customer_id.eq.${c.id}`, ...(ph.length ? [`phone.in.(${ph.map((p) => `"${p}"`).join(",")})`] : [])].join(",");
-  const { data, error } = await supabase.from("reservations").select("id, phone").or(filter);
+  const { data, error } = await scopeAssist(supabase.from("reservations").select("id, phone")).or(filter);
   if (error) throw error;
   return data ?? [];
 }
