@@ -31,7 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Secrets / environment
-.env
+# Environment: .env stays tracked (publishable keys only; the published build needs VITE_* values).
 .env.*
 
