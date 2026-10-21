@@ -5,6 +5,7 @@ import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { normPhone, rangesOf } from "./data";
+import { assistId, scopeAssist } from "./assist";
 import { useMembership, useSettings } from "./membership";
 import { reliabilityStats, type HistoryRow } from "./no-show";
 
@@ -72,7 +73,7 @@ export function searchFilter(term: string) {
 /* ---------- Note di servizio ---------- */
 export function useServiceNote(date: string, shift: string) {
   const qc = useQueryClient();
-  const key = ["service-note", date, shift];
+  const key = ["service-note", date, shift, assistId() ?? "own"];
   useEffect(() => {
     const ch = supabase.channel(`note-${date}-${shift}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "service_notes" }, () => qc.invalidateQueries({ queryKey: key }))
@@ -82,7 +83,7 @@ export function useServiceNote(date: string, shift: string) {
   return useQuery({
     queryKey: key,
     queryFn: async () => {
-      const { data } = await supabase.from("service_notes").select("body").eq("date", date).eq("shift", shift).maybeSingle();
+      const { data } = await scopeAssist(supabase.from("service_notes").select("body")).eq("date", date).eq("shift", shift).maybeSingle();
       return data?.body ?? "";
     },
   });
