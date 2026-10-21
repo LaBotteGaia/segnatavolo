@@ -242,6 +242,16 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           </section>
 
           <section className="space-y-2">
+            <h3 className="font-display text-lg">Coperti di Riserva (Margine di Sala)</h3>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="number" min={0} max={200} className="w-24 rounded-md border bg-paper px-2 py-2" value={st.reserve} onChange={(e) => setSt((o) => ({ ...o, reserve: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))} /> posti
+            </label>
+            <p className="text-xs text-muted-foreground">Posti sottratti dal totale per mantenere una riserva di emergenza / passanti prima che il turno sia considerato completo.</p>
+          </section>
+
+
+
+          <section className="space-y-2">
             <h3 className="font-display text-lg">Privacy</h3>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="size-5" checked={st.privacy} onChange={(e) => setSt((o) => ({ ...o, privacy: e.target.checked }))} /> Modalità Privacy al banco (Maschera numeri telefonici)</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="size-5" checked={st.printPhones} onChange={(e) => setSt((o) => ({ ...o, printPhones: e.target.checked }))} /> Mostra numeri completi sul Foglio di Sala stampato</label>

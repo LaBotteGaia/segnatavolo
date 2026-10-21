@@ -99,6 +99,12 @@ function AgendaPage() {
     return out;
   }, [monthRows, rooms, tables]);
   const emptyDots = useMemo(() => dayDots([], (s: Shift) => totalCapacities(rooms, tables, s)), [rooms, tables]);
+  void dotsByDay; void emptyDots;
+  const bookedByDay = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of monthRows) if (!r.no_show) m.set(`${r.date}|${r.shift}`, (m.get(`${r.date}|${r.shift}`) ?? 0) + r.people);
+    return m;
+  }, [monthRows]);
 
   const setDate = (d: string) => navigate({ search: d === todayStr() ? {} : { d } });
   const goTo = (r: Reservation) => { setMobileShift(r.shift as Shift); navigate({ search: { ...(r.date === todayStr() ? {} : { d: r.date }), h: r.id } }); };
@@ -214,7 +220,17 @@ function AgendaPage() {
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <DayDots dots={dotsByDay.get(ds) ?? (outsideClosed(rooms, ds) ? { ...emptyDots, outside: "off" as DotLevel } : emptyDots)} />
+                      <span className="flex gap-0.5 !opacity-100">
+                        {(["pranzo", "sera"] as const).map((s) => {
+                          const cap = bookableCapacity(ds, s, rooms, tables, settings);
+                          const booked = bookedByDay.get(`${ds}|${s}`) ?? 0;
+                          const tip = affluenceTip(s, booked, cap);
+                          return (
+                            <span key={s} title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 2500 }); } }}
+                              className={cn("inline-flex size-2 shrink-0 items-center justify-center rounded-full", AFF_CLASS[affluenceLevel(booked, cap)])} />
+                          );
+                        })}
+                      </span>
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
