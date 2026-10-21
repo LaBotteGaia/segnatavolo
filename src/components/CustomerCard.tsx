@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { normPhone, rangesOf, shiftName, useTables, type Customer, type Shift } from "@/lib/data";
 import { useMembership, useSettings } from "@/lib/membership";
+import { scopeAssist } from "@/lib/assist";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesOf } from "@/lib/customers";
 

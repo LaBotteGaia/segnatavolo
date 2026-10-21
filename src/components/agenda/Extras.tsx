@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { APP_VERSION, lastVisitText, saveServiceNote, searchFilter, useServiceNote, useVisitStats, useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { rangesOf, shiftName, tableLabel, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
 import { useMembership, useSettings } from "@/lib/membership";
+import { scopeAssist } from "@/lib/assist";
 import { reliabilityStats } from "@/lib/no-show";
 import { ChangelogDialog } from "@/components/ChangelogDialog";
 
