@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { assistId, scopeAssist } from "@/lib/assist";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Room = Tables<"rooms">;
@@ -10,18 +11,18 @@ export type Shift = "colazione" | "pranzo" | "sera";
 export const ALL_SHIFTS: Shift[] = ["colazione", "pranzo", "sera"];
 
 export const roomsQuery = () => ({
-  queryKey: ["rooms"],
+  queryKey: ["rooms", assistId() ?? "own"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("rooms").select("*").order("sort_order").order("created_at");
+    const { data, error } = await scopeAssist(supabase.from("rooms").select("*")).order("sort_order").order("created_at");
     if (error) throw error;
     return data;
   },
 });
 
 export const tablesQuery = () => ({
-  queryKey: ["tables"],
+  queryKey: ["tables", assistId() ?? "own"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("restaurant_tables").select("*");
+    const { data, error } = await scopeAssist(supabase.from("restaurant_tables").select("*"));
     if (error) throw error;
     return [...data].sort((a, b) => compareTableNames(a.name, b.name));
   },
@@ -43,18 +44,18 @@ export function compareTables(rooms: { id: string }[] | undefined) {
 }
 
 export const customersQuery = () => ({
-  queryKey: ["customers"],
+  queryKey: ["customers", assistId() ?? "own"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("customers").select("*").order("name");
+    const { data, error } = await scopeAssist(supabase.from("customers").select("*")).order("name");
     if (error) throw error;
     return data;
   },
 });
 
 export const reservationsQuery = (date: string) => ({
-  queryKey: ["reservations", date],
+  queryKey: ["reservations", date, assistId() ?? "own"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("reservations").select("*").is("deleted_at", null).eq("date", date);
+    const { data, error } = await scopeAssist(supabase.from("reservations").select("*")).is("deleted_at", null).eq("date", date);
     if (error) throw error;
     return data;
   },
@@ -253,9 +254,9 @@ export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift">
 }
 
 export const monthReservationsQuery = (from: string, to: string) => ({
-  queryKey: ["reservations-month", from, to],
+  queryKey: ["reservations-month", from, to, assistId() ?? "own"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("reservations").select("date, shift, people, outside, no_show").is("deleted_at", null).gte("date", from).lte("date", to);
+    const { data, error } = await scopeAssist(supabase.from("reservations").select("date, shift, people, outside, no_show")).is("deleted_at", null).gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },
