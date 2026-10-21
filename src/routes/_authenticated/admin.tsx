@@ -43,9 +43,9 @@ function AdminPage() {
       if (e2) throw e2;
       if (e3) throw e3;
       const roomCount = new Map<string, number>();
-      for (const r of rooms ?? []) roomCount.set(r.restaurant_id, (roomCount.get(r.restaurant_id) ?? 0) + 1);
+      for (const r of rooms ?? []) if (r.restaurant_id) roomCount.set(r.restaurant_id, (roomCount.get(r.restaurant_id) ?? 0) + 1);
       const staffCount = new Map<string, number>();
-      for (const m of members ?? []) staffCount.set(m.restaurant_id, (staffCount.get(m.restaurant_id) ?? 0) + 1);
+      for (const m of members ?? []) if (m.restaurant_id) staffCount.set(m.restaurant_id, (staffCount.get(m.restaurant_id) ?? 0) + 1);
       return (restaurants ?? []).map((r) => ({ id: r.id, name: r.name, created_at: r.created_at, rooms: roomCount.get(r.id) ?? 0, staff: staffCount.get(r.id) ?? 0 }));
     },
   });
