@@ -329,6 +329,7 @@ export type Database = {
           closed_periods: Json
           closed_shifts: string[]
           created_at: string
+          double_shifts: Json
           environment: string
           grid_cols: number
           grid_rows: number
@@ -345,6 +346,7 @@ export type Database = {
           closed_periods?: Json
           closed_shifts?: string[]
           created_at?: string
+          double_shifts?: Json
           environment?: string
           grid_cols?: number
           grid_rows?: number
@@ -361,6 +363,7 @@ export type Database = {
           closed_periods?: Json
           closed_shifts?: string[]
           created_at?: string
+          double_shifts?: Json
           environment?: string
           grid_cols?: number
           grid_rows?: number

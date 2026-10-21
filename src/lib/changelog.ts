@@ -3,6 +3,16 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.11.0-alpha",
+    date: "21 ottobre 2026",
+    items: [
+      "Calendario con selettore ☀️ Pranzo / 🌙 Cena e titolo dinamico (es. \"Pranzi di Ottobre 2026\").",
+      "Ripristinato il pallino singolo per giorno: mostra solo l'affluenza del turno selezionato (verde < 65%, giallo 65–89%, rosso ≥ 90%, grigio se chiuso).",
+      "Nuove regole di \"Doppio Turno\" per sala (Gestione Sale): periodo dell'anno o tutto l'anno, giorni della settimana e turni applicabili; la capienza della sala conta doppia nelle date e turni attivi.",
+      "Conservate sincronizzazione, audit, passanti rapidi, cestino, cache offline, privacy, sale e ostacoli.",
+    ],
+  },
+  {
     version: "v0.10.0-alpha",
     date: "21 ottobre 2026",
     items: [
