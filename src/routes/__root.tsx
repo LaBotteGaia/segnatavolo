@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { LiveSync } from "@/lib/live-sync";
 import { registerOfflineApp } from "@/lib/pwa";
+import { AssistBanner } from "@/components/AssistBanner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -125,6 +126,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LiveSync />
+      <AssistBanner />
       <Outlet />
       <Toaster position="bottom-center" />
     </QueryClientProvider>
