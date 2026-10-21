@@ -20,3 +20,4 @@
 - Emergency exports are self-contained escaped HTML built from loaded query data, so they download without a network call and preserve room/table ordering.
 - Service deletions set reservations.deleted_at without clearing the row; every active reservation read excludes deleted rows, while permanent customer deletion still removes all linked records to preserve its existing semantics.
 - Walk-in creation and recycle-bin restoration use authenticated security-invoker database RPCs with restaurant-scoped locking and interval checks; this preserves RLS and trusted audit attribution while detecting concurrent service conflicts.
+- Account deletion goes through the SECURITY DEFINER RPC delete_own_account(): it removes the caller's restaurant_members row and auth.users row while audit survives on copied operator-name text; the last active master of a restaurant is blocked from self-deletion.

@@ -8,4 +8,5 @@
 - [x] v0.8.0-alpha: unico hub Sala & Servizio e rimozione duplicati.
 - [x] Passanti rapidi con disponibilità corrente, arrivo automatico e rotazione 90+15.
 - [x] Cestino condiviso del giorno, annulla per 8 secondi e ripristino con controllo tavoli.
-- [x] Test delle regole e verifica autenticata dei nuovi flussi.
+- [x] Test delle regole e verifica autenticata dei nuovi flussi.- [x] v0.9.0-alpha: link Termini e Privacy in accesso e sezione legale nel menù.
+- [x] Eliminazione account operatore con conferma, revoca immediata e audit storico conservato.
