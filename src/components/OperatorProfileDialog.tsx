@@ -37,12 +37,12 @@ function ProfileForm({ member, email }: { member: Member; email: string }) {
   const [name, setName] = useState(member.name);
   const [phone, setPhone] = useState(member.phone);
   const [notes, setNotes] = useState(member.notes);
-  const [job, setJob] = useState(member.operational_role || "Altro");
+  const [job, setJob] = useState(member.operational_role || "unspecified");
   const [busy, setBusy] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
     e.preventDefault(); if (busy || !name.trim()) return; setBusy(true);
     try {
-      const { error } = await supabase.rpc("update_operator_profile", { _name: name.trim(), _phone: phone.trim(), _notes: notes.trim(), _operational_role: job });
+      const { error } = await supabase.rpc("update_operator_profile", { _name: name.trim(), _phone: phone.trim(), _notes: notes.trim(), _operational_role: job === "unspecified" ? "" : job });
       if (error) throw error;
       await Promise.all(["own-operator-profile", "membership", "members"].map((key) => qc.invalidateQueries({ queryKey: [key] })));
       toast.success("Profilo operatore aggiornato");
@@ -50,7 +50,7 @@ function ProfileForm({ member, email }: { member: Member; email: string }) {
   }}>
     <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Anagrafica operatore interno</h3><span className="text-xs text-muted-foreground">{roleLabel(member.role)}</span></div>
     <div><Label htmlFor="profile-name">Nome e Cognome / Nickname di sala</Label><Input id="profile-name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></div>
-    <div><Label htmlFor="profile-job">Ruolo operativo</Label><Select value={job} onValueChange={setJob}><SelectTrigger id="profile-job"><SelectValue /></SelectTrigger><SelectContent>{Array.from(new Set([...OPERATIONAL_ROLES, job])).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select></div>
+    <div><Label htmlFor="profile-job">Ruolo operativo</Label><Select value={job} onValueChange={setJob}><SelectTrigger id="profile-job"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="unspecified">Non specificato</SelectItem>{Array.from(new Set([...OPERATIONAL_ROLES, ...(job === "unspecified" ? [] : [job])])).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select></div>
     <div><Label htmlFor="profile-email">Indirizzo Email</Label><Input id="profile-email" type="email" readOnly value={email} className="bg-muted" /></div>
     <div><Label htmlFor="profile-phone">Recapito Telefonico Personale / Servizio</Label><Input id="profile-phone" type="tel" autoComplete="tel" maxLength={40} value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
     <div><Label htmlFor="profile-notes">Note operative / Disponibilità</Label><Textarea id="profile-notes" maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
