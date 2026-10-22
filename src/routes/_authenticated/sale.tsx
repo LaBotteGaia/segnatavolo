@@ -124,7 +124,7 @@ function SalePage() {
 
   return (
     <div className="min-h-screen p-3 sm:p-6">
-      <div className="mx-auto max-w-5xl">
+      <div className="w-full max-w-none">
         <Button asChild variant="secondary" size="sm" className="mb-4">
           <Link to="/agenda"><ArrowLeft /> Torna all'agenda</Link>
         </Button>

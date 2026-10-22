@@ -317,9 +317,9 @@ function AgendaPage() {
   };
 
   return (
-    <div className="min-h-screen pb-10">
-      <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 text-primary-foreground backdrop-blur">
-        <div className="mx-auto grid max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
+    <div className="min-h-screen w-full pb-10">
+      <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-primary-foreground backdrop-blur">
+        <div className="grid w-full max-w-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
           <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
@@ -361,12 +361,12 @@ function AgendaPage() {
             </Button>
           </div>
         </div>
-        <div className="mx-auto mt-2 flex max-w-7xl flex-wrap items-center gap-2">
+        <div className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2">
           <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
           <ServiceHub requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
-        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
+        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (
             <Button
               variant="ghost"
@@ -380,11 +380,11 @@ function AgendaPage() {
         </div>
       </div>
 
-      <main className="mx-auto mt-4 max-w-7xl px-2 sm:px-4">
+      <main className="mt-4 w-full max-w-none px-3 sm:px-6 lg:px-8">
         <OnlineRequests />
         <div className="hidden gap-0 agenda-wide:flex">
           {shifts.map((s, i) => (
-            <div key={s} className="flex min-w-0 flex-1 gap-0">
+            <div key={s} className="flex w-full min-w-0 flex-1 basis-0 gap-0">
               {i > 0 && <div className="w-1 bg-desk" />}
               {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
             </div>
