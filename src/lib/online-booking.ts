@@ -1,8 +1,12 @@
 import { z } from 'zod';
-export const onlineConfigSchema = z.object({ max_days: z.number().int().min(1).max(365).default(30), cutoff: z.enum(['hours','previous_day','24h','48h']).default('hours'), cutoff_hours: z.number().int().min(0).max(72).default(2), closed_message: z.string().trim().max(1000).default('Per prenotazioni dell’ultimo minuto contatta direttamente il ristorante.') });
+export const onlineConfigSchema = z.object({ max_party_size: z.number().int().min(1).max(100).default(6), max_days: z.number().int().min(1).max(365).default(30), cutoff: z.enum(['hours','previous_day','24h','48h']).default('hours'), cutoff_hours: z.number().int().min(0).max(72).default(2), closed_message: z.string().trim().max(1000).default('Per prenotazioni dell’ultimo minuto contatta direttamente il ristorante.') });
 export const slugSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/, 'Usa almeno 2 caratteri: lettere minuscole, numeri e trattini');
 export const slugFromName = (name: string) => name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
 export const bookingSchema = z.object({ slug: slugSchema, request_id: z.string().uuid(), people: z.number().int().min(1).max(100), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), shift: z.enum(['pranzo','sera']), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), name: z.string().trim().min(2).max(150), phone: z.string().transform(p=>p.replace(/[\s\-./()]/g,'')).pipe(z.string().regex(/^\+?\d{7,15}$/, 'Inserisci un cellulare valido')), email: z.string().trim().email().max(255), notes: z.string().trim().max(1000), outside: z.boolean(), privacy: z.literal(true), marketing: z.boolean() });
 export type OnlineConfig = z.infer<typeof onlineConfigSchema>;
 export type OnlinePage = { name: string; address: string; logo: string; today: string; config: OnlineConfig; shifts: Record<'pranzo'|'sera',{enabled:boolean;from:string;to:string}>; days: {date:string;pranzo:number|null;sera:number|null}[] };
 export function dayAvailable(day: OnlinePage['days'][number], people: number) { return (day.pranzo ?? -1)>=people || (day.sera ?? -1)>=people; }
+
+export type OnlineSlot = { time: string; remaining: number | null };
+export function partyLimit(remaining: number | null | undefined, maximum: number) { return Math.max(0, Math.min(remaining ?? 0, maximum)); }
+export function confirmedBooking(row: { status?: string }) { return row.status === undefined || row.status === "confirmed"; }

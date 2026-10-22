@@ -59,7 +59,7 @@ export const reservationsQuery = (date: string, restaurantId: string | null = nu
   queryKey: ["reservations", date, restaurantId],
   enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("date", date);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("status", "confirmed").eq("date", date);
     if (error) throw error;
     return data;
   },
@@ -261,7 +261,7 @@ export const monthReservationsQuery = (from: string, to: string, restaurantId: s
   queryKey: ["reservations-month", from, to, restaurantId],
   enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date, shift, people, outside, no_show"), restaurantId).is("deleted_at", null).gte("date", from).lte("date", to);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date, shift, people, outside, no_show"), restaurantId).is("deleted_at", null).eq("status", "confirmed").gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },
