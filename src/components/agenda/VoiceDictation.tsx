@@ -9,15 +9,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useActiveRestaurantId } from "@/lib/tenant";
 import { getAiSettings, parseVoiceBooking } from "@/lib/voice-ai.functions";
 import type { VoiceBooking } from "@/lib/voice-ai";
+import { voiceDateContext } from "@/lib/voice-date";
 import { cn } from "@/lib/utils";
 
 type Rec = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
-const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
 
-export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBooking) => void; className?: string }) {
+export function VoiceDictation({ onResult, className, selectedDate }: { onResult: (b: VoiceBooking) => void; className?: string; selectedDate?: string }) {
   const rid = useActiveRestaurantId();
   const load = useServerFn(getAiSettings), parse = useServerFn(parseVoiceBooking);
-  const { data: cfg } = useQuery({ queryKey: ["ai-settings", rid], enabled: !!rid, queryFn: () => load({ data: { id: rid! } }), staleTime: 60_000 });
+  const { data: cfg } = useQuery({ queryKey: ["ai-settings", rid], enabled: !!rid, queryFn: () => { if (!rid) throw new Error("Ristorante non disponibile"); return load({ data: { id: rid } }); }, staleTime: 60_000 });
   const [listening, setListening] = useState(false);
   const [review, setReview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,7 +54,7 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
     if (!rid || !review?.trim()) return;
     setBusy(true);
     try {
-      const r = await parse({ data: { restaurant_id: rid, transcript: review, current_date: romeToday() } });
+      const r = await parse({ data: { restaurant_id: rid, transcript: review, ...voiceDateContext(new Date(), selectedDate) } });
       if (!r.ok) { toast.error(r.message); return; }
       setReview(null); onResult(r.booking);
     } catch { toast.error("Elaborazione non riuscita"); } finally { setBusy(false); }

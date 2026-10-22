@@ -378,7 +378,7 @@ function AgendaPage() {
         <div className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2">
           <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
-          <VoiceDictation onResult={openVoice} className="flex-none" />
+          <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
           <ServiceHub requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
