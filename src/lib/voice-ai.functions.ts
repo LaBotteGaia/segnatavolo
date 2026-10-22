@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { aiSettingsSchema, normalizeVoiceBooking, type VoiceBooking } from './voice-ai';
+import { dayNames, voiceDateSchema } from './voice-date';
 
 const idInput = z.object({ id: z.string().uuid() });
 const aad = (id: string) => `ai:${id}`;
@@ -45,14 +46,15 @@ export const testAiKey = createServerFn({ method: 'POST' }).middleware([requireS
   return r.ok ? { ok: true, message: 'Chiave API valida e pronta all’uso' } : { ok: false, message: r.message };
 });
 
-export const parseVoiceBooking = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => z.object({ restaurant_id: z.string().uuid(), transcript: z.string().trim().min(3).max(1000), current_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(v)).handler(async ({ data, context }): Promise<{ ok: true; booking: VoiceBooking } | { ok: false; message: string }> => {
+export const parseVoiceBooking = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => z.object({ restaurant_id: z.string().uuid(), transcript: z.string().trim().min(3).max(1000), current_date: voiceDateSchema, current_day_name: z.enum(dayNames).optional(), agenda_selected_date: voiceDateSchema.nullish() }).parse(v)).handler(async ({ data, context }): Promise<{ ok: true; booking: VoiceBooking } | { ok: false; message: string }> => {
   const { data: allowed } = await context.supabase.rpc('can_use_restaurant', { _rid: data.restaurant_id });
   if (!allowed) throw new Error('Non autorizzato');
   const cfg = await loadKey(data.restaurant_id);
   if (!cfg || !cfg.enabled) return { ok: false, message: 'Dettatura vocale non configurata per questo ristorante.' };
   const { callProvider } = await import('./voice-ai.server');
-  const r = await callProvider(cfg.provider, cfg.key, data.transcript, data.current_date);
+  const dateContext = { current_date: data.current_date, current_day_name: dayNames[new Date(`${data.current_date}T12:00:00Z`).getUTCDay()] ?? 'domenica', agenda_selected_date: data.agenda_selected_date ?? null };
+  const r = await callProvider(cfg.provider, cfg.key, data.transcript, data.current_date, 300, dateContext);
   if (!r.ok) return r;
-  try { return { ok: true, booking: normalizeVoiceBooking(JSON.parse(r.text), data.current_date) }; }
+  try { return { ok: true, booking: normalizeVoiceBooking(JSON.parse(r.text), data.current_date, dateContext, data.transcript) }; }
   catch { return { ok: false, message: 'Risposta dell’IA non interpretabile: correggi il testo e riprova.' }; }
 });
