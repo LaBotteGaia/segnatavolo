@@ -186,12 +186,12 @@ function SalePage() {
               <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
               <div className="mb-4 flex flex-wrap items-end gap-4 rounded-md border bg-card p-3">
                 <div>
-                  <div className="mb-1 text-xs text-muted-foreground">Ambiente</div>
+                  <div className="mb-1 text-xs text-muted-foreground">Tipologia Sala</div>
                   <div className="flex gap-1">
                     {(["interno", "esterno"] as const).map((env) => (
-                      <button key={env} onClick={() => updateRoom(room, { environment: env })}
+                      <button key={env} onClick={() => updateRoom(room, { environment: env, is_outdoor: env === "esterno" })}
                         className={cn("rounded-md border px-3 py-1.5 text-sm", room.environment === env ? "bg-primary text-primary-foreground" : "bg-paper")}>
-                        {env === "interno" ? "Interno" : "Esterno / All'aperto (Fuori)"}
+                        {env === "interno" ? "🏠 Interna" : "🌳 Esterna / Dehors / Veranda"}
                       </button>
                     ))}
                   </div>

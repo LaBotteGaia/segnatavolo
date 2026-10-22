@@ -15,7 +15,7 @@ import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { activeShifts, closedShifts, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, shiftPlural, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
-import { affluenceLevel, affluenceTip, bookableCapacity, type Affluence } from "@/lib/affluence";
+import { affluenceLevel, zoneCapacities, zoneTip, type Affluence } from "@/lib/affluence";
 import { useSettings } from "@/lib/membership";
 import { useActiveRestaurantId } from "@/lib/tenant";
 import { useNewReservationNotifications } from "@/lib/notifications";
@@ -97,7 +97,7 @@ function AgendaPage() {
   const calShift: Shift = shifts.includes(calPick) ? calPick : (shifts[0] ?? "pranzo");
   const bookedByDay = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of monthRows) if (!r.no_show) m.set(`${r.date}|${r.shift}`, (m.get(`${r.date}|${r.shift}`) ?? 0) + r.people);
+    for (const r of monthRows) if (!r.no_show) { const k = `${r.date}|${r.shift}|${r.outside ? "out" : "in"}`; m.set(k, (m.get(k) ?? 0) + r.people); }
     return m;
   }, [monthRows]);
 
@@ -215,13 +215,17 @@ function AgendaPage() {
                   const ds = format(d, "yyyy-MM-dd");
                   if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
-                  const cap = bookableCapacity(ds, calShift, rooms, tables, settings);
-                  const booked = bookedByDay.get(`${ds}|${calShift}`) ?? 0;
-                  const tip = affluenceTip(calShift, booked, cap);
+                  const cap = zoneCapacities(ds, calShift, rooms, tables, settings);
+                  const bin = bookedByDay.get(`${ds}|${calShift}|in`) ?? 0;
+                  const bout = bookedByDay.get(`${ds}|${calShift}|out`) ?? 0;
+                  const tip = zoneTip(bin, cap.inside, bout, cap.outside);
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <span title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 2500 }); } }}
-                        className={cn("inline-flex size-2 shrink-0 items-center justify-center rounded-full", AFF_CLASS[affluenceLevel(booked, cap)])} />
+                      <span title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 3000 }); } }}
+                        className="inline-flex items-center gap-0.5">
+                        <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bin, cap.inside)])} />
+                        <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bout, cap.outside)])} />
+                      </span>
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
@@ -428,5 +432,5 @@ const AFF_CLASS: Record<Affluence, string> = {
   green: "bg-free",
   yellow: "bg-warning",
   red: "bg-destructive",
-  closed: "bg-muted-foreground/25",
+  closed: "bg-foreground/70",
 };
