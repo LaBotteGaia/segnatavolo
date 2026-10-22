@@ -93,7 +93,8 @@ export function reorganizeService(p: {
   /** Unioni contigue nella stessa sala che soddisfano `fits`; ordinate per ordine di riempimento, dimensione, spreco. */
   const unions = (r: ReorgReservation, me: { start: number; free: number }, fits: (combo: ReorgTable[]) => TableExtras | null): { ids: string[]; extras: TableExtras } | null => {
     const zone = zoneRooms(r);
-    let best: { ids: string[]; extras: TableExtras; score: number[] } | null = null;
+    type Best = { ids: string[]; extras: TableExtras; score: number[] };
+    const box: { best: Best | null } = { best: null };
     for (const room of zone) {
       const freeTables = p.tables.filter((t) => t.room_id === room.id && isFree(occ, t.id, me));
       const adjacent = (a: ReorgTable, b: ReorgTable) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
@@ -105,7 +106,7 @@ export function reorganizeService(p: {
         const extras = fits(combo);
         if (extras) {
           const score = [combo.reduce((s, t) => s + fillOrder(t), 0), combo.length, Math.max(0, seats - r.people)];
-          if (!best || lexLess(score, best.score)) best = { ids: combo.map((t) => t.id), extras, score };
+          if (!box.best || lexLess(score, box.best.score)) box.best = { ids: combo.map((t) => t.id), extras, score };
         }
         if (seats >= r.people) return;
         for (const next of freeTables) {
@@ -115,7 +116,7 @@ export function reorganizeService(p: {
       };
       for (const t of freeTables) explore([t], comodi(t));
     }
-    return best ? { ids: best.ids, extras: best.extras } : null;
+    return box.best ? { ids: box.best.ids, extras: box.best.extras } : null;
   };
 
   const zoneRooms = (r: ReorgReservation) => {
