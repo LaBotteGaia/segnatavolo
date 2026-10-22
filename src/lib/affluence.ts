@@ -33,3 +33,25 @@ export function affluenceTip(shift: Shift, booked: number, capacity: number | nu
   const pct = capacity > 0 ? Math.round((booked / capacity) * 100) : 100;
   return `${shiftName(shift)}: ${booked}/${capacity} coperti - ${pct}%`;
 }
+
+type ZR = R & { environment?: string | null; is_outdoor?: boolean | null };
+const isOut = (r: ZR) => r.is_outdoor ?? r.environment === "esterno";
+
+/** Capienza Interno/Esterno: il margine di riserva si sottrae alle sale interne (o alle esterne se il locale non ne ha di interne aperte). */
+export function zoneCapacities(date: string, shift: Shift, rooms: ZR[], tables: Pick<RTable, "room_id" | "seats">[], st: Pick<RestaurantSettings, "reserve" | "shifts" | "weekly" | "holidays">) {
+  const zero = { ...st, reserve: 0 };
+  let inside = bookableCapacity(date, shift, rooms.filter((r) => !isOut(r)), tables, zero);
+  let outside = bookableCapacity(date, shift, rooms.filter(isOut), tables, zero);
+  const reserve = Math.max(0, st.reserve);
+  if (inside !== null) inside = Math.max(0, inside - reserve);
+  else if (outside !== null) outside = Math.max(0, outside - reserve);
+  return { inside, outside };
+}
+
+const zoneTxt = (label: string, booked: number, cap: number | null) =>
+  cap === null ? `${label}: Chiuso` : `${label}: ${booked}/${cap} coperti (${cap > 0 ? Math.round((booked / cap) * 100) : 100}%)`;
+
+/** Es. "Interno: 32/45 coperti (71%) | Esterno: Chiuso". */
+export function zoneTip(inBooked: number, inCap: number | null, outBooked: number, outCap: number | null) {
+  return `${zoneTxt("Interno", inBooked, inCap)} | ${zoneTxt("Esterno", outBooked, outCap)}`;
+}

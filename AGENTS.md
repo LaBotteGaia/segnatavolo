@@ -27,3 +27,4 @@
 - The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub rather than creating a duplicate tools page.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
+- Room indoor/outdoor: rooms.is_outdoor and legacy rooms.environment are kept in sync by a DB trigger, so older code reading environment stays correct. Table suggestions come from the pure src/lib/allocation.ts reusing tableState/canJoin, so rotation, double shifts and join constraints share one source of truth.
