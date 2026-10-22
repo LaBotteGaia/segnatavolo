@@ -11,7 +11,7 @@ import { getAiSettings, parseVoiceBooking } from "@/lib/voice-ai.functions";
 import type { VoiceBooking } from "@/lib/voice-ai";
 import { cn } from "@/lib/utils";
 
-type Rec = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
+type Rec = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
 const SILENCE_MS = 2500;
 const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
 
@@ -38,7 +38,22 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
     r.lang = "it-IT"; r.continuous = true; r.interimResults = true;
     text.current = ""; setLive("");
     const arm = () => { clearTimeout(timer.current); timer.current = setTimeout(() => r.stop(), SILENCE_MS); };
-    r.onresult = (e) => { text.current = Array.from(e.results).map((x) => x[0]?.transcript ?? "").join(" ").replace(/\s+/g, " ").trim(); setLive(text.current); arm(); };
+    // Ricostruzione senza echi: i risultati definitivi si accumulano una sola volta,
+    // quelli provvisori (interim) vengono scartati a ogni evento e sostituiti.
+    r.onresult = (e) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+      for (let i = 0; i < e.results.length; ++i) {
+        const result = e.results[i];
+        if (!result) continue;
+        const transcript = result[0]?.transcript ?? "";
+        if (result.isFinal) finalTranscript += transcript + " ";
+        else interimTranscript += transcript;
+      }
+      text.current = (finalTranscript + interimTranscript).trim().replace(/\s+/g, " ");
+      setLive(text.current);
+      arm();
+    };
     r.onerror = (e) => { if (e.error === "not-allowed") toast.error("Consenti l'uso del microfono per dettare"); };
     r.onend = () => { clearTimeout(timer.current); setListening(false); rec.current = null; setReview(text.current); };
     rec.current = r; r.start(); setListening(true); arm();
