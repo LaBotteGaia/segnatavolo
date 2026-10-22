@@ -15,7 +15,7 @@ import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Calendar, CalendarDayExtra } from "@/components/ui/calendar";
+import { Calendar, CalendarDayExtra, CalendarDayGesture } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { activeShifts, closedShifts, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, shiftPlural, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
@@ -101,6 +101,9 @@ function AgendaPage() {
   const [mobilePick, setMobileShift] = useState<Shift>(new Date().getHours() >= 16 ? "sera" : new Date().getHours() < 11 && settings.shifts.colazione.enabled ? "colazione" : "pranzo");
   const mobileShift: Shift = shifts.includes(mobilePick) ? mobilePick : (shifts[0] ?? "pranzo");
   const [month, setMonth] = useState<Date>(() => parseISO(date));
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const calendarTap = useRef<{ key: string; at: number } | null>(null);
+  const availabilityToast = useRef<string | number | undefined>(undefined);
   const { data: rooms = [] } = useRooms();
   const { data: tables = [] } = useTables();
   const mFrom = format(startOfMonth(addDays(startOfMonth(month), -7)), "yyyy-MM-dd");
@@ -234,7 +237,7 @@ function AgendaPage() {
                   const tip = zoneTip(bin, cap.inside, bout, cap.outside);
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <span title={tip} aria-label={tip} role="img" onClick={(e) => { if (window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 3000 }); } }}
+                      <span title={tip} aria-label={tip} role="img"
                         className="inline-flex items-center gap-0.5">
                         <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bin, cap.inside)])} />
                         <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bout, cap.outside)])} />
@@ -242,6 +245,20 @@ function AgendaPage() {
                       {part.length > 0 && <span className="text-[7px] leading-none text-muted-foreground">Chiuso {part.map((s) => shiftName(s)[0]).join("/")}</span>}
                     </span>
                   );
+  };
+
+  const consultDay = (d: Date) => {
+    const ds = format(d, "yyyy-MM-dd");
+    const cap = zoneCapacities(ds, calShift, rooms, tables, settings);
+    toast.dismiss(availabilityToast.current);
+    availabilityToast.current = toast(isDayClosed(ds, settings) ? "Chiuso" : zoneTip(bookedByDay.get(`${ds}|${calShift}|in`) ?? 0, cap.inside, bookedByDay.get(`${ds}|${calShift}|out`) ?? 0, cap.outside), { duration: 3000 });
+  };
+  const openCalendarDay = (d: Date) => {
+    toast.dismiss(availabilityToast.current);
+    calendarTap.current = null;
+    setCalendarOpen(false);
+    setMobileShift(calShift);
+    setDate(format(d, "yyyy-MM-dd"));
   };
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
@@ -343,7 +360,7 @@ function AgendaPage() {
             <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
               <ChevronLeft />
             </Button>
-            <Popover>
+            <Popover open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); calendarTap.current = null; if (!open) toast.dismiss(availabilityToast.current); }}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" aria-label="Apri calendario" className="h-auto min-w-0 gap-2 whitespace-normal px-1 py-2 font-display text-xl capitalize leading-tight hover:bg-primary-foreground/10 hover:text-primary-foreground agenda-wide:text-lg">
                   <CalendarIcon className="hidden size-4 shrink-0 agenda-wide:block" />
@@ -362,9 +379,11 @@ function AgendaPage() {
                   </div>
                   <div className="mt-2 text-center font-display text-lg text-primary">{shiftPlural(calShift)} di {format(month, "MMMM yyyy", { locale: it }).replace(/^\w/, (c) => c.toUpperCase())}</div>
                 </div>
-                <CalendarDayExtra.Provider value={dayExtra}>
-                  <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={setMonth} onSelect={(d) => d && setDate(format(d, "yyyy-MM-dd"))} className="pointer-events-auto p-3" />
-                </CalendarDayExtra.Provider>
+                <CalendarDayGesture.Provider value={{ openDay: openCalendarDay, lastTap: calendarTap }}>
+                  <CalendarDayExtra.Provider value={dayExtra}>
+                    <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={(m) => { calendarTap.current = null; setMonth(m); }} onDayClick={consultDay} className="pointer-events-auto p-3" />
+                  </CalendarDayExtra.Provider>
+                </CalendarDayGesture.Provider>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
                   <span><Dot level="green" /> libero</span><span><Dot level="yellow" /> limitato</span><span><Dot level="red" /> quasi pieno</span><span><Dot level="off" /> chiuso</span>
                 </div>

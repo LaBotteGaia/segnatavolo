@@ -36,3 +36,4 @@
 - Booking email templates and staff destination live in the protected restaurant delivery settings; trusted reservation events derive recipients and tenant-scoped placeholder data server-side, never from a generic browser send endpoint.
 - Voice dictation uses each restaurant's own OpenAI/Gemini key, encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing runs in authenticated server functions (voice-ai.functions.ts), never Edge Functions, and only after the operator confirms the transcript.
 - Voice date context uses device-local calendar fields; shared pure date rules override AI arithmetic for supported expressions and use the selected agenda date when no temporal reference exists, preventing provider-dependent date drift.
+- Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.

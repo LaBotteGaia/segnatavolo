@@ -6,6 +6,7 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useCalendarGesture, type CalendarTapTracker } from "@/hooks/use-calendar-gesture";
 
 function Calendar({
   className,
@@ -138,6 +139,7 @@ function Calendar({
 
 /** Optional extra content rendered under each day number (e.g. availability dots). */
 export const CalendarDayExtra = React.createContext<((date: Date) => React.ReactNode) | null>(null);
+export const CalendarDayGesture = React.createContext<{ openDay: (date: Date) => void; lastTap: CalendarTapTracker } | null>(null);
 
 function CalendarDayButton({
   className,
@@ -149,6 +151,10 @@ function CalendarDayButton({
 
   const ref = React.useRef<HTMLButtonElement>(null);
   const extra = React.useContext(CalendarDayExtra);
+  const gesture = React.useContext(CalendarDayGesture);
+  const fallbackTap = React.useRef<{ key: string; at: number } | null>(null);
+  const openDay = React.useCallback(() => gesture?.openDay(day.date), [gesture, day.date]);
+  const handlers = useCalendarGesture(day.date.toLocaleDateString(), gesture ? openDay : undefined, gesture?.lastTap ?? fallbackTap);
   React.useEffect(() => {
     if (modifiers["focused"]) ref.current?.focus();
   }, [modifiers]);
@@ -174,6 +180,7 @@ function CalendarDayButton({
         className,
       )}
       {...props}
+      {...(gesture ? handlers : {})}
     >
       {props.children}
       {extra?.(day.date)}
