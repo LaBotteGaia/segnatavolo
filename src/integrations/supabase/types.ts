@@ -22,6 +22,8 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          marketing_consent: boolean
+          marketing_consent_at: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -34,6 +36,8 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -46,6 +50,8 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
@@ -84,6 +90,8 @@ export type Database = {
           arrived: boolean
           barella_seats: number
           buffer_min: number | null
+          channel: string
+          contact_email: string | null
           created_at: string
           created_by: string | null
           created_by_name: string
@@ -98,9 +106,12 @@ export type Database = {
           name: string
           no_show: boolean
           notes: string
+          online_request_id: string | null
           outside: boolean
           people: number
           phone: string | null
+          privacy_consent_at: string | null
+          privacy_policy_url: string | null
           restaurant_id: string | null
           shift: string
           table_ids: string[]
@@ -113,6 +124,8 @@ export type Database = {
           arrived?: boolean
           barella_seats?: number
           buffer_min?: number | null
+          channel?: string
+          contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
@@ -127,9 +140,12 @@ export type Database = {
           name?: string
           no_show?: boolean
           notes?: string
+          online_request_id?: string | null
           outside?: boolean
           people?: number
           phone?: string | null
+          privacy_consent_at?: string | null
+          privacy_policy_url?: string | null
           restaurant_id?: string | null
           shift: string
           table_ids?: string[]
@@ -142,6 +158,8 @@ export type Database = {
           arrived?: boolean
           barella_seats?: number
           buffer_min?: number | null
+          channel?: string
+          contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
@@ -156,9 +174,12 @@ export type Database = {
           name?: string
           no_show?: boolean
           notes?: string
+          online_request_id?: string | null
           outside?: boolean
           people?: number
           phone?: string | null
+          privacy_consent_at?: string | null
+          privacy_policy_url?: string | null
           restaurant_id?: string | null
           shift?: string
           table_ids?: string[]
@@ -334,19 +355,34 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          online_config: Json
+          online_enabled: boolean
+          public_address: string
+          public_logo_url: string
           settings: Json
+          web_slug: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          online_config?: Json
+          online_enabled?: boolean
+          public_address?: string
+          public_logo_url?: string
           settings?: Json
+          web_slug?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          online_config?: Json
+          online_enabled?: boolean
+          public_address?: string
+          public_logo_url?: string
           settings?: Json
+          web_slug?: string | null
         }
         Relationships: []
       }
@@ -493,9 +529,14 @@ export type Database = {
           role: string
         }[]
       }
+      get_online_booking_page: { Args: { _slug: string }; Returns: Json }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
+      online_shift_remaining: {
+        Args: { _date: string; _rid: string; _shift: string }
+        Returns: number
+      }
       restore_restaurant_data: {
         Args: { _backup_data: Json; _target_restaurant_id: string }
         Returns: boolean
@@ -505,6 +546,10 @@ export type Database = {
         Returns: boolean
       }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
+      submit_online_booking: {
+        Args: { _data: Json; _slug: string }
+        Returns: Json
+      }
       update_operator_profile: {
         Args: {
           _name: string
