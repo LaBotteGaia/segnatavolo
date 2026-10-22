@@ -54,7 +54,7 @@ export function OnlineRequests() {
       setAssign(null); setReject(null); setReason('');
       await qc.invalidateQueries();
       toast.success(accept ? 'Prenotazione confermata e tavolo assegnato' : 'Richiesta rifiutata');
-      toast.warning('Notifica email non inviata: servizio di posta da configurare.');
+      if (!result.email.sent) toast.warning(result.email.message);
     } catch { toast.error('Connessione interrotta: verifica lo stato della richiesta prima di riprovare.'); }
     finally { setBusy(false); }
   };

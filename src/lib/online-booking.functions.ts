@@ -16,7 +16,10 @@ export const submitOnlineBooking = createServerFn({method:'POST'}).inputValidato
  const {slug,...payload}=data;
  const {data:result,error}=await client.rpc('submit_online_booking',{_slug:slug,_data:payload});
  if(error) return {ok:false as const,error:error.code==='P0001'?error.message:'Prenotazione non salvata. Controlla i dati e riprova.'};
- return {ok:true as const,result};
+ const r=result as {id?:string;duplicate?:boolean}|null;
+  let email={sent:false,message:'Notifica email non inviata.'};
+  if(r?.id&&!r.duplicate){const {supabaseAdmin}=await import('@/integrations/supabase/client.server');const {data:restaurant}=await supabaseAdmin.from('restaurants').select('id').eq('web_slug',slug).eq('online_enabled',true).single();if(restaurant){const {sendBookingNotification}=await import('./restaurant-email.server');email=await sendBookingNotification(restaurant.id,r.id);}}
+  return {ok:true as const,result,email};
 });
 
 export const getOnlineSlots = createServerFn({method:'GET'}).inputValidator((d: unknown)=>z.object({slug:slugSchema,date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),shift:z.enum(['pranzo','sera'])}).parse(d)).handler(async({data})=>{

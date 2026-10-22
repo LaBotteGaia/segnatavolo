@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RestaurantEmailSettings } from './RestaurantEmailSettings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,5 +33,5 @@ function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{on
  {cfg.cutoff==='hours'&&<label className="block text-sm">Ore di anticipo<Input type="number" min={0} max={72} value={cfg.cutoff_hours} onChange={e=>patch({cutoff_hours:Number(e.target.value)})}/></label>}
  <label className="block text-sm">Messaggio di chiusura personalizzato<Textarea value={cfg.closed_message} maxLength={1000} onChange={e=>patch({closed_message:e.target.value})}/></label>
  <div className="space-y-2"><label className="block text-sm">Link pubblico<Input readOnly value={link}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(link)}><Copy/>Copia link</Button><label className="block text-sm">Codice Iframe<Textarea readOnly value={embed}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(embed)}><Copy/>Copia codice</Button></div>
- <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button></section>;
+ <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button><RestaurantEmailSettings id={id}/></section>;
 }
