@@ -214,6 +214,35 @@ export type Database = {
           },
         ]
       }
+      restaurant_delivery_settings: {
+        Row: {
+          encrypted_password: string | null
+          restaurant_id: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          encrypted_password?: string | null
+          restaurant_id: string
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          encrypted_password?: string | null
+          restaurant_id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_delivery_settings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_invites: {
         Row: {
           accepted_at: string | null
@@ -500,6 +529,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_configure_delivery: { Args: { _rid: string }; Returns: boolean }
       create_restaurant: {
         Args: { _display_name: string; _name: string }
         Returns: string

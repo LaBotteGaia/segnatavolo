@@ -162,6 +162,13 @@
       "when": 1792667934344,
       "tag": "0022_online_request_approval_and_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792668051422,
+      "tag": "0023_restaurant_delivery_configuration",
+      "breakpoints": true
     }
   ]
 }
