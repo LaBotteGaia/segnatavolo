@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { useActiveRestaurantId } from '@/lib/tenant';
 import { useSettings } from '@/lib/membership';
-import { NO_EXTRAS, tableLabel, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from '@/lib/data';
+import { NO_EXTRAS, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from '@/lib/data';
 import { suggestTables } from '@/lib/allocation';
 import { decideOnlineBooking } from '@/lib/online-approval.functions';
 import { TableDialog } from './TableDialog';

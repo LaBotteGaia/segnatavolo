@@ -13,7 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LEGAL_URL } from '@/lib/legal';
 import { bookingSchema,dayAvailable,slugSchema,partyLimit,type OnlinePage } from '@/lib/online-booking';
 import { getOnlinePage,getOnlineSlots,submitOnlineBooking } from '@/lib/online-booking.functions';
-import { timeSlots } from '@/lib/data';
 const options=(slug:string)=>queryOptions({queryKey:['public-booking',slug],queryFn:async()=>{if(!slugSchema.safeParse(slug).success)throw notFound();const page=await getOnlinePage({data:{slug}});if(!page)throw notFound();return page;},staleTime:0,refetchInterval:15000});
 export const Route=createFileRoute('/prenota/$slug')({
  loader:({params,context})=>context.queryClient.ensureQueryData(options(params.slug)),
