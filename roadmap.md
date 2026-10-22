@@ -31,4 +31,4 @@
 - [x] Nuova gerarchia suggerimenti: contigui prioritari e una prolunga per tavolo solo oltre 8 pax.
 - [x] Oggetto/corpo email personalizzati e notifica al maître per richiesta e conferma; salvataggio/rilettura autenticati verificati, invio reale resta bloccato dalle credenziali mancanti.
 - [x] Campi numerici vuoti durante digitazione, conversione su uscita/salvataggio.
-- [x] Doppi turni web raggruppati senza slot intermedi; richiesta reale verificata e v0.8.6-alpha, 176 test superati.
+- [x] Doppi turni web raggruppati senza slot intermedi; richiesta reale e blocco invio diretto verificati, v0.8.6-alpha; suite completa di 176 test e ulteriore test priorità tavoli superati.
