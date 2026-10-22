@@ -17,17 +17,17 @@ export function validateBackup(data: unknown): { ok: true; summary: BackupSummar
   for (const key of ["rooms", "tables", "reservations"]) {
     if (!Array.isArray(data[key])) return { ok: false, error: `Il backup non contiene l'elenco "${key}".` };
   }
-  const meta = isObj(data.meta) ? data.meta : {};
-  const restaurant = isObj(data.restaurant) ? data.restaurant : {};
+  const meta = isObj(data["meta"]) ? data["meta"] : {};
+  const restaurant = isObj(data["restaurant"]) ? data["restaurant"] : {};
   return {
     ok: true,
     summary: {
-      exportedAt: typeof meta.exported_at === "string" ? meta.exported_at : null,
-      restaurantName: typeof restaurant.name === "string" ? restaurant.name : "",
+      exportedAt: typeof meta["exported_at"] === "string" ? meta["exported_at"] : null,
+      restaurantName: typeof restaurant["name"] === "string" ? restaurant["name"] : "",
       rooms: (data.rooms as unknown[]).length,
       tables: (data.tables as unknown[]).length,
       reservations: (data.reservations as unknown[]).length,
-      customers: Array.isArray(data.customers) ? data.customers.length : 0,
+      customers: Array.isArray(data["customers"]) ? data["customers"].length : 0,
     },
   };
 }

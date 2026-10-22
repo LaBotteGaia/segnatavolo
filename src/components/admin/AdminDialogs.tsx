@@ -64,7 +64,7 @@ export function RestoreDialog({ target, onClose, onDone }: { target: { id: strin
     setBusy(true);
     const { error } = await supabase.rpc("restore_restaurant_data", { _target_restaurant_id: target.id, _backup_data: file.data as never });
     setBusy(false);
-    if (error) return toast.error(`Ripristino annullato: ${errMsg(error)}`);
+    if (error) { toast.error(`Ripristino annullato: ${errMsg(error)}`); return; }
     toast.success(`Ripristino completato per ${target.name}`);
     onDone();
     close();
@@ -110,7 +110,7 @@ export function ImportDialog({ open, onClose, onDone }: { open: boolean; onClose
     setBusy(true);
     const { error } = await supabase.rpc("create_restaurant_from_backup", { _name: name.trim(), _backup_data: file.data as never });
     setBusy(false);
-    if (error) return toast.error(`Importazione annullata: ${errMsg(error)}`);
+    if (error) { toast.error(`Importazione annullata: ${errMsg(error)}`); return; }
     toast.success(`Ristorante "${name.trim()}" creato dal backup`);
     onDone();
     close();
@@ -153,7 +153,7 @@ export function StaffDialog({ target, members, onClose, onDone }: { target: { id
     setBusy(confirm.m.user_id);
     const { error } = await supabase.rpc("delete_restaurant_user", { _user_id: confirm.m.user_id, _restaurant_id: target.id, _delete_from_auth: confirm.full });
     setBusy(null);
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success(confirm.full ? "Utente eliminato definitivamente" : "Utente rimosso dal locale");
     setConfirm(null);
     onDone();
@@ -210,7 +210,7 @@ export function DeleteRestaurantDialog({ target, onClose, onDone }: { target: { 
     setBusy(true);
     const { error } = await supabase.rpc("delete_restaurant_cascade", { _restaurant_id: target.id });
     setBusy(false);
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success(`${target.name} eliminato`);
     onDone();
     close();
