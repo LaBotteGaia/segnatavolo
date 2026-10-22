@@ -35,4 +35,5 @@
 - [x] v0.8.7-alpha: dettatura vocale con revisione testo e chiave IA per ristorante (OpenAI/Gemini)
 - [x] v0.8.8-alpha: contesto locale, calcoli delle date vocali e fallback agenda; 25 test superati, inclusi conferma e contesto inviato ai due provider; build OK.
 - [ ] Prova vocale reale sul telefono con provider: non verificata; la sessione locale di prova non ha mostrato l’agenda, il flusso è coperto da test con riconoscimento e provider simulati.
-- [ ] Calendario: tap consultazione, pressione 500 ms e doppio tap entro 300 ms per aprire il giorno; test e verifica autenticata.
+- [x] v0.8.9-alpha: calendario con tap consultazione, pressione 500 ms e doppio tap entro 300 ms per aprire il giorno; 22 test superati e build OK.
+- [ ] Verifica calendario nell’agenda autenticata: la sessione locale ripristinata non rende la schermata; gesti e soppressione click verificati nei test del calendario reale.
