@@ -12,7 +12,6 @@ import type { VoiceBooking } from "@/lib/voice-ai";
 import { cn } from "@/lib/utils";
 
 type Rec = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
-const SILENCE_MS = 2500;
 const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
 
 export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBooking) => void; className?: string }) {
@@ -20,43 +19,35 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
   const load = useServerFn(getAiSettings), parse = useServerFn(parseVoiceBooking);
   const { data: cfg } = useQuery({ queryKey: ["ai-settings", rid], enabled: !!rid, queryFn: () => load({ data: { id: rid! } }), staleTime: 60_000 });
   const [listening, setListening] = useState(false);
-  const [live, setLive] = useState("");
   const [review, setReview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const rec = useRef<Rec | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const text = useRef("");
-  useEffect(() => () => { clearTimeout(timer.current); rec.current?.abort(); }, []);
+  useEffect(() => () => { rec.current?.abort(); }, []);
 
-  const stop = () => { clearTimeout(timer.current); rec.current?.stop(); };
+  const stop = () => { rec.current?.stop(); };
   const start = () => {
     if (!cfg?.ready) { toast.info("Per usare la dettatura vocale, inserisci prima la tua chiave API in Configurazione Servizio"); return; }
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { toast.error("Questo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari"); return; }
     const r = new Ctor();
-    r.lang = "it-IT"; r.continuous = true; r.interimResults = true;
-    text.current = ""; setLive("");
-    const arm = () => { clearTimeout(timer.current); timer.current = setTimeout(() => r.stop(), SILENCE_MS); };
-    // Ricostruzione senza echi: i risultati definitivi si accumulano una sola volta,
-    // quelli provvisori (interim) vengono scartati a ogni evento e sostituiti.
-    r.onresult = (e) => {
-      let finalTranscript = "";
-      let interimTranscript = "";
-      for (let i = 0; i < e.results.length; ++i) {
-        const result = e.results[i];
-        if (!result) continue;
-        const transcript = result[0]?.transcript ?? "";
-        if (result.isFinal) finalTranscript += transcript + " ";
-        else interimTranscript += transcript;
-      }
-      text.current = (finalTranscript + interimTranscript).trim().replace(/\s+/g, " ");
-      setLive(text.current);
-      arm();
-    };
+    r.lang = "it-IT"; r.continuous = false; r.interimResults = false;
+    text.current = "";
     r.onerror = (e) => { if (e.error === "not-allowed") toast.error("Consenti l'uso del microfono per dettare"); };
-    r.onend = () => { clearTimeout(timer.current); setListening(false); rec.current = null; setReview(text.current); };
-    rec.current = r; r.start(); setListening(true); arm();
+    // Ascolto single-shot: continuous=false e interimResults=false evitano gli echi
+    // su mobile (Chrome Android / iOS). Il sistema restituisce un solo risultato
+    // finale quando l'operatore smette di parlare.
+    r.onresult = (e) => {
+      const results = e.results;
+      const last = results[results.length - 1];
+      if (!last) return;
+      // Solo l'ultimo risultato valido, sovrascrive qualsiasi testo precedente.
+      const transcript = (last[0]?.transcript ?? "").trim().replace(/\s+/g, " ");
+      if (transcript) { text.current = transcript; setReview(transcript); }
+    };
+    r.onend = () => { setListening(false); rec.current = null; setReview(text.current); };
+    rec.current = r; r.start(); setListening(true);
   };
 
   const confirm = async () => {
@@ -75,7 +66,7 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
         className={cn("min-w-0 whitespace-normal px-2", listening && "animate-pulse bg-destructive text-destructive-foreground hover:bg-destructive/90", className)}>
         <Mic /> <span className={listening ? "" : "hidden sm:inline"}>{listening ? "In ascolto... Parla ora" : "🎙️ Dettatura Rapida"}</span>
       </Button>
-      {listening && <div role="status" className="w-full rounded-md bg-paper px-3 py-2 text-sm text-foreground shadow">{live || "…"}</div>}
+      {listening && <div role="status" className="w-full rounded-md bg-paper px-3 py-2 text-sm text-foreground shadow">🎙️ Ti sto ascoltando... Parla liberamente. Quando smetti di parlare, la frase sarà pronta per la verifica.</div>}
       <Dialog open={review !== null} onOpenChange={(o) => { if (!o && !busy) setReview(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Verifica dettatura</DialogTitle></DialogHeader>
