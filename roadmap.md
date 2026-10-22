@@ -20,6 +20,6 @@
 - [x] Turni e giorni delle sale modificabili anche con mappa bloccata, salvataggio e conferma.
 - [x] 138 test superati; verifica autenticata del locale proprio, assistenza su altro locale e salvataggio/rilettura di turni, giorni e doppi turni con valori originali ripristinati.
 - [ ] Conferma email di sicurezza cambio password: impostazione/invio non verificabili con i controlli disponibili; messaggio limitato all’aggiornamento riuscito.
-- [ ] Canale online: impostazioni Master/Assistenza, slug, link e iframe.
-- [ ] Pagina pubblica e salvataggio atomico con capienza, finestre temporali e consensi separati.
-- [ ] Verifica prenotazione online e rilettura nell’agenda; test e versione alpha.
+- [x] Canale online: impostazioni Master/Assistenza, slug, link e iframe.
+- [x] Pagina pubblica e salvataggio atomico con capienza, finestre temporali e consensi separati.
+- [x] Verifica prenotazione online e rilettura nell’agenda; 152 test e versione v0.8.4-alpha.
