@@ -19,20 +19,21 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
   const load = useServerFn(getAiSettings), parse = useServerFn(parseVoiceBooking);
   const { data: cfg } = useQuery({ queryKey: ["ai-settings", rid], enabled: !!rid, queryFn: () => load({ data: { id: rid! } }), staleTime: 60_000 });
   const [listening, setListening] = useState(false);
-  const [live, setLive] = useState("");
   const [review, setReview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const rec = useRef<Rec | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const text = useRef("");
-  useEffect(() => () => { clearTimeout(timer.current); rec.current?.abort(); }, []);
+  useEffect(() => () => { rec.current?.abort(); }, []);
 
-  const stop = () => { clearTimeout(timer.current); rec.current?.stop(); };
+  const stop = () => { rec.current?.stop(); };
   const start = () => {
     if (!cfg?.ready) { toast.info("Per usare la dettatura vocale, inserisci prima la tua chiave API in Configurazione Servizio"); return; }
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { toast.error("Questo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari"); return; }
+    const r = new Ctor();
+    r.lang = "it-IT"; r.continuous = false; r.interimResults = false;
+    text.current = "";
     r.onerror = (e) => { if (e.error === "not-allowed") toast.error("Consenti l'uso del microfono per dettare"); };
     // Ascolto single-shot: continuous=false e interimResults=false evitano gli echi
     // su mobile (Chrome Android / iOS). Il sistema restituisce un solo risultato
