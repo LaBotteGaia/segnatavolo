@@ -45,6 +45,7 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
       let interimTranscript = "";
       for (let i = 0; i < e.results.length; ++i) {
         const result = e.results[i];
+        if (!result) continue;
         const transcript = result[0]?.transcript ?? "";
         if (result.isFinal) finalTranscript += transcript + " ";
         else interimTranscript += transcript;
