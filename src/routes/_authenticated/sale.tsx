@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership, useSettings } from "@/lib/membership";
 import { useActiveRestaurantId } from "@/lib/tenant";
@@ -204,10 +205,9 @@ function SalePage() {
                         onChange={(e) => updateRoom(room, { capacity: e.target.checked ? null : roomCapacity(room, tables) })} />
                       Automatica (somma posti tavoli)
                     </label>
-                    <Input key={room.id + String(room.capacity === null)} type="number" min={0} className="h-9 w-24"
-                      disabled={room.capacity === null}
-                      {...(room.capacity === null ? { value: roomCapacity(room, tables), readOnly: true } : { defaultValue: room.capacity })}
-                      onBlur={(e) => room.capacity !== null && updateRoom(room, { capacity: Math.max(0, Number(e.target.value) || 0) })} />
+                    <NumberInput key={room.id + String(room.capacity === null)} min={0} className="h-9 w-24"
+                      disabled={room.capacity === null} value={room.capacity ?? roomCapacity(room, tables)}
+                      onCommit={(capacity) => room.capacity !== null && updateRoom(room, { capacity })} />
                   </div>
                 </div>
               </div>

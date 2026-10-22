@@ -4,6 +4,7 @@ import { Plus, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { compareTables, isShiftClosed, shiftName, useReservations, useRooms, useTables } from "@/lib/data";
@@ -42,7 +43,7 @@ function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date:
     <DialogHeader><DialogTitle className="flex items-center gap-2"><Zap /> Accomoda al volo</DialogTitle></DialogHeader>
     <div className="text-sm font-semibold text-primary">{shiftName(clock.shift)} · {clock.time} · {clock.date.split("-").reverse().join("/")}</div>
     <form onSubmit={save} className="space-y-4">
-      <fieldset><legend className="mb-2 text-sm font-semibold">Coperti / Persone</legend><div className="grid grid-cols-5 gap-2">{[1,2,3,4,5,6,7,8].map((n) => <Button key={n} type="button" className="h-12 text-lg" variant={people === n ? "default" : "outline"} aria-pressed={people === n} onClick={() => setPeople(n)}>{n}</Button>)}<Button type="button" variant="outline" className="h-12" aria-label="Aggiungi una persona" onClick={() => setPeople((p) => p + 1)}><Plus /></Button></div>{people > 8 && <Input aria-label="Numero coperti" type="number" min={1} value={people} onChange={(e) => setPeople(Math.max(1, Number(e.target.value) || 1))} className="mt-2" />}</fieldset>
+      <fieldset><legend className="mb-2 text-sm font-semibold">Coperti / Persone</legend><div className="grid grid-cols-5 gap-2">{[1,2,3,4,5,6,7,8].map((n) => <Button key={n} type="button" className="h-12 text-lg" variant={people === n ? "default" : "outline"} aria-pressed={people === n} onClick={() => setPeople(n)}>{n}</Button>)}<Button type="button" variant="outline" className="h-12" aria-label="Aggiungi una persona" onClick={() => setPeople((p) => p + 1)}><Plus /></Button></div>{people > 8 && <NumberInput aria-label="Numero coperti" min={1} defaultValue={WALKIN_DEFAULT_PEOPLE} value={people} onCommit={setPeople} className="mt-2" />}</fieldset>
       <fieldset><legend className="mb-2 text-sm font-semibold">Tavolo</legend><div className="grid max-h-52 grid-cols-2 gap-2 overflow-y-auto">{free.map((t) => <Button key={t.id} type="button" variant={selected && table === t.id ? "default" : "outline"} className="h-auto min-h-14 flex-col gap-0.5 whitespace-normal" aria-pressed={selected && table === t.id} onClick={() => setTable(t.id)}><span className="font-bold">Tavolo {t.name} · {t.seats} posti</span><span className="text-xs">{rooms.find((r) => r.id === t.room_id)?.name}</span></Button>)}</div>{!free.length && <p role="status" className="text-sm text-muted-foreground">{closed ? "Servizio chiuso" : !ready ? "Caricamento tavoli…" : "Nessun tavolo libero per questi coperti"}</p>}</fieldset>
       <div><Label htmlFor="walkin-name">Nome / Riferimento (facoltativo)</Label><Input id="walkin-name" value={name} onChange={(e) => setName(e.target.value)} /></div>
       <Button type="submit" className="h-12 w-full" disabled={!selected || busy}><Zap /> {busy ? "Salvataggio…" : `Accomoda ${people} ${people === 1 ? "persona" : "persone"}`}</Button>

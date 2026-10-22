@@ -28,3 +28,7 @@
 - [x] Configurazione SMTP cifrata per ristorante, prova all’operatore e messaggi per i tre stati; scelta del servizio predefinito.
 - [ ] Invio email reale: mancano credenziali SMTP e verifica sul servizio pubblicato; dominio Email Lovable e collegamento Resend assenti. Servizi predefiniti non ancora collegati all’invio. Host SMTP dedicati fuori elenco richiedono protezione e verifica destinazione.
 - [x] Test delle regole, contatori e isolamento; versione v0.8.5-alpha e controlli dell’app riusciti.
+- [ ] Nuova gerarchia suggerimenti: contigui prioritari e una prolunga per tavolo solo oltre 8 pax.
+- [ ] Oggetto/corpo email personalizzati e notifica al maître per richiesta e conferma.
+- [ ] Campi numerici vuoti durante digitazione, conversione su uscita/salvataggio.
+- [ ] Doppi turni web raggruppati senza slot intermedi; verifica e v0.8.6-alpha.
