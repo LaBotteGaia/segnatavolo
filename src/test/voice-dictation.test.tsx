@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { VoiceDictation } from '@/components/agenda/VoiceDictation';
 import { normalizeVoiceBooking } from '@/lib/voice-ai';
 import type { VoiceDateContext } from '@/lib/voice-date';
+import { voiceDateContext } from '@/lib/voice-date';
 
 const mocks = vi.hoisted(() => ({ parse: vi.fn(), load: vi.fn() }));
 vi.mock('@/lib/tenant', () => ({ useActiveRestaurantId: () => '11111111-2222-4333-8444-555555555555' }));
@@ -24,10 +25,7 @@ it('invia il contesto locale e la data aperta solo dopo conferma e restituisce l
     abort() {}
   }
   vi.stubGlobal('SpeechRecognition', Recognition);
-  const now = new Date(2026, 9, 22, 23, 30);
-  vi.spyOn(globalThis, 'Date').mockImplementation(function (...args: unknown[]) {
-    return args.length ? new originalDate(...args as [string]) : now;
-  } as DateConstructor);
+  const expectedContext = voiceDateContext(new Date(), '2026-11-10');
   mocks.load.mockResolvedValue({ ready: true });
   mocks.parse.mockImplementation(async ({ data }: { data: VoiceDateContext & { transcript: string } }) => ({
     ok: true, booking: normalizeVoiceBooking({ customer_name: 'Rossi', pax: 4, time: '20:30', date: '2027-01-01' }, data.current_date, data, data.transcript),
@@ -46,8 +44,7 @@ it('invia il contesto locale e la data aperta solo dopo conferma e restituisce l
   fireEvent.click(screen.getByRole('button', { name: /Conferma ed Elabora/ }));
   await waitFor(() => expect(mocks.parse).toHaveBeenCalledWith({ data: {
     restaurant_id: '11111111-2222-4333-8444-555555555555', transcript,
-    current_date: '2026-10-22', current_day_name: 'giovedì', agenda_selected_date: '2026-11-10',
+    ...expectedContext,
   } }));
   await waitFor(() => expect(result).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-11-10', pax: 4, customer_name: 'Rossi' })));
 });
-const originalDate = Date;
