@@ -60,7 +60,7 @@ export function suggestTables(p: {
       dist += near(a, b) + (a.x === b.x || a.y === b.y ? 0 : 0.5);
     }
     const cand = { ids: combo.map((t) => t.id), extras, kind: "join" as const, waste, dist };
-    const score = (s: typeof cand) => [s.ids.length, s.waste + s.extras.extra_sponde * 0.5, s.dist];
+    const score = (s: Suggestion & { dist: number }) => [s.ids.length, s.waste + s.extras.extra_sponde * 0.5, s.dist];
     if (!best) { best = cand; return; }
     const a = score(cand), b = score(best);
     for (let k = 0; k < a.length; k++) { if (a[k]! < b[k]!) { best = cand; return; } if (a[k]! > b[k]!) return; }
