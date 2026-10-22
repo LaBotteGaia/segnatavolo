@@ -204,6 +204,13 @@
       "when": 1792688889280,
       "tag": "0028_restaurant_ai_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792703207369,
+      "tag": "0029_dual_table_capacity_and_locked_reservations",
+      "breakpoints": true
     }
   ]
 }

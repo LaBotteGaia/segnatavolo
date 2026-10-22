@@ -37,3 +37,5 @@
 - [ ] Prova vocale reale sul telefono con provider: non verificata; la sessione locale di prova non ha mostrato l’agenda, il flusso è coperto da test con riconoscimento e provider simulati.
 - [x] v0.8.9-alpha: calendario con tap consultazione, pressione 500 ms e doppio tap entro 300 ms per aprire il giorno; 22 test superati e build OK.
 - [ ] Verifica calendario nell’agenda autenticata: la sessione locale ripristinata non rende la schermata; gesti e soppressione click verificati nei test del calendario reale.
+- [x] v0.8.10-alpha: riorganizzazione automatica della sala con doppia capienza tavoli, ordine di riempimento, lucchetto prenotazioni e switch globale; 14 test del motore superati.
+- [x] Prova reale della riorganizzazione in agenda autenticata: pulsanti a fondo turno e anteprima con spostamento proposto verificati (applicazione non eseguita per non toccare i dati reali).
