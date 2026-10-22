@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RestaurantEmailSettings } from './RestaurantEmailSettings';
+import { AiVoiceSettings } from './AiVoiceSettings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,5 +36,5 @@ function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{on
  <fieldset className="space-y-3"><legend className="font-semibold">Orari web con doppio turno</legend>{(['pranzo','sera'] as const).map(s=><div key={s} className="grid grid-cols-2 gap-3"><label className="text-sm">{s==='pranzo'?'Pranzo':'Cena'} · Ultimo arrivo 1° Turno<Input type="time" step={900} value={cfg.double_windows[s].first_to} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],first_to:e.target.value}}})}/></label><label className="text-sm">Primo arrivo 2° Turno<Input type="time" step={900} value={cfg.double_windows[s].second_from} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],second_from:e.target.value}}})}/></label></div>)}</fieldset>
  <label className="block text-sm">Messaggio di chiusura personalizzato<Textarea value={cfg.closed_message} maxLength={1000} onChange={e=>patch({closed_message:e.target.value})}/></label>
  <div className="space-y-2"><label className="block text-sm">Link pubblico<Input readOnly value={link}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(link)}><Copy/>Copia link</Button><label className="block text-sm">Codice Iframe<Textarea readOnly value={embed}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(embed)}><Copy/>Copia codice</Button></div>
- <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button><RestaurantEmailSettings id={id}/></section>;
+ <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button><RestaurantEmailSettings id={id}/><AiVoiceSettings id={id}/></section>;
 }
