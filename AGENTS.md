@@ -34,3 +34,4 @@
 - Editable numeric controls keep string drafts until blur or submission; shared NumberInput preserves numeric persisted state without coercing empty keystrokes.
 - Online double-turn windows are restaurant configuration, enforced by the same database predicate in slot listing and atomic submission; duration and cleaning buffer protect the second turn, while public results expose only aggregate slots and turn labels.
 - Booking email templates and staff destination live in the protected restaurant delivery settings; trusted reservation events derive recipients and tenant-scoped placeholder data server-side, never from a generic browser send endpoint.
+- Voice dictation uses each restaurant's own OpenAI/Gemini key, encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing runs in authenticated server functions (voice-ai.functions.ts), never Edge Functions, and only after the operator confirms the transcript.
