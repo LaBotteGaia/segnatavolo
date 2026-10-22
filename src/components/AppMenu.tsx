@@ -1,9 +1,10 @@
 import { RecycleBinDialog } from "@/components/RecycleBinDialog";
+import { OperatorProfileDialog } from "@/components/OperatorProfileDialog";
 import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, Trash2, Users, Wrench } from "lucide-react";
+import { CalendarDays, ClipboardList, CircleHelp, Download, Bell, Building2, LayoutGrid, LogOut, Menu, Plus, Scale, ShieldCheck, Trash2, Users } from "lucide-react";
 import { TutorialDialog } from "@/components/TutorialDialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +23,7 @@ import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, LEGAL_URL, SERVER_REGION_LINE } from 
 import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
-import { assistId, scopeAssist, useIsSuperAdmin } from "@/lib/assist";
+import { assistId, clearAssist, scopeAssist, useIsSuperAdmin } from "@/lib/assist";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
@@ -35,6 +36,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [binOpen, setBinOpen] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const isMaster = me?.role === "master";
   const { data: isSuperAdmin } = useIsSuperAdmin();
   const [notify, setNotify] = useNotifyPref();
@@ -58,6 +60,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const logout = async () => {
     await qc.cancelQueries();
     qc.clear();
+    clearAssist();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
@@ -87,49 +90,50 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
           </SheetHeader>
 
           <nav className="flex-1 overflow-y-auto p-3">
-            <label className="mb-3 flex items-center gap-3 rounded-md border px-3 py-2.5">
-              <Bell className="size-4" />
-              <span className="flex-1 text-sm">Notifiche nuove prenotazioni</span>
+            <MenuHeading>Consultazione e operatività rapida</MenuHeading>
+            <MenuLink to="/agenda" icon={<CalendarDays />} close={() => setOpen(false)}>Agenda &amp; Prenotazioni</MenuLink>
+            <MenuLink to="/rubrica" icon={<Users />} close={() => setOpen(false)}>Rubrica Clienti &amp; No-Show</MenuLink>
+            <MenuItem icon={<ClipboardList />} onClick={() => { setOpen(false); navigate({ to: "/agenda", search: { service: true } }); }}>Sala &amp; Servizio</MenuItem>
+            <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setBinOpen(true); }}>Cestino del giorno</MenuItem>
+            {(isMaster || isSuperAdmin) && <>
+              <MenuHeading>Gestione struttura</MenuHeading>
+              <MenuLink to="/sale" icon={<LayoutGrid />} close={() => setOpen(false)}>Sale, Muri &amp; Tavoli</MenuLink>
+              <MenuItem icon={<Building2 />} onClick={() => { setOpen(false); setRestOpen(true); }}>Configurazione Servizio</MenuItem>
+              <MenuItem icon={<Users />} onClick={() => { setOpen(false); setUsersOpen(true); }}>Gestione Staff &amp; Inviti</MenuItem>
+            </>}
+            <MenuHeading>Account &amp; note legali</MenuHeading>
+            <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Il Mio Profilo</MenuItem>
+            <Button asChild variant="ghost" className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left"><a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}><Scale className="size-4 shrink-0" /> Termini &amp; Privacy</a></Button>
+            <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setDeleteOpen(true); }}>Elimina il mio account</MenuItem>
+            {isSuperAdmin && <>
+              <MenuHeading>Piattaforma &amp; assistenza</MenuHeading>
+              <MenuLink to="/admin" icon={<ShieldCheck />} close={() => setOpen(false)}>Pannello Super Admin / Assistenza</MenuLink>
+            </>}
+            <MenuHeading>Preferenze e strumenti</MenuHeading>
+            <label className="flex items-center gap-3 px-3 py-2.5">
+              <Bell className="size-4 shrink-0" /><span className="flex-1 text-sm">Notifiche nuove prenotazioni</span>
               <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />
             </label>
-            <Link to="/rubrica" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left font-semibold hover:bg-accent [&_svg]:size-4">
-              <Users /> Rubrica Clienti
-            </Link>
-            <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup)</MenuItem>
+            <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup CSV)</MenuItem>
             <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>Guida Rapida / Tutorial</MenuItem>
-            <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setBinOpen(true); }}>Cestino del giorno</MenuItem>
-            <MenuItem icon={<Users />} onClick={() => { setOpen(false); setOperatorOpen(true); }}>Profilo operatore</MenuItem>
-            <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setLegalOpen(true); }}>Informazioni legali e Privacy</MenuItem>
-            {isSuperAdmin && (
-              <Link to="/admin" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left font-semibold text-amber-700 hover:bg-amber-50 [&_svg]:size-4">
-                <Wrench /> Pannello Admin
-              </Link>
-            )}
-            {isMaster && (
-              <>
-                <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Configurazione</div>
-                <MenuItem icon={<Building2 />} onClick={() => { setOpen(false); setRestOpen(true); }}>Gestione Ristorante</MenuItem>
-                <Link to="/sale" onClick={() => setOpen(false)} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent [&_svg]:size-4">
-                  <LayoutGrid /> Gestione Sale e Mappe
-                </Link>
-                <MenuItem icon={<Users />} onClick={() => { setOpen(false); setUsersOpen(true); }}>Gestione Utenti e Inviti</MenuItem>
-              </>
-            )}
+            <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setLegalOpen(true); }}>Informazioni app e legali</MenuItem>
           </nav>
 
           <div className="border-t p-3">
+            <div className="mb-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">{APP_NAME} <VersionBadge /> <ConnectionDot /></div>
             <Button variant="ghost" className="w-full justify-start bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={logout}>
-              <LogOut /> Esci (Logout)
+              <LogOut /> Esci / Logout
             </Button>
           </div>
         </SheetContent>
       </Sheet>
-      {me && <OperatorNameDialog open={operatorOpen} onOpenChange={setOperatorOpen} name={me.name} />}
+      <OperatorProfileDialog open={operatorOpen} onOpenChange={setOperatorOpen} />
+      <OperatorNameDialog open={deleteOpen} onOpenChange={setDeleteOpen} name="" deleteOnly />
       <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
       <RecycleBinDialog open={binOpen} onOpenChange={setBinOpen} />
       <LegalDialog open={legalOpen} onOpenChange={setLegalOpen} />
-      {me && isMaster && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
-      {me && isMaster && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
+      {me && (isMaster || isSuperAdmin) && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
+      {me && (isMaster || isSuperAdmin) && <RestaurantDialog open={restOpen} onOpenChange={setRestOpen} id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={me.restaurants?.settings} />}
     </>
   );
 }
@@ -155,9 +159,16 @@ function LegalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
   );
 }
 
+function MenuHeading({ children }: { children: React.ReactNode }) {
+  return <div className="mb-1 mt-3 border-t px-3 pb-1 pt-3 text-[10px] font-bold uppercase text-muted-foreground first:mt-0 first:border-0 first:pt-0">{children}</div>;
+}
+function MenuLink({ to, icon, close, children }: { to: "/agenda" | "/rubrica" | "/sale" | "/admin"; icon: React.ReactNode; close: () => void; children: React.ReactNode }) {
+  return <Button asChild variant="ghost" className="h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left [&_svg]:size-4 [&_svg]:shrink-0"><Link to={to} onClick={close}>{icon}<span className="min-w-0">{children}</span></Link></Button>;
+}
+
 function MenuItem({ icon, children, onClick }: { icon: React.ReactNode; children: React.ReactNode; onClick: () => void }) {
   return (
-    <Button variant="ghost" onClick={onClick} className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left [&_svg]:size-4">
+    <Button variant="ghost" onClick={onClick} className="h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left [&_svg]:size-4 [&_svg]:shrink-0">
       {icon} {children}
     </Button>
   );

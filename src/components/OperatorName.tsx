@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { clearAssist } from "@/lib/assist";
 import { DELETE_ACCOUNT_WARNING } from "@/lib/legal";
 
 export function OperatorName({ initial = "", onSaved }: { initial?: string; onSaved?: () => void }) {
@@ -19,7 +20,7 @@ export function OperatorName({ initial = "", onSaved }: { initial?: string; onSa
     await qc.invalidateQueries({ queryKey: ["membership"] }); onSaved?.();
   }}><div><Label htmlFor="operator-name">Nome o Nickname di Sala</Label><Input id="operator-name" required maxLength={80} value={name} placeholder="Marco, Elena Cassa, Chef" onChange={(e) => setName(e.target.value)} /></div><Button type="submit" disabled={busy || !name.trim()}>Salva nome operatore</Button></form>;
 }
-export function OperatorNameDialog({ open, onOpenChange, name }: { open: boolean; onOpenChange: (open: boolean) => void; name: string }) {
+export function OperatorNameDialog({ open, onOpenChange, name, deleteOnly = false }: { open: boolean; onOpenChange: (open: boolean) => void; name: string; deleteOnly?: boolean }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -36,6 +37,7 @@ export function OperatorNameDialog({ open, onOpenChange, name }: { open: boolean
     }
     await qc.cancelQueries();
     qc.clear();
+    clearAssist();
     await supabase.auth.signOut();
     onOpenChange(false);
     navigate({ to: "/auth", replace: true });
@@ -44,7 +46,7 @@ export function OperatorNameDialog({ open, onOpenChange, name }: { open: boolean
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={!deleteOnly && open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader><DialogTitle>Profilo operatore</DialogTitle></DialogHeader>
           <OperatorName initial={name} onSaved={() => onOpenChange(false)} />
@@ -55,7 +57,7 @@ export function OperatorNameDialog({ open, onOpenChange, name }: { open: boolean
           </div>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog open={deleteOnly ? open : confirmOpen} onOpenChange={deleteOnly ? onOpenChange : setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare l'account?</AlertDialogTitle>
