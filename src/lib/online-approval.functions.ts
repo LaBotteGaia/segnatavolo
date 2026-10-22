@@ -8,7 +8,10 @@ export const decideOnlineBooking = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc('decide_online_booking', { _restaurant_id: data.restaurantId, _id: data.id, _accept: data.accept, _tables: data.tables, _extras: data.extras, _reason: data.reason });
     if (error) return { ok: false as const, error: error.code === 'P0001' ? error.message : 'Richiesta non aggiornata. Riprova.' };
-    const { sendBookingNotification } = await import('./restaurant-email.server');
-    const email = await sendBookingNotification(data.restaurantId, data.id);
+    let email = { sent: false, message: 'Decisione salvata, ma notifica email non inviata.' };
+    try {
+      const { sendBookingNotification } = await import('./restaurant-email.server');
+      email = await sendBookingNotification(data.restaurantId, data.id);
+    } catch { /* Delivery must never undo or obscure the persisted decision. */ }
     return { ok: true as const, result, email };
   });

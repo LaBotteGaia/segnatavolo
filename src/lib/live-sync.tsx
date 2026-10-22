@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "./membership";
 
-export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "customers", "customer-history", "search", "recycle-bin", "service-note", "members"];
+export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "online-requests", "approval-occupied", "customers", "customer-history", "search", "recycle-bin", "service-note", "members"];
 export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
