@@ -32,3 +32,4 @@
 - [x] Oggetto/corpo email personalizzati e notifica al maître per richiesta e conferma; salvataggio/rilettura autenticati verificati, invio reale resta bloccato dalle credenziali mancanti.
 - [x] Campi numerici vuoti durante digitazione, conversione su uscita/salvataggio.
 - [x] Doppi turni web raggruppati senza slot intermedi; richiesta reale e blocco invio diretto verificati, v0.8.6-alpha; suite completa di 176 test e ulteriore test priorità tavoli superati.
+- [x] v0.8.7-alpha: dettatura vocale con revisione testo e chiave IA per ristorante (OpenAI/Gemini)

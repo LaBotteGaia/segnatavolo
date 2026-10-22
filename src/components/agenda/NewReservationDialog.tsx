@@ -39,8 +39,9 @@ const field = "w-full rounded-md border bg-paper px-3 py-2";
 const bad = "border-destructive ring-1 ring-destructive";
 
 export function NewReservationDialog({
-  open, onOpenChange, initialDate, initialShift, onCreate, initialTime = "", initialTables = [], initialCustomerId,
+  open, onOpenChange, initialDate, initialShift, onCreate, initialTime = "", initialTables = [], initialCustomerId, initialDraft,
 }: {
+  initialDraft?: { name: string; phone: string; people: number; notes: string; outside: boolean } | undefined;
   initialTime?: string; initialTables?: string[]; initialCustomerId?: string | undefined;
   open: boolean; onOpenChange: (o: boolean) => void; initialDate: string; initialShift: Shift;
   onCreate: (v: NewReservationInput) => Promise<boolean>;
@@ -88,6 +89,7 @@ export function NewReservationDialog({
       setAdv(false); setDur(null); setBuf(null); setTags(""); setManual(initialTables.length > 0);
       const c = initialCustomerId ? customers?.find((x) => x.id === initialCustomerId) : undefined;
       if (c) { setName(c.name); setPickedId(c.id); setPhone(c.phone ?? ""); setNotes(c.notes ?? ""); }
+      if (initialDraft) { setName(initialDraft.name); setPhone(initialDraft.phone); setPeople(String(initialDraft.people)); setNotes(initialDraft.notes); setOutside(initialDraft.outside); }
     }
   }, [open, initialCustomerId, !!customers]); // eslint-disable-line react-hooks/exhaustive-deps
 
