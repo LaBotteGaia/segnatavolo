@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmergencyButton } from "@/components/EmergencyButton";
 import { shiftName, type Shift } from "@/lib/data";
 
-export function ServiceHub({ date, shifts, selectedShift, onAvailability, requestedOpen, onRequestedClose }: { requestedOpen?: boolean; onRequestedClose?: () => void; date: string; shifts: Shift[]; selectedShift: Shift; onAvailability: (s: Shift) => void }) {
+export function ServiceHub({ date, shifts, selectedShift, onAvailability, requestedOpen, onRequestedClose }: { requestedOpen?: boolean | undefined; onRequestedClose?: () => void; date: string; shifts: Shift[]; selectedShift: Shift; onAvailability: (s: Shift) => void }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (requestedOpen) setOpen(true); }, [requestedOpen]);
   const [picked, setPicked] = useState<Shift>(selectedShift);
