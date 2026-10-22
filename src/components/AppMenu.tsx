@@ -152,7 +152,7 @@ function LegalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Copyright</dt><dd className="font-semibold">{COPYRIGHT_LINE}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Server dati</dt><dd className="text-right font-semibold">{SERVER_REGION_LINE}</dd></div>
           </dl>
-          <p className="text-xs text-muted-foreground">Per eliminare il tuo account operatore apri "Profilo operatore" dal menù.</p>
+          <p className="text-xs text-muted-foreground">Per eliminare il tuo account operatore scegli "Elimina il mio account" dal menù.</p>
         </div>
       </DialogContent>
     </Dialog>
@@ -217,6 +217,7 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
             <div className="rounded-md border p-3"><div className="font-display text-2xl">{cap.outside}</div><div className="text-xs text-muted-foreground">Capienza esterna</div></div>
           </div>
           <p className="text-xs text-muted-foreground">La capienza si imposta per ogni sala in "Gestione Sale e Mappe".</p>
+          <Button asChild variant="outline" className="w-full"><Link to="/sale" onClick={() => onOpenChange(false)}><LayoutGrid /> Regole Doppi Turni per sala e periodo</Link></Button>
 
           <section className="space-y-2">
             <h3 className="font-display text-lg">Turni e orari</h3>
