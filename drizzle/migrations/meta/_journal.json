@@ -120,6 +120,13 @@
       "when": 1792654054154,
       "tag": "0016_operator_profile_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792655734497,
+      "tag": "0017_platform_admins_self_read",
+      "breakpoints": true
     }
   ]
 }
