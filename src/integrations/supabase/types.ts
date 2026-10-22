@@ -627,6 +627,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_online_assignment: {
+        Args: { _extras: Json; _id: string; _rid: string; _tables: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
