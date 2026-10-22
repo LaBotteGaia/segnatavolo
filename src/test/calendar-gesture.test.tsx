@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { Calendar, CalendarDayGesture } from "@/components/ui/calendar";
+import { Calendar, CalendarDayExtra, CalendarDayGesture } from "@/components/ui/calendar";
 
 beforeEach(() => { vi.useFakeTimers(); vi.stubGlobal("PointerEvent", MouseEvent); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -11,7 +11,7 @@ function setup() {
   Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
   function Fixture() {
     const lastTap = useRef<{ key: string; at: number } | null>(null);
-    return <CalendarDayGesture.Provider value={{ openDay: open, lastTap }}><Calendar month={new Date(2026, 9, 1)} onDayClick={consult} /></CalendarDayGesture.Provider>;
+    return <CalendarDayGesture.Provider value={{ openDay: open, lastTap }}><CalendarDayExtra.Provider value={() => <span role="img" aria-label="Disponibilità" onClick={consult}>● ●</span>}><Calendar month={new Date(2026, 9, 1)} onDayClick={consult} /></CalendarDayExtra.Provider></CalendarDayGesture.Provider>;
   }
   render(<Fixture />);
   const day = screen.getByRole("button", { name: /Friday, October 23rd, 2026/ });
@@ -36,7 +36,7 @@ it("a 500 ms apre il giorno, vibra 40 ms e sopprime anche il click sui pallini",
   act(() => vi.advanceTimersByTime(1));
   expect(open).toHaveBeenCalledWith(new Date(2026, 9, 23));
   expect(vibrate).toHaveBeenCalledWith(40);
-  fireEvent.pointerUp(day); fireEvent.click(day, { detail: 1 });
+  fireEvent.pointerUp(day); fireEvent.click(day.querySelector('[role="img"]') ?? day, { detail: 1 });
   expect(consult).not.toHaveBeenCalled();
 });
 it("doppio tap sulla stessa cella entro 299 ms apre una sola volta", () => {
