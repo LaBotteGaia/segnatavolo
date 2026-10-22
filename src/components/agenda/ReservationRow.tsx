@@ -7,7 +7,7 @@ import { LoyaltyBox } from "./Extras";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, Copy, LayoutGrid, MessageCircle, Phone, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, ChevronDown, Copy, LayoutGrid, Lock, LockOpen, MessageCircle, Phone, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -109,6 +109,7 @@ export function ReservationRow({
           <span className="flex min-w-0 items-center gap-1 font-hand text-lg leading-tight text-ink">
             <span className="truncate xl:whitespace-normal xl:break-words">{firstName(r.name) || "—"}</span>
             {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
+            {r.tavolo_bloccato && <Lock className="size-3.5 shrink-0 text-destructive" aria-label="Tavolo bloccato: escluso dalla riorganizzazione automatica" />}
           </span>
           {label && <span className="truncate xl:whitespace-normal text-[11px] xl:text-xs font-semibold leading-tight text-primary">{label}</span>}
           {noShow && <span className="text-xs font-semibold text-destructive">No-Show</span>}
@@ -161,7 +162,16 @@ export function ReservationRow({
           </div>
 
           <div>
-            <div className={lbl}>Tavolo</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className={lbl}>Tavolo</div>
+              <button type="button" onClick={() => onUpdate({ tavolo_bloccato: !r.tavolo_bloccato })}
+                aria-label={r.tavolo_bloccato ? "Sblocca il tavolo: la riorganizzazione automatica potrà spostarlo" : "Blocca il tavolo: la riorganizzazione automatica non lo sposterà"}
+                title={r.tavolo_bloccato ? "Tavolo bloccato: protetto dalla riorganizzazione automatica" : "Tavolo libero di essere riorganizzato"}
+                className={cn("flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold", r.tavolo_bloccato ? "border-destructive bg-destructive/10 text-destructive" : "text-muted-foreground")}>
+                {r.tavolo_bloccato ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+                {r.tavolo_bloccato ? "Bloccato" : "Libero"}
+              </button>
+            </div>
             <Button variant="outline" onClick={() => setTableOpen(true)}
               className={cn("h-auto w-full justify-start py-2.5", label ? "border-primary/50 text-primary" : "border-dashed text-muted-foreground")}>
               <LayoutGrid /> <span className="truncate font-semibold">{label || "Assegna tavolo sulla mappa"}</span>

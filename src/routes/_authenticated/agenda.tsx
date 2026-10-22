@@ -35,6 +35,7 @@ import { WhatsNew } from "@/components/ChangelogDialog";
 import { TutorialAutoOpen } from "@/components/TutorialDialog";
 import { APP_NAME } from "@/lib/extras";
 import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
+import { ReorganizeButton } from "@/components/agenda/ReorganizeButton";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -343,6 +344,7 @@ function AgendaPage() {
         ))}
         {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">{all.length ? "Tutti arrivati" : "Nessuna prenotazione"}</p>}
         </div>
+        {settings.reorganize && !closed && <div className="shrink-0 pt-1"><ReorganizeButton date={date} shift={shift} rows={all} /></div>}
       </section>
     );
   };

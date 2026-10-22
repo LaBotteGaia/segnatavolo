@@ -285,6 +285,8 @@ export type RestaurantSettings = {
   printPhones: boolean;
   /** Coperti di riserva (margine di sala) sottratti dalla capienza prenotabile */
   reserve: number;
+  /** Riorganizzazione intelligente della sala (pulsante a fondo turno) */
+  reorganize: boolean;
 };
 
 export const DEFAULT_SETTINGS: RestaurantSettings = {
@@ -300,13 +302,14 @@ export const DEFAULT_SETTINGS: RestaurantSettings = {
   privacy: true,
   printPhones: false,
   reserve: 4,
+  reorganize: true,
 };
 
 export function normalizeSettings(raw: unknown): RestaurantSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<RestaurantSettings>;
   const shifts = { ...DEFAULT_SETTINGS.shifts };
   for (const s of ALL_SHIFTS) if (r.shifts?.[s]) shifts[s] = { ...shifts[s], ...r.shifts[s] };
-  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4 };
+  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4, reorganize: r.reorganize !== false };
 }
 
 export const rangesOf = (st: RestaurantSettings): Ranges =>

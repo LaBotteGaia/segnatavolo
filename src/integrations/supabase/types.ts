@@ -119,6 +119,7 @@ export type Database = {
           status: string
           table_ids: string[]
           tags: string[]
+          tavolo_bloccato: boolean
           time: string
           updated_at: string | null
           updated_by_name: string | null
@@ -156,6 +157,7 @@ export type Database = {
           status?: string
           table_ids?: string[]
           tags?: string[]
+          tavolo_bloccato?: boolean
           time?: string
           updated_at?: string | null
           updated_by_name?: string | null
@@ -193,6 +195,7 @@ export type Database = {
           status?: string
           table_ids?: string[]
           tags?: string[]
+          tavolo_bloccato?: boolean
           time?: string
           updated_at?: string | null
           updated_by_name?: string | null
@@ -369,10 +372,14 @@ export type Database = {
       restaurant_tables: {
         Row: {
           allow_extras: boolean
+          coperti_comodi: number
+          coperti_max: number
           created_at: string
           id: string
           name: string
           no_join: string[]
+          ordine_riempimento: number
+          posti_scomodi_solo_in_unione: boolean
           restaurant_id: string | null
           room_id: string
           seats: number
@@ -381,10 +388,14 @@ export type Database = {
         }
         Insert: {
           allow_extras?: boolean
+          coperti_comodi?: number
+          coperti_max?: number
           created_at?: string
           id?: string
           name: string
           no_join?: string[]
+          ordine_riempimento?: number
+          posti_scomodi_solo_in_unione?: boolean
           restaurant_id?: string | null
           room_id: string
           seats?: number
@@ -393,10 +404,14 @@ export type Database = {
         }
         Update: {
           allow_extras?: boolean
+          coperti_comodi?: number
+          coperti_max?: number
           created_at?: string
           id?: string
           name?: string
           no_join?: string[]
+          ordine_riempimento?: number
+          posti_scomodi_solo_in_unione?: boolean
           restaurant_id?: string | null
           room_id?: string
           seats?: number

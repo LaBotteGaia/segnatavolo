@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
-import { validSeats, validTableName } from "@/lib/extras";
+import { validTableName } from "@/lib/extras";
 import { doubleShiftRulesOf, periodsOf, type ClosedPeriod, type DoubleShiftRule } from "@/lib/rotation";
 
 export const Route = createFileRoute("/_authenticated/sale")({
@@ -111,7 +111,7 @@ function SalePage() {
       await supabase.from("restaurant_tables").update({ x, y }).eq("id", selected.id).eq("restaurant_id", restaurantId ?? "");
     } else {
       const n = roomTables.length + 1;
-      const { data } = await supabase.from("restaurant_tables").insert({ restaurant_id: restaurantId, room_id: room.id, name: `T${n}`, seats: 4, x, y }).select().single();
+      const { data } = await supabase.from("restaurant_tables").insert({ restaurant_id: restaurantId, room_id: room.id, name: `T${n}`, seats: 4, coperti_comodi: 4, coperti_max: 4, x, y }).select().single();
       if (data) setSel(data.id);
     }
     refresh();
@@ -312,14 +312,25 @@ function SalePage() {
 
 function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) => void }) {
   const [name, setName] = useState(t.name);
-  const [seats, setSeats] = useState(String(t.seats));
-  const [bad, setBad] = useState<{ name?: boolean; seats?: boolean }>({});
-  useEffect(() => { setName(t.name); setSeats(String(t.seats)); }, [t.name, t.seats]);
+  const [comodi, setComodi] = useState(String(t.coperti_comodi ?? t.seats));
+  const [max, setMax] = useState(String(t.coperti_max ?? t.seats));
+  const [ordine, setOrdine] = useState(String(t.ordine_riempimento ?? 99));
+  const [bad, setBad] = useState<{ name?: boolean; comodi?: boolean; max?: boolean; ordine?: boolean }>({});
+  useEffect(() => { setName(t.name); setComodi(String(t.coperti_comodi ?? t.seats)); setMax(String(t.coperti_max ?? t.seats)); setOrdine(String(t.ordine_riempimento ?? 99)); }, [t.name, t.seats, t.coperti_comodi, t.coperti_max, t.ordine_riempimento]);
   const save = () => {
-    const b = { name: !validTableName(name), seats: !validSeats(seats) };
+    const c = Number(comodi), m = Number(max), o = Number(ordine);
+    const b = {
+      name: !validTableName(name),
+      comodi: !Number.isInteger(c) || c < 1 || c > 20,
+      max: !Number.isInteger(m) || m < c || m > 20,
+      ordine: !Number.isInteger(o) || o < 1 || o > 99,
+    };
     setBad(b);
-    if (b.name || b.seats) { toast.error("Inserisci un valore valido prima di confermare"); return; }
-    if (name.trim() !== t.name || Number(seats) !== t.seats) { onSave({ name: name.trim(), seats: Number(seats) }); toast.success("Tavolo salvato"); }
+    if (b.name || b.comodi || b.max || b.ordine) { toast.error("Inserisci valori validi: coperti max non inferiori ai comodi, ordine tra 1 e 99"); return; }
+    if (name.trim() !== t.name || c !== t.coperti_comodi || m !== t.coperti_max || o !== t.ordine_riempimento) {
+      onSave({ name: name.trim(), seats: c, coperti_comodi: c, coperti_max: m, ordine_riempimento: o });
+      toast.success("Tavolo salvato");
+    }
   };
   const err = "border-destructive ring-1 ring-destructive";
   return (
@@ -329,11 +340,23 @@ function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) =>
         <Input className={cn("w-28", bad.name && err)} value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div>
-        <label className="text-xs text-muted-foreground">Coperti</label>
-        <Input className={cn("w-20", bad.seats && err)} inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
+        <label className="text-xs text-muted-foreground">Coperti comodi</label>
+        <Input className={cn("w-20", bad.comodi && err)} inputMode="numeric" value={comodi} onChange={(e) => setComodi(e.target.value)} />
       </div>
+      <div>
+        <label className="text-xs text-muted-foreground">Coperti max</label>
+        <Input className={cn("w-20", bad.max && err)} inputMode="numeric" value={max} onChange={(e) => setMax(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-xs text-muted-foreground">Ordine riempimento (1-99)</label>
+        <Input className={cn("w-20", bad.ordine && err)} inputMode="numeric" value={ordine} onChange={(e) => setOrdine(e.target.value)} />
+      </div>
+      <label className="flex items-center gap-2 pb-2 text-sm" title="Se attivo, i coperti oltre quelli comodi si attivano solo quando il tavolo è unito a un tavolo contiguo">
+        <input type="checkbox" checked={t.posti_scomodi_solo_in_unione ?? true} onChange={(e) => onSave({ posti_scomodi_solo_in_unione: e.target.checked })} />
+        Posti scomodi solo in unione
+      </label>
       <Button size="sm" onClick={save}>Conferma</Button>
-      {(bad.name || bad.seats) && <p className="w-full text-sm font-semibold text-destructive">Inserisci un valore valido prima di confermare</p>}
+      {(bad.name || bad.comodi || bad.max || bad.ordine) && <p className="w-full text-sm font-semibold text-destructive">Inserisci valori validi: coperti max non inferiori ai comodi, ordine tra 1 e 99</p>}
     </div>
   );
 }

@@ -272,6 +272,15 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
             <p className="text-xs text-muted-foreground">Posti sottratti dal totale per mantenere una riserva di emergenza / passanti prima che il turno sia considerato completo.</p>
           </section>
 
+          <section className="space-y-2">
+            <h3 className="font-display text-lg">Riorganizzazione Intelligente</h3>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              Abilita Riorganizzazione Intelligente della Sala
+              <Switch checked={st.reorganize} onCheckedChange={(v) => setSt((o) => ({ ...o, reorganize: v }))} aria-label="Abilita Riorganizzazione Intelligente della Sala" />
+            </label>
+            <p className="text-xs text-muted-foreground">Permette di ottimizzare automaticamente i coperti di sala privilegiando le sedute comode e riempiendo le sale secondo l'ordine di priorità stabilito.</p>
+          </section>
+
 
 
           <section className="space-y-2">
