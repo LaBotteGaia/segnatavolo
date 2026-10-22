@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeSettings } from "@/lib/data";
+import { ownRestaurantId, scopeRestaurant } from "./tenant";
 import { getAssist } from "@/lib/assist";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -35,10 +36,13 @@ export const membershipQuery = () => {
           restaurants: { name: r.name, settings: r.settings },
         } as Member & { restaurants: { name: string; settings: unknown } | null };
       }
-      const { data, error } = await supabase
+      const restaurantId = await ownRestaurantId();
+      if (!restaurantId) return null;
+      const { data, error } = await scopeRestaurant(supabase
         .from("restaurant_members")
-        .select("*, restaurants(name, settings)")
+        .select("*, restaurants(name, settings)"), restaurantId)
         .eq("user_id", u.user.id)
+        .eq("status", "active")
         .maybeSingle();
       if (error) throw error;
       return data as (Member & { restaurants: { name: string; settings: unknown } | null }) | null;

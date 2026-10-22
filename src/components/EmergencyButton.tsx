@@ -10,8 +10,8 @@ import type { Reservation, Room, RTable, Shift } from "@/lib/data";
 export function EmergencyButton({ date = format(new Date(), "yyyy-MM-dd"), shifts, className }: { date?: string | undefined; shifts?: Shift[] | undefined; className?: string }) {
   const qc = useQueryClient(); const { data: me } = useMembership(); const settings = useSettings();
   const save = () => {
-    const rows = qc.getQueryData<Reservation[]>(["reservations", date]);
-    const rooms = qc.getQueryData<Room[]>(["rooms"]); const tables = qc.getQueryData<RTable[]>(["tables"]);
+    const rows = qc.getQueryData<Reservation[]>(["reservations", date, me?.restaurant_id]);
+    const rooms = qc.getQueryData<Room[]>(["rooms", me?.restaurant_id]); const tables = qc.getQueryData<RTable[]>(["tables", me?.restaurant_id]);
     if (!me || !rows || !rooms || !tables) { toast.error("Apri l’agenda della data da esportare e attendi il caricamento"); return; }
     downloadEmergency({ name: me.restaurants?.name ?? "Segnatavolo", date, shifts, rows, rooms, tables, settings });
     toast.success("Piano di sala salvato sul dispositivo");

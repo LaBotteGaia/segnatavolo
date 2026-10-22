@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+import { activeRestaurantId, scopeRestaurant } from "./tenant";
+
 export type ConnState = "online" | "degraded" | "offline";
 
 export type ConnStatus = {
@@ -19,7 +21,7 @@ const INTERVAL_MS = 60_000;
 /** Ping leggero al database: conta 0 righe su reservations. */
 async function ping(): Promise<{ ms: number }> {
   const t0 = performance.now();
-  const { error } = await supabase.from("reservations").select("id", { count: "exact", head: true }).limit(1);
+  const { error } = await scopeRestaurant(supabase.from("reservations").select("id", { count: "exact", head: true }), await activeRestaurantId()).limit(1);
   const ms = Math.round(performance.now() - t0);
   if (error) throw new Error(error.message);
   return { ms };

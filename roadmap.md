@@ -16,4 +16,7 @@
 - [x] Profilo completo e cambio password protetto; contatti staff e accesso assistenza sicuro.
 - [x] Menù riorganizzato, hub Sala & Servizio condiviso, versione richiesta v0.8.0-alpha.
 - [x] Verifica test, salvataggio profilo e navigazione autenticata.
+- [x] Isolamento esplicito del ristorante attivo in tutte le letture e cache operative.
+- [x] Turni e giorni delle sale modificabili anche con mappa bloccata, salvataggio e conferma.
+- [x] 138 test superati; verifica autenticata del locale proprio, assistenza su altro locale e salvataggio/rilettura di turni, giorni e doppi turni con valori originali ripristinati.
 - [ ] Conferma email di sicurezza cambio password: impostazione/invio non verificabili con i controlli disponibili; messaggio limitato all’aggiornamento riuscito.

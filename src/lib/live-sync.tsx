@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "./membership";
 
-export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "customers", "customer-history", "search", "recycle-bin"];
+export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "customers", "customer-history", "search", "recycle-bin", "service-note", "members"];
 export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
@@ -39,11 +39,11 @@ export function LiveSync() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
       if (saved && Date.now() - saved.at <= OFFLINE_TTL) {
-        for (const row of saved.rows) if (Date.now() - row.at <= OFFLINE_TTL && !qc.getQueryData(row.key)) qc.setQueryData(row.key, row.data, { updatedAt: row.at });
+        for (const row of saved.rows) if (Date.now() - row.at <= OFFLINE_TTL && row.key.at(-1) === me.restaurant_id && Array.isArray(row.data) && row.data.every((r: { restaurant_id?: string }) => r.restaurant_id === me.restaurant_id) && !qc.getQueryData(row.key)) qc.setQueryData(row.key, row.data, { updatedAt: row.at });
       }
     } catch { /* Browser storage is optional. */ }
     const persist = () => {
-      const rows = qc.getQueryCache().getAll().filter((q) => ["reservations", "rooms", "tables", "customers"].includes(String(q.queryKey[0])) && q.state.data !== undefined).map((q) => ({ key: q.queryKey, data: q.state.data, at: q.state.dataUpdatedAt }));
+      const rows = qc.getQueryCache().getAll().filter((q) => ["reservations", "rooms", "tables", "customers"].includes(String(q.queryKey[0])) && q.queryKey.at(-1) === me.restaurant_id && q.state.data !== undefined).map((q) => ({ key: q.queryKey, data: q.state.data, at: q.state.dataUpdatedAt }));
       try { sessionStorage.setItem(storageKey, JSON.stringify({ at: Date.now(), rows })); } catch { /* Quota/private browsing. */ }
     };
     const unsubscribe = qc.getQueryCache().subscribe((event) => { if (event.type === "updated" && event.action.type === "success") persist(); });
@@ -57,6 +57,10 @@ export function LiveSync() {
     const channel = supabase.channel(`service-${me.restaurant_id}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, change)
       .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, change)
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_notes" }, change)
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, change)
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_tables" }, change)
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_members" }, change)
       .subscribe((status) => { if (status === "SUBSCRIBED") refresh(); });
     const visible = () => { if (document.visibilityState === "visible" && navigator.onLine) refresh(); };
     window.addEventListener("online", refresh);

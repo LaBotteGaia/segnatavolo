@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { useMembership, useSettings } from "@/lib/membership";
-import { assistId } from "@/lib/assist";
+import { useActiveRestaurantId } from "@/lib/tenant";
 import { cn } from "@/lib/utils";
 import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
 import { RoomGrid } from "@/components/agenda/RoomGrid";
@@ -42,6 +42,7 @@ function MasterOnly() {
 
 function SalePage() {
   const qc = useQueryClient();
+  const restaurantId = useActiveRestaurantId();
   const { data: rooms = [] } = useRooms();
   const { data: tables = [] } = useTables();
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -64,9 +65,11 @@ function SalePage() {
   };
   const caps = totalCapacities(rooms, tables);
   const updateRoom = async (r: Room, patch: Partial<Room>) => {
-    qc.setQueryData<Room[]>(["rooms"], (old) => old?.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
-    const { error } = await supabase.from("rooms").update(patch).eq("id", r.id);
-    if (error) { toast.error("Salvataggio non riuscito"); refresh(); }
+    qc.setQueryData<Room[]>(["rooms", restaurantId], (old) => old?.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
+    const { error } = await supabase.from("rooms").update(patch).eq("id", r.id).eq("restaurant_id", restaurantId ?? "");
+    if (error) toast.error("Salvataggio non riuscito");
+    else if (["open_days", "closed_shifts", "closed_periods", "double_shifts"].some((key) => key in patch)) toast.success("Configurazione servizi salvata");
+    refresh();
   };
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["rooms"] });
@@ -77,17 +80,19 @@ function SalePage() {
     const i = rooms.findIndex((x) => x.id === r.id), j = i + dir;
     if (i < 0 || j < 0 || j >= rooms.length) return;
     const next = [...rooms];
-    next.splice(j, 0, next.splice(i, 1)[0]!);
+    const [moved] = next.splice(i, 1);
+    if (!moved) return;
+    next.splice(j, 0, moved);
     const ordered = next.map((x, k) => ({ ...x, sort_order: k }));
-    qc.setQueryData<Room[]>(["rooms"], ordered);
-    const results = await Promise.all(ordered.map((x) => supabase.from("rooms").update({ sort_order: x.sort_order }).eq("id", x.id)));
+    qc.setQueryData<Room[]>(["rooms", restaurantId], ordered);
+    const results = await Promise.all(ordered.map((x) => supabase.from("rooms").update({ sort_order: x.sort_order }).eq("id", x.id).eq("restaurant_id", restaurantId ?? "")));
     if (results.some((x) => x.error)) toast.error("Ordine delle sale non salvato");
     refresh();
   };
 
   const addRoom = async () => {
     if (!newRoom.trim()) return;
-      const assist = assistId();
+      const assist = restaurantId;
       const { data } = await supabase.from("rooms").insert({ name: newRoom.trim(), sort_order: rooms.length, ...(assist ? { restaurant_id: assist } : {}) }).select().single();
     setNewRoom("");
     if (data) setRoomId(data.id);
@@ -102,18 +107,18 @@ function SalePage() {
     if (drawObs) { updateRoom(room, { walls: toggleWall(wallsOf(room), obstacleKey(x, y)) }); return; }
     if (isObstacle(wallsOf(room), x, y)) { toast.error("🚫 Questa casella è un ostacolo: non può contenere un tavolo"); return; }
     if (selected && selected.room_id === room.id) {
-      await supabase.from("restaurant_tables").update({ x, y }).eq("id", selected.id);
+      await supabase.from("restaurant_tables").update({ x, y }).eq("id", selected.id).eq("restaurant_id", restaurantId ?? "");
     } else {
       const n = roomTables.length + 1;
-      const { data } = await supabase.from("restaurant_tables").insert({ room_id: room.id, name: `T${n}`, seats: 4, x, y }).select().single();
+      const { data } = await supabase.from("restaurant_tables").insert({ restaurant_id: restaurantId, room_id: room.id, name: `T${n}`, seats: 4, x, y }).select().single();
       if (data) setSel(data.id);
     }
     refresh();
   };
 
   const updateTable = async (t: RTable, patch: Partial<RTable>) => {
-    qc.setQueryData<RTable[]>(["tables"], (old) => old?.map((x) => (x.id === t.id ? { ...x, ...patch } : x)));
-    await supabase.from("restaurant_tables").update(patch).eq("id", t.id);
+    qc.setQueryData<RTable[]>(["tables", restaurantId], (old) => old?.map((x) => (x.id === t.id ? { ...x, ...patch } : x)));
+    await supabase.from("restaurant_tables").update(patch).eq("id", t.id).eq("restaurant_id", restaurantId ?? "");
   };
 
   return (
@@ -154,7 +159,7 @@ function SalePage() {
                   className="h-9 w-48 font-display"
                   onBlur={async (e) => {
                     if (e.target.value.trim() && e.target.value !== room.name) {
-                      await supabase.from("rooms").update({ name: e.target.value.trim() }).eq("id", room.id);
+                      await supabase.from("rooms").update({ name: e.target.value.trim() }).eq("id", room.id).eq("restaurant_id", restaurantId ?? "");
                       refresh();
                     }
                   }}
@@ -164,7 +169,7 @@ function SalePage() {
                   variant="outline"
                   onClick={async () => {
                     if (!confirm(`Eliminare la sala "${room.name}" e tutti i suoi tavoli?`)) return;
-                    await supabase.from("rooms").delete().eq("id", room.id);
+                    await supabase.from("rooms").delete().eq("id", room.id).eq("restaurant_id", restaurantId ?? "");
                     setRoomId(null);
                     refresh();
                   }}
@@ -206,7 +211,9 @@ function SalePage() {
                   </div>
                 </div>
               </div>
+              </fieldset>
               <RoomSchedule room={room} onChange={(p) => updateRoom(room, p)} />
+              <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
 
 
               <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -284,7 +291,7 @@ function SalePage() {
                   <Button
                     variant="destructive" disabled={locked}
                     onClick={async () => {
-                      await supabase.from("restaurant_tables").delete().eq("id", selected.id);
+                      await supabase.from("restaurant_tables").delete().eq("id", selected.id).eq("restaurant_id", restaurantId ?? "");
                       setSel(null);
                       refresh();
                       toast("Tavolo eliminato");
@@ -361,8 +368,8 @@ function RoomSchedule({ room, onChange }: { room: Room; onChange: (p: Partial<Ro
         <div className="mb-1 text-xs text-muted-foreground">Giorni settimanali di apertura</div>
         <div className="flex flex-wrap gap-1">
           {DAYS.map(([d, l]) => (
-            <button key={d} type="button" onClick={() => onChange({ open_days: days.includes(d) ? days.filter((x) => x !== d) : [...days, d] })}
-              className={cn("rounded-md border px-2.5 py-1 text-sm", days.includes(d) ? "bg-primary text-primary-foreground" : "bg-paper text-muted-foreground line-through")}>{l}</button>
+            <Button key={d} type="button" variant="outline" aria-pressed={days.includes(d)} onClick={() => onChange({ open_days: days.includes(d) ? days.filter((x) => x !== d) : [...days, d] })}
+              className={cn("rounded-md border px-2.5 py-1 text-sm", days.includes(d) ? "bg-primary text-primary-foreground" : "bg-paper text-muted-foreground line-through")}>{l}</Button>
           ))}
         </div>
       </div>
@@ -415,8 +422,8 @@ function DoubleShiftRules({ room, onChange }: { room: Room; onChange: (p: Partia
             <div className="flex flex-wrap items-center gap-1">
               <span className="mr-1 text-xs text-muted-foreground">Giorni:</span>
               {DAYS.map(([d, l]) => (
-                <button key={d} type="button" onClick={() => setRule(i, { days: r.days.includes(d) ? r.days.filter((x) => x !== d) : [...r.days, d] })}
-                  className={cn("rounded-md border px-2 py-0.5 text-xs", r.days.includes(d) ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>{l}</button>
+                <Button key={d} type="button" variant="outline" aria-pressed={r.days.includes(d)} onClick={() => setRule(i, { days: r.days.includes(d) ? r.days.filter((x) => x !== d) : [...r.days, d] })}
+                  className={cn("rounded-md border px-2 py-0.5 text-xs", r.days.includes(d) ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>{l}</Button>
               ))}
               {r.days.length === 0 && <span className="text-xs text-muted-foreground">(nessun giorno selezionato = tutti i giorni)</span>}
             </div>

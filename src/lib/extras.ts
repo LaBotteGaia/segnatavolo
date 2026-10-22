@@ -5,12 +5,12 @@ import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { normPhone, rangesOf } from "./data";
-import { assistId, scopeAssist } from "./assist";
+import { scopeRestaurant, useActiveRestaurantId } from "./tenant";
 import { useMembership, useSettings } from "./membership";
 import { reliabilityStats, type HistoryRow } from "./no-show";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.8.1-alpha";
+export const APP_VERSION = "v0.8.2-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
@@ -72,18 +72,13 @@ export function searchFilter(term: string) {
 
 /* ---------- Note di servizio ---------- */
 export function useServiceNote(date: string, shift: string) {
-  const qc = useQueryClient();
-  const key = ["service-note", date, shift, assistId() ?? "own"];
-  useEffect(() => {
-    const ch = supabase.channel(`note-${date}-${shift}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "service_notes" }, () => qc.invalidateQueries({ queryKey: key }))
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [date, shift]); // eslint-disable-line react-hooks/exhaustive-deps
+  const restaurantId = useActiveRestaurantId();
+  const key = ["service-note", date, shift, restaurantId];
   return useQuery({
-    queryKey: key,
+    queryKey: key, enabled: !!restaurantId,
     queryFn: async () => {
-      const { data } = await scopeAssist(supabase.from("service_notes").select("body")).eq("date", date).eq("shift", shift).maybeSingle();
+      const { data, error } = await scopeRestaurant(supabase.from("service_notes").select("body"), restaurantId).eq("date", date).eq("shift", shift).maybeSingle();
+      if (error) throw error;
       return data?.body ?? "";
     },
   });

@@ -23,7 +23,8 @@ import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, LEGAL_URL, SERVER_REGION_LINE } from 
 import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
-import { assistId, clearAssist, scopeAssist, useIsSuperAdmin } from "@/lib/assist";
+import { clearAssist, useIsSuperAdmin } from "@/lib/assist";
+import { scopeRestaurant } from "@/lib/tenant";
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
@@ -42,9 +43,9 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [notify, setNotify] = useNotifyPref();
 
   const exportCsv = async () => {
-    const { data, error } = await scopeAssist(supabase.from("reservations").select("*")).is("deleted_at", null).order("date").order("time");
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), me?.restaurant_id).is("deleted_at", null).order("date").order("time");
     if (error || !data) { toast.error("Esportazione non riuscita"); return; }
-    const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables", assistId() ?? "own"]) ?? []).map((t) => [t.id, t.name]));
+    const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables", me?.restaurant_id]) ?? []).map((t) => [t.id, t.name]));
     const rows = data.map((r) => ({ ...r, tavoli: r.table_ids.map((i) => byId.get(i) ?? "?"), turno: shiftName(r.shift as Shift), arrivato: r.arrived ? "Sì" : "No", fuori: r.outside ? "Sì" : "No", nuovo: r.is_new ? "Sì" : "No" }));
     const csv = toCsv(rows, [
       { key: "date", label: "Data" }, { key: "turno", label: "Turno" }, { key: "time", label: "Orario" }, { key: "name", label: "Nome" },
