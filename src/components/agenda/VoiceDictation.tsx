@@ -66,7 +66,7 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
         className={cn("min-w-0 whitespace-normal px-2", listening && "animate-pulse bg-destructive text-destructive-foreground hover:bg-destructive/90", className)}>
         <Mic /> <span className={listening ? "" : "hidden sm:inline"}>{listening ? "In ascolto... Parla ora" : "🎙️ Dettatura Rapida"}</span>
       </Button>
-      {listening && <div role="status" className="w-full rounded-md bg-paper px-3 py-2 text-sm text-foreground shadow">{live || "…"}</div>}
+      {listening && <div role="status" className="w-full rounded-md bg-paper px-3 py-2 text-sm text-foreground shadow">🎙️ Ti sto ascoltando... Parla liberamente. Quando smetti di parlare, la frase sarà pronta per la verifica.</div>}
       <Dialog open={review !== null} onOpenChange={(o) => { if (!o && !busy) setReview(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Verifica dettatura</DialogTitle></DialogHeader>
