@@ -231,6 +231,9 @@ export type Database = {
           email: string
           id: string
           name: string
+          notes: string
+          operational_role: string
+          phone: string
           restaurant_id: string
           role: string
           status: string
@@ -241,6 +244,9 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          notes?: string
+          operational_role?: string
+          phone?: string
           restaurant_id: string
           role?: string
           status?: string
@@ -251,6 +257,9 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          notes?: string
+          operational_role?: string
+          phone?: string
           restaurant_id?: string
           role?: string
           status?: string
@@ -469,6 +478,15 @@ export type Database = {
         Returns: boolean
       }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
+      update_operator_profile: {
+        Args: {
+          _name: string
+          _notes: string
+          _operational_role: string
+          _phone: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
