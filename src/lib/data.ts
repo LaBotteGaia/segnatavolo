@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { assistId, scopeAssist } from "@/lib/assist";
+import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Room = Tables<"rooms">;
@@ -10,19 +10,21 @@ export type Reservation = Tables<"reservations">;
 export type Shift = "colazione" | "pranzo" | "sera";
 export const ALL_SHIFTS: Shift[] = ["colazione", "pranzo", "sera"];
 
-export const roomsQuery = () => ({
-  queryKey: ["rooms", assistId() ?? "own"],
+export const roomsQuery = (restaurantId: string | null = null) => ({
+  queryKey: ["rooms", restaurantId],
+  enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeAssist(supabase.from("rooms").select("*")).order("sort_order").order("created_at");
+    const { data, error } = await scopeRestaurant(supabase.from("rooms").select("*"), restaurantId).order("sort_order").order("created_at");
     if (error) throw error;
     return data;
   },
 });
 
-export const tablesQuery = () => ({
-  queryKey: ["tables", assistId() ?? "own"],
+export const tablesQuery = (restaurantId: string | null = null) => ({
+  queryKey: ["tables", restaurantId],
+  enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeAssist(supabase.from("restaurant_tables").select("*"));
+    const { data, error } = await scopeRestaurant(supabase.from("restaurant_tables").select("*"), restaurantId);
     if (error) throw error;
     return [...data].sort((a, b) => compareTableNames(a.name, b.name));
   },
@@ -43,35 +45,37 @@ export function compareTables(rooms: { id: string }[] | undefined) {
     (idx.get(a.room_id) ?? 999) - (idx.get(b.room_id) ?? 999) || compareTableNames(a.name, b.name);
 }
 
-export const customersQuery = () => ({
-  queryKey: ["customers", assistId() ?? "own"],
+export const customersQuery = (restaurantId: string | null = null) => ({
+  queryKey: ["customers", restaurantId],
+  enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeAssist(supabase.from("customers").select("*")).order("name");
+    const { data, error } = await scopeRestaurant(supabase.from("customers").select("*"), restaurantId).order("name");
     if (error) throw error;
     return data;
   },
 });
 
-export const reservationsQuery = (date: string) => ({
-  queryKey: ["reservations", date, assistId() ?? "own"],
+export const reservationsQuery = (date: string, restaurantId: string | null = null) => ({
+  queryKey: ["reservations", date, restaurantId],
+  enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeAssist(supabase.from("reservations").select("*")).is("deleted_at", null).eq("date", date);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("date", date);
     if (error) throw error;
     return data;
   },
 });
 
 export function useRooms() {
-  return useQuery(roomsQuery());
+  return useQuery(roomsQuery(useActiveRestaurantId()));
 }
 export function useTables() {
-  return useQuery(tablesQuery());
+  return useQuery(tablesQuery(useActiveRestaurantId()));
 }
 export function useCustomers() {
-  return useQuery(customersQuery());
+  return useQuery(customersQuery(useActiveRestaurantId()));
 }
 export function useReservations(date: string) {
-  return useQuery(reservationsQuery(date));
+  return useQuery(reservationsQuery(date, useActiveRestaurantId()));
 }
 
 export function findCustomer(customers: Customer[] | undefined, name: string) {
@@ -253,10 +257,11 @@ export function dayDots(rows: (Pick<Reservation, "people" | "outside" | "shift">
   return { inside: level(false), outside: level(true) };
 }
 
-export const monthReservationsQuery = (from: string, to: string) => ({
-  queryKey: ["reservations-month", from, to, assistId() ?? "own"],
+export const monthReservationsQuery = (from: string, to: string, restaurantId: string | null = null) => ({
+  queryKey: ["reservations-month", from, to, restaurantId],
+  enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeAssist(supabase.from("reservations").select("date, shift, people, outside, no_show")).is("deleted_at", null).gte("date", from).lte("date", to);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date, shift, people, outside, no_show"), restaurantId).is("deleted_at", null).gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },

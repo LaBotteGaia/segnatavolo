@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: "v0.8.2-alpha", date: "22 ottobre 2026", items: ["Isolamento rigoroso dei dati operativi sul ristorante attivo, anche per Super Admin.", "Turni, giorni e doppi turni delle sale modificabili indipendentemente dal blocco mappa, con conferma di salvataggio."] },
   {
     version: "v0.8.1-alpha",
     date: "22 ottobre 2026",

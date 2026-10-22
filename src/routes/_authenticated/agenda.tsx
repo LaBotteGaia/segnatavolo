@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { activeShifts, closedShifts, isDayClosed, monthReservationsQuery, shiftCounters, shiftEmoji, shiftName, shiftPlural, useReservations, useRooms, useTables, type DotLevel, type Reservation, type Shift } from "@/lib/data";
 import { affluenceLevel, affluenceTip, bookableCapacity, type Affluence } from "@/lib/affluence";
 import { useSettings } from "@/lib/membership";
-import { assistId } from "@/lib/assist";
+import { useActiveRestaurantId } from "@/lib/tenant";
 import { useNewReservationNotifications } from "@/lib/notifications";
 import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
@@ -62,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/agenda")({
 });
 
 function AgendaPage() {
+  const restaurantId = useActiveRestaurantId();
   const search = Route.useSearch();
   const date = search.d ?? todayStr();
   const navigate = useNavigate({ from: "/agenda" });
@@ -91,7 +92,7 @@ function AgendaPage() {
   const { data: tables = [] } = useTables();
   const mFrom = format(startOfMonth(addDays(startOfMonth(month), -7)), "yyyy-MM-dd");
   const mTo = format(endOfMonth(addDays(endOfMonth(month), 7)), "yyyy-MM-dd");
-  const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo));
+  const { data: monthRows = [] } = useQuery(monthReservationsQuery(mFrom, mTo, restaurantId));
   const [calPick, setCalShift] = useState<Shift>("pranzo");
   const calShift: Shift = shifts.includes(calPick) ? calPick : (shifts[0] ?? "pranzo");
   const bookedByDay = useMemo(() => {
@@ -135,13 +136,13 @@ function AgendaPage() {
   const byShift = (s: Shift) =>
     visible.filter((r) => r.shift === s).sort((a, b) => (a.time || "99").localeCompare(b.time || "99") || a.created_at.localeCompare(b.created_at));
 
-  const key = ["reservations", date];
+  const key = ["reservations", date, restaurantId];
   useEffect(() => { setMonth(parseISO(date)); }, [date]);
 
   const update = async (id: string, patch: Partial<Reservation>) => {
     void qc.cancelQueries({ queryKey: key });
     qc.setQueryData<Reservation[]>(key, (old) => old?.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    const { error } = await supabase.from("reservations").update(patch).eq("id", id);
+    const { error } = await supabase.from("reservations").update(patch).eq("id", id).eq("restaurant_id", restaurantId ?? "");
     if (error) {
       toast.error("Salvataggio non riuscito");
       qc.invalidateQueries({ queryKey: key });
@@ -154,7 +155,7 @@ function AgendaPage() {
 
   const remove = async (r: Reservation) => {
     setHidden((h) => new Set(h).add(r.id));
-    const deletion = Promise.resolve(supabase.from("reservations").update({ deleted_at: new Date().toISOString() }).eq("id", r.id).select("id").single());
+    const deletion = Promise.resolve(supabase.from("reservations").update({ deleted_at: new Date().toISOString() }).eq("id", r.id).eq("restaurant_id", restaurantId ?? "").select("id").single());
     const undo = async (withoutTables = false) => {
       try {
         const result = await deletion; if (result.error) return;
@@ -183,14 +184,14 @@ function AgendaPage() {
 
   const saveCustomerPhone = async (r: Reservation, phone: string) => {
     if (r.customer_id) {
-      await supabase.from("customers").update({ phone }).eq("id", r.customer_id);
+      await supabase.from("customers").update({ phone }).eq("id", r.customer_id).eq("restaurant_id", restaurantId ?? "");
       qc.invalidateQueries({ queryKey: ["customers"] });
     }
   };
 
   const create = async (v: NewReservationInput): Promise<boolean> => {
     let customerId = v.customer?.id ?? null;
-    const assist = assistId();
+    const assist = restaurantId;
     if (!customerId) {
       const { data } = await supabase.from("customers").insert({ name: v.name, phone: v.phone || null, ...(assist ? { restaurant_id: assist } : {}) }).select("id").single();
       customerId = data?.id ?? null;
@@ -228,7 +229,7 @@ function AgendaPage() {
 
   const move = async (r: Reservation, v: { date: string; shift: Shift; time: string }) => {
     qc.setQueryData<Reservation[]>(key, (old) => old?.filter((x) => x.id !== r.id));
-    const { error } = await supabase.from("reservations").update({ ...v, no_show: false, arrived: false, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id);
+    const { error } = await supabase.from("reservations").update({ ...v, no_show: false, arrived: false, table_ids: [], extra_sponde: 0, extra_barelle: 0 }).eq("id", r.id).eq("restaurant_id", restaurantId ?? "");
     qc.invalidateQueries({ queryKey: key });
     qc.invalidateQueries({ queryKey: ["reservations", v.date] });
     qc.invalidateQueries({ queryKey: ["reservations-month"] });
@@ -240,7 +241,7 @@ function AgendaPage() {
   };
 
   const duplicate = async (r: Reservation, v: { dates: string[]; shift: Shift; time: string }) => {
-    const assist = assistId();
+    const assist = restaurantId;
     const rows = v.dates.map((d) => ({
       date: d, shift: v.shift, time: v.time, name: r.name, people: r.people, phone: r.phone,
       is_new: false, outside: r.outside, notes: r.notes, customer_id: r.customer_id, table_ids: [] as string[],

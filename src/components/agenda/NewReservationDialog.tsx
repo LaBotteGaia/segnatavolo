@@ -19,6 +19,7 @@ import {
   validateReservation, activeShifts, rangesOf, isShiftClosed, isDayClosed, shiftName, type Customer, type ReservationErrors, type Shift,
 } from "@/lib/data";
 import { TableDialog } from "./TableDialog";
+import { useActiveRestaurantId } from "@/lib/tenant";
 import { useMembership, useSettings } from "@/lib/membership";
 import { outsideClosed, DURATION_PRESETS, WHOLE_EVENING, durLabel } from "@/lib/rotation";
 import { matchesSearch, phonesOf } from "@/lib/customers";
@@ -72,6 +73,7 @@ export function NewReservationDialog({
   const warning = reservationDateWarning(date, shift, time, ranges, now);
   const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const shifts = activeShifts(settings);
+  const restaurantId = useActiveRestaurantId();
   const isMaster = useMembership().data?.role === "master";
   const closed = isShiftClosed(date, shift, settings);
 
@@ -86,7 +88,7 @@ export function NewReservationDialog({
     }
   }, [open, initialCustomerId, !!customers]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date), enabled: open });
+  const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date, restaurantId), enabled: open && !!restaurantId });
   const others = dayRes.filter((r) => r.shift === shift);
 
   // Identità cliente = telefono. Il nome da solo aggancia solo se non ci sono omonimi.

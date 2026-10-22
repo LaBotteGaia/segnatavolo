@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { APP_VERSION, lastVisitText, saveServiceNote, searchFilter, useServiceNote, useVisitStats, useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { rangesOf, shiftName, tableLabel, useRooms, useTables, type Reservation, type Shift } from "@/lib/data";
 import { useMembership, useSettings } from "@/lib/membership";
-import { scopeAssist } from "@/lib/assist";
+import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
 import { reliabilityStats } from "@/lib/no-show";
 import { ChangelogDialog } from "@/components/ChangelogDialog";
 
@@ -59,11 +59,12 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
     document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h);
   }, []);
   const filter = searchFilter(deb);
+  const restaurantId = useActiveRestaurantId();
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ["search", deb], enabled: !!filter,
+    queryKey: ["search", deb, restaurantId], enabled: !!filter && !!restaurantId,
     queryFn: async () => {
       if (!filter) return [];
-      const { data } = await scopeAssist(supabase.from("reservations").select("*")).is("deleted_at", null).or(filter).order("date", { ascending: false }).limit(20);
+      const { data } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).or(filter).order("date", { ascending: false }).limit(20);
       return data ?? [];
     },
   });

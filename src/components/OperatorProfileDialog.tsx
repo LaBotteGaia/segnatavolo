@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OPERATIONAL_ROLES, passwordError } from "@/lib/operator-profile";
+import { ownRestaurantId, scopeRestaurant } from "@/lib/tenant";
 import { roleLabel, type Member } from "@/lib/membership";
 
 export function OperatorProfileDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -18,7 +19,7 @@ export function OperatorProfileDialog({ open, onOpenChange }: { open: boolean; o
     queryFn: async () => {
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (authError || !auth.user) throw new Error("Accesso non disponibile");
-      const { data, error } = await supabase.from("restaurant_members").select("*").eq("user_id", auth.user.id).eq("status", "active").maybeSingle();
+      const { data, error } = await scopeRestaurant(supabase.from("restaurant_members").select("*"), await ownRestaurantId()).eq("user_id", auth.user.id).eq("status", "active").maybeSingle();
       if (error) throw error;
       return { member: data, email: auth.user.email ?? "" };
     },

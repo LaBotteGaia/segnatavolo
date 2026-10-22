@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { normPhone, rangesOf, shiftName, useTables, type Customer, type Shift } from "@/lib/data";
 import { useMembership, useSettings } from "@/lib/membership";
-import { scopeAssist } from "@/lib/assist";
+import { activeRestaurantId, scopeRestaurant } from "@/lib/tenant";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesOf } from "@/lib/customers";
 
@@ -18,7 +18,7 @@ import { customerRows, customerStats, fullName, firstOf, habits, lastOf, phonesO
 async function linkedReservations(c: Customer) {
   const ph = phonesOf(c);
   const filter = [`customer_id.eq.${c.id}`, ...(ph.length ? [`phone.in.(${ph.map((p) => `"${p}"`).join(",")})`] : [])].join(",");
-  const { data, error } = await scopeAssist(supabase.from("reservations").select("id, phone")).or(filter);
+  const { data, error } = await scopeRestaurant(supabase.from("reservations").select("id, phone"), await activeRestaurantId()).or(filter);
   if (error) throw error;
   return data ?? [];
 }
@@ -53,16 +53,17 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
 
   const save = async () => {
     if (!first.trim() && !last.trim()) { toast.error("Inserisci almeno il nome o il cognome"); return; }
+    if (!me) return;
     const ph = phones.map(normPhone).filter(Boolean);
     const row = {
-      first_name: first.trim(), last_name: last.trim(), name: fullName(first, last), phone: ph[0] ?? null, extra_phones: ph.slice(1),
+      restaurant_id: me.restaurant_id, first_name: first.trim(), last_name: last.trim(), name: fullName(first, last), phone: ph[0] ?? null, extra_phones: ph.slice(1),
       emails: emails.map((e) => e.trim()).filter(Boolean), notes: notes.trim() || null,
     };
     setBusy(true);
     let linked: { id: string; phone: string | null }[] = [];
     if (customer) { try { linked = await linkedReservations(customer); } catch { /* ignora */ } }
     const { data, error } = customer
-      ? await supabase.from("customers").update(row).eq("id", customer.id).select("*").single()
+      ? await supabase.from("customers").update(row).eq("id", customer.id).eq("restaurant_id", me?.restaurant_id ?? "").select("*").single()
       : await supabase.from("customers").insert(row).select("*").single();
     if (error) { setBusy(false); toast.error("Salvataggio non riuscito"); return; }
     if (customer && linked.length) {
@@ -70,8 +71,8 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
       const fix = linked.filter((r) => !ph.includes(normPhone(r.phone))).map((r) => r.id);
       const base = { name: row.name, customer_id: customer.id };
       const res = await Promise.all([
-        keep.length ? supabase.from("reservations").update(base).in("id", keep) : null,
-        fix.length ? supabase.from("reservations").update({ ...base, phone: row.phone }).in("id", fix) : null,
+        keep.length ? supabase.from("reservations").update(base).in("id", keep).eq("restaurant_id", me?.restaurant_id ?? "") : null,
+        fix.length ? supabase.from("reservations").update({ ...base, phone: row.phone }).in("id", fix).eq("restaurant_id", me?.restaurant_id ?? "") : null,
       ]);
       if (res.some((r) => r?.error)) toast.error("Alcune prenotazioni non sono state aggiornate");
     }
@@ -90,8 +91,8 @@ export function CustomerCard({ open, onOpenChange, customer, onBook }: {
     setBusy(true);
     try {
       const ids = (await linkedReservations(customer)).map((r) => r.id);
-      if (ids.length) { const { error } = await supabase.from("reservations").delete().in("id", ids); if (error) throw error; }
-      const { error } = await supabase.from("customers").delete().eq("id", customer.id); if (error) throw error;
+      if (ids.length) { const { error } = await supabase.from("reservations").delete().in("id", ids).eq("restaurant_id", me?.restaurant_id ?? ""); if (error) throw error; }
+      const { error } = await supabase.from("customers").delete().eq("id", customer.id).eq("restaurant_id", me?.restaurant_id ?? ""); if (error) throw error;
       toast.success("Cliente e tutte le prenotazioni collegate eliminati con successo");
       setDel(null); onOpenChange(false); qc.invalidateQueries();
     } catch { toast.error("Eliminazione non riuscita"); }
