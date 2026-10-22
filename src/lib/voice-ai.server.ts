@@ -14,7 +14,7 @@ export async function callProvider(provider: AiProvider, key: string, transcript
       if (!res.ok) return { ok: false, message: providerError(res.status, body) };
       return { ok: true, text: body?.choices?.[0]?.message?.content ?? '' };
     }
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent', {
       method: 'POST', signal: ctrl.signal, headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: voicePrompt(currentDate) }] }, contents: [{ role: 'user', parts: [{ text: transcript }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: Math.max(maxTokens, 400), thinkingConfig: { thinkingBudget: 0 } } }),
     });
