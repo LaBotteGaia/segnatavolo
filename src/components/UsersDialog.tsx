@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Phone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MaskedPhone } from "@/components/MaskedPhone";
 import { inviteLink, roleLabel, type Invite, type Member, type Role } from "@/lib/membership";
 
 const copy = async (token: string) => {
@@ -18,15 +19,14 @@ const copy = async (token: string) => {
 export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenChange: (o: boolean) => void; me: Member }) {
   const qc = useQueryClient();
   const members = useQuery({
-    queryKey: ["members"],
+    queryKey: ["members", me.restaurant_id],
     enabled: open,
-    queryFn: async () => (await supabase.from("restaurant_members").select("*").order("created_at")).data as Member[],
+    queryFn: async () => { const { data, error } = await supabase.from("restaurant_members").select("*").eq("restaurant_id", me.restaurant_id).order("created_at"); if (error) throw error; return data as Member[]; },
   });
   const invites = useQuery({
-    queryKey: ["invites"],
+    queryKey: ["invites", me.restaurant_id],
     enabled: open,
-    queryFn: async () =>
-      (await supabase.from("restaurant_invites").select("*").is("accepted_at", null).order("created_at")).data as Invite[],
+    queryFn: async () => { const { data, error } = await supabase.from("restaurant_invites").select("*").eq("restaurant_id", me.restaurant_id).is("accepted_at", null).order("created_at"); if (error) throw error; return data as Invite[]; },
   });
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["members"] });
@@ -63,7 +63,7 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-primary">Gestione Utenti e Inviti</DialogTitle>
+          <DialogTitle className="font-display text-2xl text-primary">Gestione Staff & Inviti</DialogTitle>
         </DialogHeader>
 
         <section className="space-y-3 rounded-md border p-4">
@@ -100,6 +100,7 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
 
         <section className="space-y-2">
           <h3 className="font-semibold">Utenti e inviti</h3>
+          {(members.isError || invites.isError) && <p role="alert" className="text-sm text-destructive">Impossibile caricare staff o inviti. <Button variant="outline" size="sm" onClick={refresh}>Riprova</Button></p>}
           {members.data?.map((m) => {
             const self = m.user_id === me.user_id;
             return (
@@ -107,6 +108,9 @@ export function UsersDialog({ open, onOpenChange, me }: { open: boolean; onOpenC
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{m.name || "—"} {self && <span className="text-muted-foreground">(tu)</span>}</div>
                   <div className="truncate text-muted-foreground">{m.email}</div>
+                  {m.operational_role && <div>{m.operational_role}</div>}
+                  {m.phone && <div className="flex items-center gap-2"><MaskedPhone phone={m.phone} /><Button asChild variant="ghost" size="icon"><a href={`tel:${m.phone.replace(/[^+\d]/g, "")}`} aria-label={`Chiama ${m.name}`}><Phone className="size-4" /></a></Button></div>}
+                  {m.notes && <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{m.notes}</p>}
                 </div>
                 <span className={m.status === "active" ? "text-primary" : "text-destructive"}>{m.status === "active" ? "Attivo" : "Sospeso"}</span>
                 {self ? (

@@ -35,9 +35,10 @@ import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string } => {
+  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string; service?: boolean } => {
     const d = s["d"], h = s["h"], c = s["c"];
     return {
+      ...(s["service"] === true || s["service"] === "true" ? { service: true } : {}),
       ...(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {}),
       ...(typeof h === "string" && h ? { h } : {}),
       ...(typeof c === "string" && c ? { c } : {}),
@@ -357,7 +358,7 @@ function AgendaPage() {
         <div className="mx-auto mt-2 flex max-w-7xl flex-wrap items-center gap-2">
           <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
-          <ServiceHub date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
+          <ServiceHub requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (

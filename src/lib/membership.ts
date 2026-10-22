@@ -31,6 +31,7 @@ export const membershipQuery = () => {
           role: "master",
           status: "active",
           created_at: "",
+          phone: "", notes: "", operational_role: "",
           restaurants: { name: r.name, settings: r.settings },
         } as Member & { restaurants: { name: string; settings: unknown } | null };
       }

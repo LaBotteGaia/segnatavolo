@@ -3,6 +3,17 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.8.0-alpha",
+    date: "22 ottobre 2026",
+    items: [
+      "Menù riorganizzato: Agenda, Rubrica e No-Show, Sala & Servizio, Cestino, gestione struttura e account.",
+      "Il Mio Profilo: nome per audit, ruolo operativo, email in sola lettura, telefono e disponibilità; cambio password con conferma e minimo 8 caratteri.",
+      "Staff e inviti: contatti telefonici rapidi e ruoli operativi; assistenza filtrata per ristorante.",
+      "Accomoda al volo resta esclusivamente nella toolbar Agenda; preservate tutte le logiche di servizio.",
+      "Numero di versione v0.8.0-alpha ripristinato su richiesta, senza rimuovere le funzioni dei rilasci successivi.",
+    ],
+  },
+  {
     version: "v0.12.0-alpha",
     date: "21 ottobre 2026",
     items: [
@@ -45,7 +56,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: "v0.8.0-alpha",
+    version: "v0.8.0-alpha (21 ottobre)",
     date: "21 ottobre 2026",
     items: [
       "Sala & Servizio: un solo pannello per disponibilità tavoli, stampa Foglio di Sala e backup HTML offline del turno selezionato.",

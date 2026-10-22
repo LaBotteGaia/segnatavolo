@@ -13,3 +13,7 @@
 - [x] v0.10.0-alpha: pallini affluenza Pranzo/Cena nel calendario con riepilogo e margine di riserva.
 - [x] v0.11.0-alpha: calendario con selettore turno, titolo dinamico, pallino singolo e regole Doppio Turno per sala.
 - [x] v0.12.0-alpha: Super Admin con pannello /admin, modalità Assistenza sui ristoranti e banner dedicato.
+- [x] Profilo completo e cambio password protetto; contatti staff e accesso assistenza sicuro.
+- [x] Menù riorganizzato, hub Sala & Servizio condiviso, versione richiesta v0.8.0-alpha.
+- [x] Verifica test, salvataggio profilo e navigazione autenticata.
+- [ ] Conferma email di sicurezza cambio password: impostazione/invio non verificabili con i controlli disponibili; messaggio limitato all’aggiornamento riuscito.
