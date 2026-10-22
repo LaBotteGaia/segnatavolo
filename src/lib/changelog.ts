@@ -3,6 +3,17 @@ export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
   {
+    version: "v0.8.1-alpha",
+    date: "22 ottobre 2026",
+    items: [
+      "Pannello Super Admin: backup completo di ogni ristorante in un file .json scaricabile.",
+      "Ripristino da backup con riepilogo del file, avviso e conferma scrivendo RIPRISTINA; in caso di errore nulla viene modificato.",
+      "Importa Ristorante da Backup: crea un nuovo locale partendo da un file esportato.",
+      "Staff & Utenti per ristorante: rimozione dal locale o eliminazione definitiva dell'account.",
+      "Elimina Ristorante con conferma digitando il nome esatto.",
+    ],
+  },
+  {
     version: "v0.8.0-alpha",
     date: "22 ottobre 2026",
     items: [
