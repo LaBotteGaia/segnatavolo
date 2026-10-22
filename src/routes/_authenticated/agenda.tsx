@@ -227,7 +227,7 @@ function AgendaPage() {
     return true;
   };
 
-  const dayExtra = (d: Date) => {
+  const dayExtra = (d: Date, monthlyCalendar = false) => {
                   const ds = format(d, "yyyy-MM-dd");
                   if (isDayClosed(ds, settings)) return <span className="text-[8px] font-bold uppercase leading-none">Chiuso</span>;
                   const part = closedShifts(ds, settings).filter((s) => shifts.includes(s));
@@ -237,7 +237,7 @@ function AgendaPage() {
                   const tip = zoneTip(bin, cap.inside, bout, cap.outside);
                   return (
                     <span className="flex flex-col items-center gap-0.5">
-                      <span title={tip} aria-label={tip} role="img"
+                      <span title={tip} aria-label={tip} role="img" onClick={(e) => { if (!monthlyCalendar && window.matchMedia("(hover: none)").matches) { e.stopPropagation(); toast(tip, { duration: 3000 }); } }}
                         className="inline-flex items-center gap-0.5">
                         <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bin, cap.inside)])} />
                         <span className={cn("inline-flex size-2 shrink-0 rounded-full", AFF_CLASS[affluenceLevel(bout, cap.outside)])} />
@@ -380,7 +380,7 @@ function AgendaPage() {
                   <div className="mt-2 text-center font-display text-lg text-primary">{shiftPlural(calShift)} di {format(month, "MMMM yyyy", { locale: it }).replace(/^\w/, (c) => c.toUpperCase())}</div>
                 </div>
                 <CalendarDayGesture.Provider value={{ openDay: openCalendarDay, lastTap: calendarTap }}>
-                  <CalendarDayExtra.Provider value={dayExtra}>
+                  <CalendarDayExtra.Provider value={(d) => dayExtra(d, true)}>
                     <Calendar mode="single" modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md" }} locale={it} selected={dateObj} month={month} onMonthChange={(m) => { calendarTap.current = null; setMonth(m); }} onDayClick={consultDay} className="pointer-events-auto p-3" />
                   </CalendarDayExtra.Provider>
                 </CalendarDayGesture.Provider>
