@@ -155,6 +155,41 @@
       "when": 1792662750504,
       "tag": "0021_customer_phone_identity_online",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792667934344,
+      "tag": "0022_online_request_approval_and_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792668051422,
+      "tag": "0023_restaurant_delivery_configuration",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792668162029,
+      "tag": "0024_online_slot_calendar_consistency",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792668241649,
+      "tag": "0025_online_validation_and_assistance_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792668439609,
+      "tag": "0026_online_decision_required_inputs",
+      "breakpoints": true
     }
   ]
 }

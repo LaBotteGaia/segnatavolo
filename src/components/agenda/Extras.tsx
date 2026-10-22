@@ -64,7 +64,7 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
     queryKey: ["search", deb, restaurantId], enabled: !!filter && !!restaurantId,
     queryFn: async () => {
       if (!filter) return [];
-      const { data } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).or(filter).order("date", { ascending: false }).limit(20);
+      const { data } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("status", "confirmed").or(filter).order("date", { ascending: false }).limit(20);
       return data ?? [];
     },
   });

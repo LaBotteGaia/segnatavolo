@@ -1,0 +1,2 @@
+DO $$ DECLARE def text; BEGIN SELECT pg_get_functiondef('public.decide_online_booking(uuid,uuid,boolean,uuid[],jsonb,text)'::regprocedure) INTO def; def:=replace(def,'IF auth.uid() IS NULL OR NOT','IF _accept IS NULL OR _restaurant_id IS NULL OR _id IS NULL OR _tables IS NULL OR _extras IS NULL OR _reason IS NULL THEN RAISE EXCEPTION ''Dati decisione non validi''; END IF;
+ IF auth.uid() IS NULL OR NOT'); EXECUTE def; END $$;

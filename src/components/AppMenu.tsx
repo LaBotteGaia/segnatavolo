@@ -44,7 +44,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [notify, setNotify] = useNotifyPref();
 
   const exportCsv = async () => {
-    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), me?.restaurant_id).is("deleted_at", null).order("date").order("time");
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), me?.restaurant_id).is("deleted_at", null).eq("status", "confirmed").order("date").order("time");
     if (error || !data) { toast.error("Esportazione non riuscita"); return; }
     const byId = new Map((qc.getQueryData<{ id: string; name: string }[]>(["tables", me?.restaurant_id]) ?? []).map((t) => [t.id, t.name]));
     const rows = data.map((r) => ({ ...r, tavoli: r.table_ids.map((i) => byId.get(i) ?? "?"), turno: shiftName(r.shift as Shift), arrivato: r.arrived ? "Sì" : "No", fuori: r.outside ? "Sì" : "No", nuovo: r.is_new ? "Sì" : "No" }));

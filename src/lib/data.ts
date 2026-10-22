@@ -1,3 +1,4 @@
+import { confirmedBooking } from "./online-booking";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
@@ -59,7 +60,7 @@ export const reservationsQuery = (date: string, restaurantId: string | null = nu
   queryKey: ["reservations", date, restaurantId],
   enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("date", date);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("*"), restaurantId).is("deleted_at", null).eq("status", "confirmed").eq("date", date);
     if (error) throw error;
     return data;
   },
@@ -85,10 +86,10 @@ export function findCustomer(customers: Customer[] | undefined, name: string) {
 }
 
 /** Totals for a shift page header. */
-export function shiftCounters(rows: (Pick<Reservation, "people" | "outside" | "arrived"> & { no_show?: boolean })[]) {
+export function shiftCounters(rows: (Pick<Reservation, "people" | "outside" | "arrived"> & { no_show?: boolean; status?: string })[]) {
   let total = 0, inside = 0, outside = 0, pending = 0;
   for (const r of rows) {
-    if (r.no_show && !r.arrived) continue;
+    if (!confirmedBooking(r) || (r.no_show && !r.arrived)) continue;
     total += r.people;
     if (r.outside) outside += r.people;
     else inside += r.people;
@@ -261,7 +262,7 @@ export const monthReservationsQuery = (from: string, to: string, restaurantId: s
   queryKey: ["reservations-month", from, to, restaurantId],
   enabled: !!restaurantId,
   queryFn: async () => {
-    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date, shift, people, outside, no_show"), restaurantId).is("deleted_at", null).gte("date", from).lte("date", to);
+    const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date, shift, people, outside, no_show"), restaurantId).is("deleted_at", null).eq("status", "confirmed").gte("date", from).lte("date", to);
     if (error) throw error;
     return data;
   },

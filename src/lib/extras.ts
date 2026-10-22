@@ -10,7 +10,7 @@ import { useMembership, useSettings } from "./membership";
 import { reliabilityStats, type HistoryRow } from "./no-show";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.8.4-alpha";
+export const APP_VERSION = "v0.8.5-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };
@@ -49,7 +49,7 @@ export function useCustomerHistory() {
     queryFn: async () => {
       const rows: HistoryRow[] = [];
       for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase.from("reservations").select("id,phone,date,shift,time,arrived,no_show,people,table_ids").is("deleted_at", null).eq("restaurant_id", restaurantId ?? "").order("id").range(from, from + 999);
+        const { data, error } = await supabase.from("reservations").select("id,phone,date,shift,time,arrived,no_show,people,table_ids").is("deleted_at", null).eq("status", "confirmed").eq("restaurant_id", restaurantId ?? "").order("id").range(from, from + 999);
         if (error) throw error;
         rows.push(...data);
         if (data.length < 1000) break;
