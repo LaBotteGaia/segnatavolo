@@ -23,3 +23,7 @@
 - [x] Canale online: impostazioni Master/Assistenza, slug, link e iframe.
 - [x] Pagina pubblica e salvataggio atomico con capienza, finestre temporali e consensi separati.
 - [x] Verifica prenotazione online e rilettura nell’agenda; 152 test e versione v0.8.4-alpha.
+- [ ] Disponibilità online per orario, limite comitiva e selezione coperti dinamica.
+- [ ] Richieste pending, banner, accettazione con assegnazione e rifiuto motivato.
+- [ ] SMTP per ristorante con password protetta, test operatore e tre email; definire compatibilità invio e servizio predefinito.
+- [ ] Test di isolamento, disponibilità e approvazioni; verifica completa e aggiornamento versione alpha.
