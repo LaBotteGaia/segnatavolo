@@ -141,6 +141,20 @@
       "when": 1792659116835,
       "tag": "0019_rooms_is_outdoor",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792662456695,
+      "tag": "0020_online_booking_channel",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792662750504,
+      "tag": "0021_customer_phone_identity_online",
+      "breakpoints": true
     }
   ]
 }

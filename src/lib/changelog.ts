@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: "v0.8.4-alpha", date: "22 ottobre 2026", items: ["Canale prenotazioni online per locale, inizialmente disabilitato: identificativo univoco, link pubblico e widget iframe.", "Anticipo massimo e chiusura configurabili, capienza controllata alla conferma con sale aperte, doppi turni e margine di riserva.", "Consenso Privacy obbligatorio e marketing facoltativo separato, con data di accettazione; prenotazioni online nell’agenda condivisa."] },
   { version: "v0.8.3-alpha", date: "22 ottobre 2026", items: ["Calendario: due pallini per giorno, 🏠 sale interne e 🌳 sale esterne, nero se tutte chiuse.", "Tipologia Sala Interna / Esterna (Dehors, Veranda) in Gestione Sale.", "Tavolo suggerito automatico nella nuova prenotazione: tavolo esatto, prolunga con sponde, poi unione di tavoli vicini rispettando i vincoli; sempre modificabile a mano."] },
   { version: "v0.8.2-alpha", date: "22 ottobre 2026", items: ["Isolamento rigoroso dei dati operativi sul ristorante attivo, anche per Super Admin.", "Turni, giorni e doppi turni delle sale modificabili indipendentemente dal blocco mappa, con conferma di salvataggio."] },
   {
