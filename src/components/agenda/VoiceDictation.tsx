@@ -24,7 +24,7 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
   const [review, setReview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const rec = useRef<Rec | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const text = useRef("");
   useEffect(() => () => { clearTimeout(timer.current); rec.current?.abort(); }, []);
 
