@@ -19,6 +19,7 @@ import { Route as AuthenticatedRubricaRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSaleRouteImport } from './routes/_authenticated/sale'
 import { Route as AuthenticatedSituazioneRouteImport } from './routes/_authenticated/situazione'
 import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
+import { Route as PrenotaSlugRouteImport } from './routes/prenota.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -69,6 +70,11 @@ const InvitoTokenRoute = InvitoTokenRouteImport.update({
   path: '/invito/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrenotaSlugRoute = PrenotaSlugRouteImport.update({
+  id: '/prenota/$slug',
+  path: '/prenota/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
+  '/prenota/$slug': typeof PrenotaSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
+  '/prenota/$slug': typeof PrenotaSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/sale': typeof AuthenticatedSaleRoute
   '/_authenticated/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
+  '/prenota/$slug': typeof PrenotaSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/sale'
     | '/situazione'
     | '/invito/$token'
+    | '/prenota/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/sale'
     | '/situazione'
     | '/invito/$token'
+    | '/prenota/$slug'
   id:
     | '__root__'
     | '/'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sale'
     | '/_authenticated/situazione'
     | '/invito/$token'
+    | '/prenota/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,6 +159,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   InvitoTokenRoute: typeof InvitoTokenRoute
+  PrenotaSlugRoute: typeof PrenotaSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvitoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prenota/$slug': {
+      id: '/prenota/$slug'
+      path: '/prenota/$slug'
+      fullPath: '/prenota/$slug'
+      preLoaderRoute: typeof PrenotaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -250,6 +270,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   InvitoTokenRoute: InvitoTokenRoute,
+  PrenotaSlugRoute: PrenotaSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

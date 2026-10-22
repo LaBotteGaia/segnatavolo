@@ -28,3 +28,4 @@
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
 - Room indoor/outdoor: rooms.is_outdoor and legacy rooms.environment are kept in sync by a DB trigger, so older code reading environment stays correct. Table suggestions come from the pure src/lib/allocation.ts reusing tableState/canJoin, so rotation, double shifts and join constraints share one source of truth.
+- Public online booking uses narrow database RPCs returning only restaurant branding and aggregate availability, never operational rows; insertion validates tenant, cutoff, capacity and consent atomically under restaurant locking, preserving audit triggers and private RLS. Public pages use sessionless server publishable clients and do not mount management banners.

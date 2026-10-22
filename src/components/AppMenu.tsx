@@ -1,4 +1,5 @@
 import { RecycleBinDialog } from "@/components/RecycleBinDialog";
+import { OnlineBookingSettings } from "@/components/OnlineBookingSettings";
 import { OperatorProfileDialog } from "@/components/OperatorProfileDialog";
 import { OperatorNameDialog } from "@/components/OperatorName";
 import { useState } from "react";
@@ -198,7 +199,8 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
     if (!value.trim()) return;
     for (const s of active) if (st.shifts[s].from >= st.shifts[s].to) { toast.error(`${shiftName(s)}: l'orario di fine deve essere dopo l'inizio`); return; }
     if (st.holidays.some((h) => !h.from || !h.to || h.from > h.to)) { toast.error("Controlla le date delle ferie"); return; }
-    const { error } = await supabase.from("restaurants").update({ name: value.trim(), settings: st }).eq("id", id);
+    const preserved = settings && typeof settings === "object" ? settings : {};
+    const { error } = await supabase.from("restaurants").update({ name: value.trim(), settings: { ...preserved, ...st } }).eq("id", id);
     if (error) { toast.error("Salvataggio non riuscito"); return; }
     toast.success("Ristorante aggiornato");
     qc.invalidateQueries({ queryKey: ["membership"] });
@@ -312,6 +314,7 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           </section>
 
           <Button type="submit" className="w-full">Salva</Button>
+          <OnlineBookingSettings id={id} name={name} />
         </form>
       </DialogContent>
     </Dialog>

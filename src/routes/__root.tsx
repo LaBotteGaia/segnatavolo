@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -113,6 +114,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const publicBooking = useRouterState({ select: (state) => state.location.pathname.startsWith("/prenota/") });
   useEffect(() => { void registerOfflineApp().catch(() => {}); }, []);
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -125,8 +127,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LiveSync />
-      <AssistBanner />
+      {!publicBooking && <LiveSync />}
+      {!publicBooking && <AssistBanner />}
       <Outlet />
       <Toaster position="bottom-center" />
     </QueryClientProvider>
