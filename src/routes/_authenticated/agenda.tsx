@@ -317,8 +317,8 @@ function AgendaPage() {
   };
 
   return (
-    <div className="min-h-screen pb-10">
-      <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 text-primary-foreground backdrop-blur">
+    <div className="min-h-screen w-full pb-10">
+      <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-primary-foreground backdrop-blur">
         <div className="grid w-full max-w-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
@@ -384,7 +384,7 @@ function AgendaPage() {
         <OnlineRequests />
         <div className="hidden gap-0 agenda-wide:flex">
           {shifts.map((s, i) => (
-            <div key={s} className="flex min-w-0 flex-1 gap-0">
+            <div key={s} className="flex w-full min-w-0 flex-1 basis-0 gap-0">
               {i > 0 && <div className="w-1 bg-desk" />}
               {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
             </div>

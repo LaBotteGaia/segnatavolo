@@ -22,7 +22,7 @@ import { isNoShow } from "@/lib/no-show";
 import { useServiceClock } from "@/lib/extras";
 import { MaskedPhone } from "@/components/MaskedPhone";
 
-export const ROW_GRID = "grid items-center gap-x-1 grid-cols-[2rem_3rem_minmax(0,1fr)_2.3rem_4.5rem_1rem]";
+export const ROW_GRID = "grid items-center gap-x-1 grid-cols-[2rem_3rem_minmax(0,1fr)_2.3rem_4.5rem_1rem] lg:gap-x-3 xl:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_3rem_5.5rem_1.25rem]";
 
 export function ReservationRow({
   r, others, onUpdate, onDelete, onCustomerPhone, onMove, onDuplicate, dayExtra = null, highlight = false,
@@ -107,10 +107,10 @@ export function ReservationRow({
         <span className={cn("font-display font-semibold tabular-nums", dim)}>{r.time || "--:--"}</span>
         <span className={cn("flex min-w-0 flex-col", dim)}>
           <span className="flex min-w-0 items-center gap-1 font-hand text-lg leading-tight text-ink">
-            <span className="truncate">{firstName(r.name) || "—"}</span>
+            <span className="truncate xl:whitespace-normal xl:break-words">{firstName(r.name) || "—"}</span>
             {mismatch && <AlertTriangle className="size-4 shrink-0 text-destructive" aria-label={mismatchText(mismatch)} />}
           </span>
-          {label && <span className="truncate text-[11px] font-semibold leading-tight text-primary">{label}</span>}
+          {label && <span className="truncate xl:whitespace-normal text-[11px] xl:text-xs font-semibold leading-tight text-primary">{label}</span>}
           {noShow && <span className="text-xs font-semibold text-destructive">No-Show</span>}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
