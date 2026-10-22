@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 import { VoiceDictation } from '@/components/agenda/VoiceDictation';
@@ -38,7 +38,7 @@ it('invia il contesto locale e la data aperta solo dopo conferma e restituisce l
   fireEvent.click(screen.getByRole('button', { name: 'Dettatura Rapida' }));
   const transcript = 'Tavolo per 4 a nome Rossi alle 20:30';
   await waitFor(() => expect(recognition).toBeDefined());
-  recognition?.onresult?.({ results: [[{ transcript }]] });
+  act(() => recognition?.onresult?.({ results: [[{ transcript }]] }));
   expect(mocks.parse).not.toHaveBeenCalled();
   await screen.findByRole('textbox');
   fireEvent.click(screen.getByRole('button', { name: /Conferma ed Elabora/ }));
