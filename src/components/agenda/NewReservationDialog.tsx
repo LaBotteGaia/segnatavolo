@@ -26,6 +26,8 @@ import { matchesSearch, phonesOf } from "@/lib/customers";
 import { maskPhone } from "@/lib/privacy";
 import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { reliabilityStats } from "@/lib/no-show";
+import { suggestTables } from "@/lib/allocation";
+import { wallsOf } from "@/lib/data";
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -66,6 +68,7 @@ export function NewReservationDialog({
   const [dur, setDur] = useState<number | null>(null);
   const [buf, setBuf] = useState<number | null>(null);
   const [tags, setTags] = useState("");
+  const [manual, setManual] = useState(false);
   const settings = useSettings();
   const { data: history = [] } = useCustomerHistory();
   const now = useServiceClock();
@@ -82,7 +85,7 @@ export function NewReservationDialog({
       setDate(initialDate); setShift(initialShift); setTime(initialTime); setName(""); setPeople("2");
       setPhone(""); setNotes(""); setOutside(false); setTableIds(initialTables); setExtras(NO_EXTRAS); setErrors({}); setForce(false); setPickedId(null);
       setAcknowledged(null);
-      setAdv(false); setDur(null); setBuf(null); setTags("");
+      setAdv(false); setDur(null); setBuf(null); setTags(""); setManual(initialTables.length > 0);
       const c = initialCustomerId ? customers?.find((x) => x.id === initialCustomerId) : undefined;
       if (c) { setName(c.name); setPickedId(c.id); setPhone(c.phone ?? ""); setNotes(c.notes ?? ""); }
     }
@@ -90,6 +93,25 @@ export function NewReservationDialog({
 
   const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date, restaurantId), enabled: open && !!restaurantId });
   const others = dayRes.filter((r) => r.shift === shift);
+  const pax = Number(people) || 0;
+  const suggestion = open && rooms && tables && time && pax > 0 && !closed
+    ? suggestTables({
+        people: pax, date, shift, time, tables, rooms, others, outside,
+        cfg: { duration: settings.duration, buffer: settings.buffer },
+        wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
+        me: { id: "new", duration_min: dur, buffer_min: buf },
+      })
+    : null;
+  const sugKey = suggestion ? suggestion.ids.join(",") + "|" + suggestion.extras.extra_sponde : "";
+  const sugLabel = suggestion ? tableLabel(suggestion.ids, tables, rooms) + (suggestion.extras.extra_sponde ? ` con ${suggestion.extras.extra_sponde === 1 ? "Sponda" : `${suggestion.extras.extra_sponde} Sponde`}` : "") : "";
+  const accept = () => { if (suggestion) { setTableIds(suggestion.ids); setExtras(suggestion.extras); } };
+  // Preselezione automatica finché l'operatore non sceglie a mano.
+  useEffect(() => {
+    if (manual) return;
+    if (suggestion) { setTableIds(suggestion.ids); setExtras(suggestion.extras); }
+    else { setTableIds([]); setExtras(NO_EXTRAS); }
+  }, [sugKey, manual]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isSuggested = !!suggestion && sugKey === tableIds.join(",") + "|" + extras.extra_sponde;
 
   // Identità cliente = telefono. Il nome da solo aggancia solo se non ci sono omonimi.
   const byPhone = findCustomerByPhone(customers, phone) ?? (normPhone(phone).length >= 5 ? customers?.find((c) => phonesOf(c).includes(normPhone(phone))) : undefined);
@@ -109,6 +131,7 @@ export function NewReservationDialog({
     if (!timeSlots(s, ranges).includes(time)) setTime("");
     setTableIds([]);
     setExtras(NO_EXTRAS);
+    setManual(false);
   };
 
   const submit = async () => {
@@ -159,7 +182,7 @@ export function NewReservationDialog({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar mode="single" locale={it} selected={parseISO(date)}
                   modifiers={{ closed: (d: Date) => isDayClosed(format(d, "yyyy-MM-dd"), settings) }} modifiersClassNames={{ closed: "bg-muted/70 opacity-50 rounded-md line-through" }}
-                  onSelect={(d) => { if (d) { setDate(format(d, "yyyy-MM-dd")); setTableIds([]); } }}
+                  onSelect={(d) => { if (d) { setDate(format(d, "yyyy-MM-dd")); setTableIds([]); setManual(false); } }}
                   className="pointer-events-auto p-3" />
               </PopoverContent>
             </Popover>
@@ -219,6 +242,15 @@ export function NewReservationDialog({
 
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Tavolo</label>
+          {suggestion ? (
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-free bg-free/10 px-3 py-2 text-sm">
+              <span>💡 Tavolo Suggerito: <b>{sugLabel}</b></span>
+              {isSuggested ? <span className="text-xs font-semibold text-free">✓ Preselezionato</span>
+                : <Button type="button" size="sm" variant="outline" onClick={accept}>Accetta suggerimento</Button>}
+            </div>
+          ) : time && pax > 0 && !closed && tables?.length ? (
+            <p className="mb-2 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">Nessun tavolo libero adatto: scegli manualmente sulla mappa.</p>
+          ) : null}
           <Button type="button" variant="outline" className="h-auto w-full justify-start py-3" onClick={() => setTableOpen(true)}>
             <LayoutGrid /> {label ? <span className="truncate font-semibold text-primary">{label}</span> : "Assegna tavolo sulla mappa"}
           </Button>
@@ -282,7 +314,7 @@ export function NewReservationDialog({
 
         <TableDialog date={date} open={tableOpen} onOpenChange={setTableOpen}
           reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time }}
-          others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); }} />
+          others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); setManual(true); }} />
       </DialogContent>
     </Dialog>
   );
