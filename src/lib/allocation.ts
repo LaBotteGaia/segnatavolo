@@ -8,76 +8,74 @@ type Other = { id: string; name: string; table_ids: string[]; time: string; dura
 
 export type Suggestion = { ids: string[]; extras: TableExtras; kind: "single" | "extension" | "join"; waste: number };
 
-/** Sponde massime di testa per raggiungere i coperti. */
-const MAX_SPONDE = 2;
-
+/** Una sponda di testa per ciascun tavolo abilitato, solo oltre 8 pax. */
 export function suggestTables(p: {
   people: number; date: string; shift: string; time: string;
   tables: T[]; rooms: RoomLite[]; others: Other[]; cfg: RotationCfg;
   outside?: boolean; wallsFor: (roomId: string) => string[];
   me?: { id: string; duration_min?: number | null; buffer_min?: number | null };
 }): Suggestion | null {
-  const { people, tables, rooms, others, cfg } = p;
-  if (!people || people < 1) return null;
+  if (!Number.isFinite(p.people) || p.people < 1) return null;
   const me = { id: p.me?.id ?? "new", time: p.time, duration_min: p.me?.duration_min ?? null, buffer_min: p.me?.buffer_min ?? null };
-  const openRooms = rooms.filter((r) => !isRoomClosedFor(r as never, p.date, p.shift));
-  // Preferisce la zona richiesta (Fuori/Dentro); se non ci sono sale di quella zona usa tutte le aperte.
-  const zone = p.outside === undefined ? openRooms : openRooms.filter((r) => (r.environment === "esterno") === p.outside);
-  const roomIds = new Set((zone.length ? zone : openRooms).map((r) => r.id));
-  // Libero = nessuna sovrapposizione oraria (rotazione/doppio turno inclusi).
-  const free = tables.filter((t) => roomIds.has(t.room_id) && tableState(t.id, me, others, cfg).kind !== "busy");
-  if (!free.length) return null;
-  const bySize = (a: T, b: T) => a.seats - b.seats || a.name.localeCompare(b.name, "it", { numeric: true });
-
-  // A. tavolo singolo perfetto
-  const exact = free.filter((t) => t.seats === people).sort(bySize)[0];
-  if (exact) return { ids: [exact.id], extras: NO_EXTRAS, kind: "single", waste: 0 };
-  // B. prolunga con sponde su un tavolo poco più piccolo
-  const ext = free.filter((t) => t.allow_extras && t.seats < people && people - t.seats <= MAX_SPONDE).sort((a, b) => b.seats - a.seats)[0];
-  if (ext) return { ids: [ext.id], extras: { ...NO_EXTRAS, extra_sponde: people - ext.seats }, kind: "extension", waste: 0 };
-  // A (eccedenza minima)
-  const bigger = free.filter((t) => t.seats > people).sort(bySize)[0];
-  if (bigger) return { ids: [bigger.id], extras: NO_EXTRAS, kind: "single", waste: bigger.seats - people };
-
-  // C. unione di tavoli vicini nella stessa sala (rispetta no_join e muri)
-  let best: (Suggestion & { dist: number }) | null = null;
-  const consider = (combo: T[]) => {
-    for (let i = 0; i < combo.length; i++) for (let j = i + 1; j < combo.length; j++) if (!canJoin(combo[i]!, combo[j]!, p.wallsFor)) return;
-    // catena di adiacenza: ogni tavolo deve avere un vicino entro 1 cella (orizzontale/verticale preferiti)
-    const near = (a: T, b: T) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-    if (!combo.every((a) => combo.some((b) => b !== a && Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1))) return;
-    const seats = combo.reduce((s, t) => s + t.seats, 0);
-    const deficit = people - seats;
-    let extras = NO_EXTRAS;
-    if (deficit > 0) {
-      if (deficit > MAX_SPONDE || !combo.some((t) => t.allow_extras)) return;
-      extras = { ...NO_EXTRAS, extra_sponde: deficit };
+  const openRooms = p.rooms.filter(r => !isRoomClosedFor(r as never, p.date, p.shift));
+  const zone = p.outside === undefined ? openRooms : openRooms.filter(r => (r.environment === "esterno") === p.outside);
+  const roomIds = new Set((zone.length ? zone : openRooms).map(r => r.id));
+  const free = p.tables.filter(t => roomIds.has(t.room_id) && tableState(t.id, me, p.others, p.cfg).kind !== "busy");
+  const single = free.filter(t => t.seats >= p.people).sort((a,b) => a.seats-b.seats || a.name.localeCompare(b.name, "it", { numeric: true }))[0];
+  if (single && p.people <= 8) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: single.seats-p.people };
+  type Candidate = Suggestion & { distance: number };
+  let plain: Candidate | undefined;
+  let extended: Candidate | undefined;
+  const score = (s: Candidate) => [s.extras.extra_sponde, s.ids.length, s.waste, s.distance];
+  const better = (a: Candidate, b?: Candidate) => {
+    if (!b) return true;
+    const left = score(a), right = score(b);
+    for (const [i, v] of left.entries()) {
+      const other = right[i] ?? 0;
+      if (v !== other) return v < other;
     }
-    const waste = Math.max(0, -deficit);
-    let dist = 0;
-    for (let i = 0; i < combo.length; i++) for (let j = i + 1; j < combo.length; j++) {
-      const a = combo[i]!, b = combo[j]!;
-      dist += near(a, b) + (a.x === b.x || a.y === b.y ? 0 : 0.5);
-    }
-    const cand = { ids: combo.map((t) => t.id), extras, kind: "join" as const, waste, dist };
-    const score = (s: Suggestion & { dist: number }) => [s.ids.length, s.waste + s.extras.extra_sponde * 0.5, s.dist];
-    if (!best) { best = cand; return; }
-    const a = score(cand), b = score(best);
-    for (let k = 0; k < a.length; k++) { if (a[k]! < b[k]!) { best = cand; return; } if (a[k]! > b[k]!) return; }
+    return false;
   };
-  const groups = new Map<string, T[]>();
-  for (const t of free) groups.set(t.room_id, [...(groups.get(t.room_id) ?? []), t]);
-  for (const g of groups.values()) {
-    const n = Math.min(g.length, 16);
-    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-      consider([g[i]!, g[j]!]);
-      for (let k = j + 1; k < n; k++) {
-        consider([g[i]!, g[j]!, g[k]!]);
-        for (let l = k + 1; l < n; l++) consider([g[i]!, g[j]!, g[k]!, g[l]!]);
+  const adjacent = (a: T, b: T) => Math.max(Math.abs(a.x-b.x), Math.abs(a.y-b.y)) <= 1;
+  const connected = (combo: T[]) => {
+    const first = combo[0]; if (!first) return false;
+    const seen = new Set([first]);
+    for (const a of seen) for (const b of combo) if (!seen.has(b) && adjacent(a,b)) seen.add(b);
+    return seen.size === combo.length;
+  };
+  const consider = (combo: T[], seats: number) => {
+    if (combo.length === 1 && seats >= p.people) return;
+    if (!connected(combo)) return;
+    const deficit = Math.max(0, p.people-seats);
+    if (deficit && (p.people <= 8 || deficit > combo.filter(t => t.allow_extras).length)) return;
+    const candidate: Candidate = {
+      ids: combo.map(t => t.id), extras: deficit ? { ...NO_EXTRAS, extra_sponde: deficit } : NO_EXTRAS,
+      kind: combo.length === 1 ? "extension" : "join", waste: Math.max(0,seats-p.people),
+      distance: combo.reduce((sum,a) => sum+combo.reduce((d,b) => d+Math.abs(a.x-b.x)+Math.abs(a.y-b.y),0),0),
+    };
+    if (deficit) { if (better(candidate,extended)) extended=candidate; }
+    else if (better(candidate,plain)) plain=candidate;
+  };
+  const groups = new Map<string,T[]>();
+  for (const t of free) groups.set(t.room_id,[...(groups.get(t.room_id)??[]),t]);
+  for (const group of groups.values()) {
+    // Expand connected sets only, without limiting unions to four physical tables.
+    const visited = new Set<string>();
+    const explore = (combo: T[], seats: number) => {
+      const key = combo.map(t=>t.id).sort().join("|");
+      if (visited.has(key)) return;
+      visited.add(key); consider(combo,seats);
+      if (seats >= p.people) return;
+      for (const next of group) {
+        if (combo.includes(next) || !combo.some(t=>adjacent(t,next)) || !combo.every(t=>canJoin(t,next,p.wallsFor))) continue;
+        explore([...combo,next],seats+next.seats);
       }
-    }
+    };
+    for (const t of group) explore([t],t.seats);
   }
+  if (!plain && single) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: single.seats-p.people };
+  const best = plain ?? extended;
   if (!best) return null;
-  const { dist: _d, ...s } = best as Suggestion & { dist: number };
-  return s;
+  const { distance: _distance, ...suggestion } = best;
+  return suggestion;
 }

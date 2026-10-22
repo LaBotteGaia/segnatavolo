@@ -9,11 +9,21 @@ const base = { date: "2026-06-10", shift: "sera", time: "20:00", rooms: [room], 
 
 describe("assegnazione intelligente", () => {
   it("preferisce il tavolo da 2 per 2 persone", () => expect(suggestTables({ ...base, people: 2, tables: [t("T4", 4, 0, 0), t("T2", 2, 3, 3)] })?.ids).toEqual(["T2"]));
-  it("3 persone: tavolo da 2 con sponda prima del 4", () => {
+  it("3 persone: tavolo da 4 senza sponde", () => {
     const s = suggestTables({ ...base, people: 3, tables: [t("T4", 4, 0, 0), t("T2", 2, 3, 3)] });
-    expect(s?.ids).toEqual(["T2"]); expect(s?.extras.extra_sponde).toBe(1);
+    expect(s?.ids).toEqual(["T4"]); expect(s?.extras.extra_sponde).toBe(0);
   });
   it("8 persone: unisce i due tavoli vicini", () => expect(suggestTables({ ...base, people: 8, tables: [t("A", 4, 0, 0), t("B", 4, 1, 0), t("C", 4, 5, 4)] })?.ids).toEqual(["A", "B"]));
+  it("fino a 8 pax non usa prolunghe anche senza alternativa", () => expect(suggestTables({ ...base, people: 8, tables: [t("A", 7, 0, 0)] })).toBeNull());
+  it("oltre 8 preferisce tavoli sufficienti senza prolunghe", () => {
+    const s = suggestTables({ ...base, people: 9, tables: [t("A", 8, 0, 0),t("B", 4, 1, 0)] });
+    expect(s?.ids).toEqual(["A","B"]); expect(s?.extras.extra_sponde).toBe(0);
+  });
+  it("oltre 8 dà priorità all’unione contigua anche con un singolo grande", () => expect(suggestTables({ ...base, people: 9, tables: [t('A',5,0,0),t('B',4,1,0),t('Grande',12,5,5)] })?.ids).toEqual(['A','B']));
+  it("9 pax può aggiungere una sola sponda a un tavolo da 8", () => expect(suggestTables({ ...base, people: 9, tables: [t("A", 8, 0, 0)] })?.extras.extra_sponde).toBe(1));
+  it("10 pax non può aggiungere due sponde a un solo tavolo", () => expect(suggestTables({ ...base, people: 10, tables: [t("A", 8, 0, 0)] })).toBeNull());
+  it("10 pax usa una sponda per ciascuno dei due tavoli da 4", () => expect(suggestTables({ ...base, people: 10, tables: [t("A",4,0,0),t("B",4,1,0)] })?.extras.extra_sponde).toBe(2));
+  it("le prolunghe contano solo sui tavoli abilitati", () => expect(suggestTables({ ...base, people: 10, tables: [t("A",4,0,0,{allow_extras:false}),t("B",4,1,0)] })).toBeNull());
   it("esclude unioni vietate", () => expect(suggestTables({ ...base, people: 8, tables: [t("A", 4, 0, 0, { no_join: ["B"] }), t("B", 4, 1, 0)] })).toBeNull());
   it("tavolo libero se l'altra prenotazione non si sovrappone (doppio turno)", () => {
     const others = [{ id: "x", name: "X", table_ids: ["T2"], time: "21:45" }];

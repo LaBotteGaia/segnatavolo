@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
@@ -28,9 +29,10 @@ function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{on
  <label className="block text-sm">Indirizzo del locale<Input value={address} maxLength={300} onChange={e=>setAddress(e.target.value)}/></label>
  <label className="block text-sm">Logo (URL HTTPS)<Input type="url" value={logo} maxLength={1000} onChange={e=>setLogo(e.target.value)}/></label>
  <label className="block text-sm">Apertura prenotazioni (anticipo massimo)<Select value={String(cfg.max_days)} onValueChange={v=>patch({max_days:Number(v)})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{[15,30,60,90].map(n=><SelectItem key={n} value={String(n)}>{n} giorni</SelectItem>)}</SelectContent></Select></label>
- <label className="block text-sm">Massimo coperti per prenotazione online<Input type="number" min={1} max={100} value={cfg.max_party_size} onChange={e=>patch({max_party_size:Number(e.target.value)})}/></label>
+ <label className="block text-sm">Massimo coperti per prenotazione online<NumberInput min={1} max={100} defaultValue={6} value={cfg.max_party_size} onCommit={max_party_size=>patch({max_party_size})}/></label>
  <label className="block text-sm">Chiusura prenotazioni<Select value={cfg.cutoff} onValueChange={v=>patch({cutoff:v as OnlineConfig['cutoff']})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="hours">X ore prima dell’inizio servizio</SelectItem><SelectItem value="previous_day">Nessuna prenotazione in giornata</SelectItem><SelectItem value="24h">Almeno 24 ore prima del turno</SelectItem><SelectItem value="48h">Almeno 48 ore prima del turno</SelectItem></SelectContent></Select></label>
- {cfg.cutoff==='hours'&&<label className="block text-sm">Ore di anticipo<Input type="number" min={0} max={72} value={cfg.cutoff_hours} onChange={e=>patch({cutoff_hours:Number(e.target.value)})}/></label>}
+ {cfg.cutoff==='hours'&&<label className="block text-sm">Ore di anticipo<NumberInput min={0} max={72} defaultValue={2} value={cfg.cutoff_hours} onCommit={cutoff_hours=>patch({cutoff_hours})}/></label>}
+ <fieldset className="space-y-3"><legend className="font-semibold">Orari web con doppio turno</legend>{(['pranzo','sera'] as const).map(s=><div key={s} className="grid grid-cols-2 gap-3"><label className="text-sm">{s==='pranzo'?'Pranzo':'Cena'} · Ultimo arrivo 1° Turno<Input type="time" step={900} value={cfg.double_windows[s].first_to} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],first_to:e.target.value}}})}/></label><label className="text-sm">Primo arrivo 2° Turno<Input type="time" step={900} value={cfg.double_windows[s].second_from} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],second_from:e.target.value}}})}/></label></div>)}</fieldset>
  <label className="block text-sm">Messaggio di chiusura personalizzato<Textarea value={cfg.closed_message} maxLength={1000} onChange={e=>patch({closed_message:e.target.value})}/></label>
  <div className="space-y-2"><label className="block text-sm">Link pubblico<Input readOnly value={link}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(link)}><Copy/>Copia link</Button><label className="block text-sm">Codice Iframe<Textarea readOnly value={embed}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(embed)}><Copy/>Copia codice</Button></div>
  <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button><RestaurantEmailSettings id={id}/></section>;

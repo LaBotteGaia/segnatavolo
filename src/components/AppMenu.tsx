@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -266,7 +267,7 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           <section className="space-y-2">
             <h3 className="font-display text-lg">Coperti di Riserva (Margine di Sala)</h3>
             <label className="flex items-center gap-2 text-sm">
-              <input type="number" min={0} max={200} className="w-24 rounded-md border bg-paper px-2 py-2" value={st.reserve} onChange={(e) => setSt((o) => ({ ...o, reserve: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))} /> posti
+              <NumberInput min={0} max={200} className="w-24" value={st.reserve} onCommit={(reserve) => setSt((o) => ({ ...o, reserve }))} /> posti
             </label>
             <p className="text-xs text-muted-foreground">Posti sottratti dal totale per mantenere una riserva di emergenza / passanti prima che il turno sia considerato completo.</p>
           </section>

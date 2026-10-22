@@ -601,6 +601,10 @@ export type Database = {
         }
         Returns: number
       }
+      online_slot_turn: {
+        Args: { _date: string; _rid: string; _shift: string; _time: string }
+        Returns: number
+      }
       restore_restaurant_data: {
         Args: { _backup_data: Json; _target_restaurant_id: string }
         Returns: boolean

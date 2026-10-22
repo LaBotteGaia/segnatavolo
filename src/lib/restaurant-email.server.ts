@@ -1,4 +1,4 @@
-import { emailSettingsSchema, type EmailSettings } from './restaurant-email';
+import { emailSettingsSchema, interpolateEmail, type EmailSettings } from './restaurant-email';
 
 async function encryptionKey() {
   const secret = process.env['RESTAURANT_EMAIL_ENCRYPTION_KEY'];
@@ -38,10 +38,24 @@ export async function sendRestaurantMessage(restaurantId: string, to: string, su
 }
 export async function sendBookingNotification(restaurantId: string, id: string) {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { data: booking, error } = await supabaseAdmin.from('reservations').select('name,date,time,shift,people,contact_email,status,rejection_reason').eq('restaurant_id', restaurantId).eq('id', id).eq('channel', 'online').single();
-  if (error || !booking?.contact_email) return { sent: false, message: 'Email cliente non disponibile.' };
-  const { data: restaurant } = await supabaseAdmin.from('restaurants').select('name,public_address').eq('id', restaurantId).single();
-  const subject = booking.status === 'pending' ? 'Richiesta ricevuta — in attesa di approvazione' : booking.status === 'confirmed' ? 'Prenotazione confermata' : 'Richiesta di prenotazione rifiutata';
-  const detail = booking.status === 'pending' ? 'La richiesta è in attesa di approvazione. Non è ancora una prenotazione confermata.' : booking.status === 'confirmed' ? 'Il ristorante ha confermato la prenotazione e assegnato il tavolo.' : `Motivazione: ${booking.rejection_reason ?? ''}`;
-  return sendRestaurantMessage(restaurantId, booking.contact_email, subject, `Buongiorno ${booking.name},\n\n${detail}\n\n${restaurant?.name ?? 'Ristorante'}\n${restaurant?.public_address ?? ''}\nData: ${booking.date.split('-').reverse().join('/')}\n${booking.shift === 'pranzo' ? 'Pranzo' : 'Cena'}: ${booking.time}\nCoperti: ${booking.people}\nRiferimento: ${id}\n\nSegnatavolo`);
+  const { data: booking, error } = await supabaseAdmin.from('reservations').select('name,date,time,shift,people,contact_email,status,rejection_reason,notes,table_ids').eq('restaurant_id', restaurantId).eq('id', id).eq('channel', 'online').is('deleted_at', null).single();
+  if (error || !booking) return { sent: false, message: 'Prenotazione non disponibile.' };
+  const [{ data: restaurant }, { data: delivery }, { data: tables }] = await Promise.all([
+    supabaseAdmin.from('restaurants').select('name,public_address').eq('id', restaurantId).single(),
+    supabaseAdmin.from('restaurant_delivery_settings').select('settings').eq('restaurant_id', restaurantId).maybeSingle(),
+    supabaseAdmin.from('restaurant_tables').select('id,name').eq('restaurant_id', restaurantId).in('id', booking.table_ids),
+  ]);
+  const parsed = emailSettingsSchema.safeParse(delivery?.settings ?? {});
+  if (!parsed.success) return { sent: false, message: 'Configurazione posta non valida.' };
+  const cfg = parsed.data;
+  const status = booking.status === 'pending' ? 'pending' : booking.status === 'confirmed' ? 'confirmed' : 'rejected';
+  const vars = { nome_cliente: booking.name.replace(/[\r\n]/g,' '), data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), tavolo_assegnato: booking.table_ids.map(tid => tables?.find(t => t.id === tid)?.name ?? '').filter(Boolean).join(' + '), note_cliente: booking.notes ?? '', nome_ristorante: restaurant?.name ?? 'Ristorante', telefono_ristorante: cfg.restaurantPhone, motivo_rifiuto: booking.rejection_reason ?? '' };
+  const subject = interpolateEmail(cfg.templates[status].subject, vars).replace(/[\r\n]/g,' ');
+  let body = interpolateEmail(cfg.templates[status].body, vars);
+  if (status === 'rejected' && booking.rejection_reason && !cfg.templates.rejected.body.includes('{motivo_rifiuto}')) body += `\n\nMotivazione: ${booking.rejection_reason}`;
+  const [customer, staff] = await Promise.all([
+    booking.contact_email ? sendRestaurantMessage(restaurantId, booking.contact_email, subject, body) : Promise.resolve({ sent: false, message: 'Email cliente non disponibile.' }),
+    cfg.staffEmail && status !== 'rejected' ? sendRestaurantMessage(restaurantId, cfg.staffEmail, status === 'pending' ? 'Nuova richiesta online in attesa' : 'Prenotazione online confermata', `${booking.name}\n${vars.data} · ${booking.time} · ${booking.people} coperti\nTavolo: ${vars.tavolo_assegnato}\nNote: ${booking.notes ?? ''}\nRiferimento: ${id}`) : Promise.resolve(null),
+  ]);
+  return { ...customer, staffSent: staff?.sent ?? false };
 }

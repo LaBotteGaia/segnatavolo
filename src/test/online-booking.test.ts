@@ -1,7 +1,9 @@
 import { describe,it,expect } from 'vitest';
-import { bookingSchema,dayAvailable,onlineConfigSchema,slugFromName,slugSchema,partyLimit,confirmedBooking } from '@/lib/online-booking';
+import { bookingSchema,dayAvailable,onlineConfigSchema,slugFromName,slugSchema,partyLimit,confirmedBooking,slotGroups } from '@/lib/online-booking';
 const booking={slug:'labottegaia',request_id:'123e4567-e89b-42d3-a456-426614174000',people:2,date:'2026-10-23',shift:'pranzo',time:'12:00',name:'Mario Rossi',phone:'340 123-4567',email:'mario@example.com',notes:'',outside:false,privacy:true,marketing:false};
 describe('prenotazioni online',()=>{
+ it('raggruppa 19:30 e 19:45 nel primo turno, 21:30 nel secondo',()=>expect(slotGroups([{time:'19:30',remaining:10,turn:1},{time:'19:45',remaining:10,turn:1},{time:'21:30',remaining:10,turn:2}]).map(g=>g.slots.map(s=>s.time))).toEqual([['19:30','19:45'],['21:30']]));
+ it('respinge finestre invertite del doppio turno',()=>expect(onlineConfigSchema.safeParse({double_windows:{sera:{first_to:'21:30',second_from:'19:45'}}}).success).toBe(false));
   it('limita la comitiva a 6 coperti quando ci sono 10 posti residui',()=>expect(partyLimit(10,6)).toBe(6));
   it('limita la scelta ai 3 posti residui anche con tetto 6',()=>expect(partyLimit(3,6)).toBe(3));
   it('blocca la scelta se non rimangono posti',()=>expect(partyLimit(0,6)).toBe(0));

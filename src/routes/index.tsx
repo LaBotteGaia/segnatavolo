@@ -6,10 +6,10 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Segnatavolo" },
-      { name: "description", content: "Agenda interna delle prenotazioni del ristorante." },
-      { property: "og:title", content: "Segnatavolo" },
-      { property: "og:description", content: "Agenda interna delle prenotazioni del ristorante." },
+      { title: "Segnatavolo — La tua agenda ristorante" },
+      { name: "description", content: "Accedi all’agenda Segnatavolo per gestire prenotazioni, tavoli e servizi del tuo ristorante." },
+      { property: "og:title", content: "Segnatavolo — La tua agenda ristorante" },
+      { property: "og:description", content: "Accedi all’agenda Segnatavolo per gestire prenotazioni, tavoli e servizi del tuo ristorante." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
