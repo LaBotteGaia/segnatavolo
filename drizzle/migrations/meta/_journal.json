@@ -127,6 +127,13 @@
       "when": 1792655734497,
       "tag": "0017_platform_admins_self_read",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792656324814,
+      "tag": "0018_admin_backup_restore",
+      "breakpoints": true
     }
   ]
 }

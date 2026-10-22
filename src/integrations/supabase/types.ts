@@ -456,11 +456,31 @@ export type Database = {
         Args: { _display_name: string; _name: string }
         Returns: string
       }
+      create_restaurant_from_backup: {
+        Args: { _backup_data: Json; _name: string }
+        Returns: string
+      }
       create_service_walkin: {
         Args: { _name?: string; _people: number; _table: string }
         Returns: string
       }
       delete_own_account: { Args: never; Returns: undefined }
+      delete_restaurant_cascade: {
+        Args: { _restaurant_id: string }
+        Returns: undefined
+      }
+      delete_restaurant_user: {
+        Args: {
+          _delete_from_auth?: boolean
+          _restaurant_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      export_restaurant_data: {
+        Args: { _restaurant_id: string }
+        Returns: Json
+      }
       get_invite: {
         Args: { _token: string }
         Returns: {
@@ -473,6 +493,10 @@ export type Database = {
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
+      restore_restaurant_data: {
+        Args: { _backup_data: Json; _target_restaurant_id: string }
+        Returns: boolean
+      }
       restore_service_reservation: {
         Args: { _id: string; _without_tables?: boolean }
         Returns: boolean
