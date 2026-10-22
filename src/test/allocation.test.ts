@@ -19,6 +19,7 @@ describe("assegnazione intelligente", () => {
     const s = suggestTables({ ...base, people: 9, tables: [t("A", 8, 0, 0),t("B", 4, 1, 0)] });
     expect(s?.ids).toEqual(["A","B"]); expect(s?.extras.extra_sponde).toBe(0);
   });
+  it("oltre 8 dà priorità all’unione contigua anche con un singolo grande", () => expect(suggestTables({ ...base, people: 9, tables: [t('A',5,0,0),t('B',4,1,0),t('Grande',12,5,5)] })?.ids).toEqual(['A','B']));
   it("9 pax può aggiungere una sola sponda a un tavolo da 8", () => expect(suggestTables({ ...base, people: 9, tables: [t("A", 8, 0, 0)] })?.extras.extra_sponde).toBe(1));
   it("10 pax non può aggiungere due sponde a un solo tavolo", () => expect(suggestTables({ ...base, people: 10, tables: [t("A", 8, 0, 0)] })).toBeNull());
   it("10 pax usa una sponda per ciascuno dei due tavoli da 4", () => expect(suggestTables({ ...base, people: 10, tables: [t("A",4,0,0),t("B",4,1,0)] })?.extras.extra_sponde).toBe(2));

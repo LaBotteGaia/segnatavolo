@@ -22,7 +22,7 @@ export function suggestTables(p: {
   const roomIds = new Set((zone.length ? zone : openRooms).map(r => r.id));
   const free = p.tables.filter(t => roomIds.has(t.room_id) && tableState(t.id, me, p.others, p.cfg).kind !== "busy");
   const single = free.filter(t => t.seats >= p.people).sort((a,b) => a.seats-b.seats || a.name.localeCompare(b.name, "it", { numeric: true }))[0];
-  if (single) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: single.seats-p.people };
+  if (single && p.people <= 8) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: single.seats-p.people };
   type Candidate = Suggestion & { distance: number };
   let plain: Candidate | undefined;
   let extended: Candidate | undefined;
@@ -44,6 +44,7 @@ export function suggestTables(p: {
     return seen.size === combo.length;
   };
   const consider = (combo: T[], seats: number) => {
+    if (combo.length === 1 && seats >= p.people) return;
     if (!connected(combo)) return;
     const deficit = Math.max(0, p.people-seats);
     if (deficit && (p.people <= 8 || deficit > combo.filter(t => t.allow_extras).length)) return;
@@ -72,6 +73,7 @@ export function suggestTables(p: {
     };
     for (const t of group) explore([t],t.seats);
   }
+  if (!plain && single) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: single.seats-p.people };
   const best = plain ?? extended;
   if (!best) return null;
   const { distance: _distance, ...suggestion } = best;
