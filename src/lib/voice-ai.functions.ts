@@ -52,7 +52,7 @@ export const parseVoiceBooking = createServerFn({ method: 'POST' }).middleware([
   const cfg = await loadKey(data.restaurant_id);
   if (!cfg || !cfg.enabled) return { ok: false, message: 'Dettatura vocale non configurata per questo ristorante.' };
   const { callProvider } = await import('./voice-ai.server');
-  const dateContext = { current_date: data.current_date, current_day_name: dayNames[new Date(`${data.current_date}T12:00:00Z`).getUTCDay()] ?? 'domenica', agenda_selected_date: data.agenda_selected_date };
+  const dateContext = { current_date: data.current_date, current_day_name: dayNames[new Date(`${data.current_date}T12:00:00Z`).getUTCDay()] ?? 'domenica', agenda_selected_date: data.agenda_selected_date ?? null };
   const r = await callProvider(cfg.provider, cfg.key, data.transcript, data.current_date, 300, dateContext);
   if (!r.ok) return r;
   try { return { ok: true, booking: normalizeVoiceBooking(JSON.parse(r.text), data.current_date, dateContext, data.transcript) }; }
