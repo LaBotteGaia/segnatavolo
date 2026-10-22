@@ -1,4 +1,5 @@
 import { ServiceHub } from "@/components/agenda/ServiceHub";
+import { OnlineRequests } from "@/components/agenda/OnlineRequests";
 import { WalkInDialog } from "@/components/agenda/WalkInDialog";
 import { UNDO_DURATION } from "@/lib/service-actions";
 import { refreshService, restoreReservation } from "@/lib/recycle-bin";
@@ -380,6 +381,7 @@ function AgendaPage() {
       </div>
 
       <main className="mx-auto mt-4 max-w-7xl px-2 sm:px-4">
+        <OnlineRequests />
         <div className="hidden gap-0 agenda-wide:flex">
           {shifts.map((s, i) => (
             <div key={s} className="flex min-w-0 flex-1 gap-0">
