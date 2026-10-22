@@ -155,6 +155,13 @@
       "when": 1792662750504,
       "tag": "0021_customer_phone_identity_online",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792667934344,
+      "tag": "0022_online_request_approval_and_slots",
+      "breakpoints": true
     }
   ]
 }

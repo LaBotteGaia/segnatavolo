@@ -97,6 +97,7 @@ export type Database = {
           created_by_name: string
           customer_id: string | null
           date: string
+          decided_at: string | null
           deleted_at: string | null
           duration_min: number | null
           extra_barelle: number
@@ -112,8 +113,10 @@ export type Database = {
           phone: string | null
           privacy_consent_at: string | null
           privacy_policy_url: string | null
+          rejection_reason: string | null
           restaurant_id: string | null
           shift: string
+          status: string
           table_ids: string[]
           tags: string[]
           time: string
@@ -131,6 +134,7 @@ export type Database = {
           created_by_name?: string
           customer_id?: string | null
           date: string
+          decided_at?: string | null
           deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
@@ -146,8 +150,10 @@ export type Database = {
           phone?: string | null
           privacy_consent_at?: string | null
           privacy_policy_url?: string | null
+          rejection_reason?: string | null
           restaurant_id?: string | null
           shift: string
+          status?: string
           table_ids?: string[]
           tags?: string[]
           time?: string
@@ -165,6 +171,7 @@ export type Database = {
           created_by_name?: string
           customer_id?: string | null
           date?: string
+          decided_at?: string | null
           deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
@@ -180,8 +187,10 @@ export type Database = {
           phone?: string | null
           privacy_consent_at?: string | null
           privacy_policy_url?: string | null
+          rejection_reason?: string | null
           restaurant_id?: string | null
           shift?: string
+          status?: string
           table_ids?: string[]
           tags?: string[]
           time?: string
@@ -503,6 +512,17 @@ export type Database = {
         Args: { _name?: string; _people: number; _table: string }
         Returns: string
       }
+      decide_online_booking: {
+        Args: {
+          _accept: boolean
+          _extras?: Json
+          _id: string
+          _reason?: string
+          _restaurant_id: string
+          _tables?: string[]
+        }
+        Returns: Json
+      }
       delete_own_account: { Args: never; Returns: undefined }
       delete_restaurant_cascade: {
         Args: { _restaurant_id: string }
@@ -530,11 +550,25 @@ export type Database = {
         }[]
       }
       get_online_booking_page: { Args: { _slug: string }; Returns: Json }
+      get_online_booking_slots: {
+        Args: { _date: string; _shift: string; _slug: string }
+        Returns: Json
+      }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       my_restaurant_id: { Args: never; Returns: string }
       online_shift_remaining: {
         Args: { _date: string; _rid: string; _shift: string }
+        Returns: number
+      }
+      online_slot_remaining: {
+        Args: {
+          _date: string
+          _exclude?: string
+          _rid: string
+          _shift: string
+          _time: string
+        }
         Returns: number
       }
       restore_restaurant_data: {
@@ -547,6 +581,10 @@ export type Database = {
       }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
       submit_online_booking: {
+        Args: { _data: Json; _slug: string }
+        Returns: Json
+      }
+      submit_online_booking_original: {
         Args: { _data: Json; _slug: string }
         Returns: Json
       }
