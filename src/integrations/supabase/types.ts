@@ -361,6 +361,7 @@ export type Database = {
           grid_cols: number
           grid_rows: number
           id: string
+          is_outdoor: boolean
           locked: boolean
           name: string
           open_days: number[]
@@ -378,6 +379,7 @@ export type Database = {
           grid_cols?: number
           grid_rows?: number
           id?: string
+          is_outdoor?: boolean
           locked?: boolean
           name: string
           open_days?: number[]
@@ -395,6 +397,7 @@ export type Database = {
           grid_cols?: number
           grid_rows?: number
           id?: string
+          is_outdoor?: boolean
           locked?: boolean
           name?: string
           open_days?: number[]
