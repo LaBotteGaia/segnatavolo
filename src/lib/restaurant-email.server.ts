@@ -11,7 +11,7 @@ export async function encryptPassword(password: string, restaurantId: string) {
   const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(restaurantId) }, await encryptionKey(), new TextEncoder().encode(password)));
   return btoa(String.fromCharCode(...iv, ...encrypted));
 }
-async function decryptPassword(value: string, restaurantId: string) {
+export async function decryptPassword(value: string, restaurantId: string) {
   const bytes = Uint8Array.from(atob(value), c => c.charCodeAt(0));
   return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12), additionalData: new TextEncoder().encode(restaurantId) }, await encryptionKey(), bytes.slice(12)));
 }
