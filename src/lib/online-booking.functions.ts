@@ -18,7 +18,7 @@ export const submitOnlineBooking = createServerFn({method:'POST'}).inputValidato
  if(error) return {ok:false as const,error:error.code==='P0001'?error.message:'Prenotazione non salvata. Controlla i dati e riprova.'};
  const r=result as {id?:string;duplicate?:boolean}|null;
   let email={sent:false,message:'Notifica email non inviata.'};
-  if(r?.id&&!r.duplicate){const {supabaseAdmin}=await import('@/integrations/supabase/client.server');const {data:restaurant}=await supabaseAdmin.from('restaurants').select('id').eq('web_slug',slug).eq('online_enabled',true).single();if(restaurant){const {sendBookingNotification}=await import('./restaurant-email.server');email=await sendBookingNotification(restaurant.id,r.id);}}
+  try { if(r?.id&&!r.duplicate){const {supabaseAdmin}=await import('@/integrations/supabase/client.server');const {data:restaurant}=await supabaseAdmin.from('restaurants').select('id').eq('web_slug',slug).eq('online_enabled',true).single();if(restaurant){const {sendBookingNotification}=await import('./restaurant-email.server');email=await sendBookingNotification(restaurant.id,r.id);}} } catch { /* The request remains saved even if delivery is unavailable. */ }
   return {ok:true as const,result,email};
 });
 

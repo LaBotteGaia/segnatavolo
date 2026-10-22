@@ -23,7 +23,8 @@
 - [x] Canale online: impostazioni Master/Assistenza, slug, link e iframe.
 - [x] Pagina pubblica e salvataggio atomico con capienza, finestre temporali e consensi separati.
 - [x] Verifica prenotazione online e rilettura nell’agenda; 152 test e versione v0.8.4-alpha.
-- [ ] Disponibilità online per orario, limite comitiva e selezione coperti dinamica.
-- [ ] Richieste pending, banner, accettazione con assegnazione e rifiuto motivato.
-- [ ] SMTP per ristorante con password protetta, test operatore e tre email; definire compatibilità invio e servizio predefinito.
-- [ ] Test di isolamento, disponibilità e approvazioni; verifica completa e aggiornamento versione alpha.
+- [x] Disponibilità online per orario, limite comitiva e selezione coperti dinamica.
+- [x] Richieste pending, banner condiviso, accettazione con assegnazione e rifiuto motivato; verifica autenticata con rilettura in agenda.
+- [x] Configurazione SMTP cifrata per ristorante, prova all’operatore e messaggi per i tre stati; scelta del servizio predefinito.
+- [ ] Invio email reale: mancano credenziali SMTP e verifica sul servizio pubblicato; dominio Email Lovable e collegamento Resend assenti. Servizi predefiniti non ancora collegati all’invio. Host SMTP dedicati fuori elenco richiedono protezione e verifica destinazione.
+- [x] Test delle regole, contatori e isolamento; versione v0.8.5-alpha e controlli dell’app riusciti.
