@@ -270,12 +270,12 @@ function AgendaPage() {
     return (
       <section
         className={cn(
-          "paper-page min-w-0 min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5",
+          "paper-page min-w-0 min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
           side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           closed && "opacity-70",
         )}
       >
-        <header className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
+        <header className="mb-3 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
           <h2 className="min-w-0 font-display text-3xl text-primary agenda-wide:text-2xl">{shiftName(shift).toUpperCase()}<span className="hidden agenda-wide:inline"> — {format(dateObj, "d MMMM", { locale: it })}</span></h2>
           {closed && <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}
           <div className="col-span-2 grid grid-cols-4 gap-2 text-right text-xs leading-tight">
@@ -285,11 +285,11 @@ function AgendaPage() {
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
         </header>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>
         </div>
-        <ServiceNotes date={date} shift={shift} />
-        <div className={cn(ROW_GRID, "pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
+        <div className="shrink-0"><ServiceNotes date={date} shift={shift} /></div>
+        <div className={cn(ROW_GRID, "shrink-0 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground")}>
           <span title="Arrivato" className="text-center">✓</span>
           <span>Ora</span>
           <span>Nome</span>
@@ -297,6 +297,7 @@ function AgendaPage() {
           <span>Zona</span>
           <span />
         </div>
+        <div className="agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-y-auto agenda-wide:overscroll-contain agenda-wide:pr-1">
         {rows.map((r) => (
           <ReservationRow
             key={r.id}
@@ -312,13 +313,14 @@ function AgendaPage() {
           />
         ))}
         {rows.length === 0 && <p className="ruled-row py-4 font-hand text-lg text-muted-foreground">{all.length ? "Tutti arrivati" : "Nessuna prenotazione"}</p>}
+        </div>
       </section>
     );
   };
 
   return (
-    <div className="min-h-screen w-full pb-10">
-      <div className="sticky top-0 z-30 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-primary-foreground backdrop-blur">
+    <div className="min-h-screen w-full pb-10 agenda-wide:flex agenda-wide:h-screen agenda-wide:max-h-screen agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:pb-0">
+      <div className="sticky top-0 z-30 shrink-0 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-primary-foreground backdrop-blur">
         <div className="grid w-full max-w-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
@@ -380,11 +382,11 @@ function AgendaPage() {
         </div>
       </div>
 
-      <main className="mt-4 w-full max-w-none px-3 sm:px-6 lg:px-8">
-        <OnlineRequests />
-        <div className="hidden gap-0 agenda-wide:flex">
+      <main className="mt-4 w-full max-w-none px-3 sm:px-6 lg:px-8 agenda-wide:mt-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3">
+        <div className="shrink-0"><OnlineRequests /></div>
+        <div className="hidden gap-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-hidden">
           {shifts.map((s, i) => (
-            <div key={s} className="flex w-full min-w-0 flex-1 basis-0 gap-0">
+            <div key={s} className="flex h-full min-h-0 w-full min-w-0 flex-1 basis-0 gap-0">
               {i > 0 && <div className="w-1 bg-desk" />}
               {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
             </div>
