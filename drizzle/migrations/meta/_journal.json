@@ -197,6 +197,13 @@
       "when": 1792674608208,
       "tag": "0027_online_double_turn_windows",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792688889280,
+      "tag": "0028_restaurant_ai_settings",
+      "breakpoints": true
     }
   ]
 }
