@@ -24,9 +24,9 @@ export function validateBackup(data: unknown): { ok: true; summary: BackupSummar
     summary: {
       exportedAt: typeof meta["exported_at"] === "string" ? meta["exported_at"] : null,
       restaurantName: typeof restaurant["name"] === "string" ? restaurant["name"] : "",
-      rooms: (data.rooms as unknown[]).length,
-      tables: (data.tables as unknown[]).length,
-      reservations: (data.reservations as unknown[]).length,
+      rooms: (data["rooms"] as unknown[]).length,
+      tables: (data["tables"] as unknown[]).length,
+      reservations: (data["reservations"] as unknown[]).length,
       customers: Array.isArray(data["customers"]) ? data["customers"].length : 0,
     },
   };

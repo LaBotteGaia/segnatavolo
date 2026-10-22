@@ -75,7 +75,7 @@ function AdminPage() {
     setExporting(r.id);
     const { data, error } = await supabase.rpc("export_restaurant_data", { _restaurant_id: r.id });
     setExporting(null);
-    if (error || !data) return toast.error(`Backup non riuscito: ${error?.message ?? "nessun dato"}`);
+    if (error || !data) { toast.error(`Backup non riuscito: ${error?.message ?? "nessun dato"}`); return; }
     downloadJson(data, backupFileName(r.name));
     toast.success("Backup scaricato");
   };
