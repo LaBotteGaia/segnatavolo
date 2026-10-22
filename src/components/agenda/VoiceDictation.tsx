@@ -12,7 +12,6 @@ import type { VoiceBooking } from "@/lib/voice-ai";
 import { cn } from "@/lib/utils";
 
 type Rec = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
-const SILENCE_MS = 2500;
 const romeToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
 
 export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBooking) => void; className?: string }) {
@@ -34,29 +33,20 @@ export function VoiceDictation({ onResult, className }: { onResult: (b: VoiceBoo
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { toast.error("Questo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari"); return; }
-    const r = new Ctor();
-    r.lang = "it-IT"; r.continuous = true; r.interimResults = true;
-    text.current = ""; setLive("");
-    const arm = () => { clearTimeout(timer.current); timer.current = setTimeout(() => r.stop(), SILENCE_MS); };
-    // Ricostruzione senza echi: i risultati definitivi si accumulano una sola volta,
-    // quelli provvisori (interim) vengono scartati a ogni evento e sostituiti.
-    r.onresult = (e) => {
-      let finalTranscript = "";
-      let interimTranscript = "";
-      for (let i = 0; i < e.results.length; ++i) {
-        const result = e.results[i];
-        if (!result) continue;
-        const transcript = result[0]?.transcript ?? "";
-        if (result.isFinal) finalTranscript += transcript + " ";
-        else interimTranscript += transcript;
-      }
-      text.current = (finalTranscript + interimTranscript).trim().replace(/\s+/g, " ");
-      setLive(text.current);
-      arm();
-    };
     r.onerror = (e) => { if (e.error === "not-allowed") toast.error("Consenti l'uso del microfono per dettare"); };
-    r.onend = () => { clearTimeout(timer.current); setListening(false); rec.current = null; setReview(text.current); };
-    rec.current = r; r.start(); setListening(true); arm();
+    // Ascolto single-shot: continuous=false e interimResults=false evitano gli echi
+    // su mobile (Chrome Android / iOS). Il sistema restituisce un solo risultato
+    // finale quando l'operatore smette di parlare.
+    r.onresult = (e) => {
+      const results = e.results;
+      const last = results[results.length - 1];
+      if (!last) return;
+      // Solo l'ultimo risultato valido, sovrascrive qualsiasi testo precedente.
+      const transcript = (last[0]?.transcript ?? "").trim().replace(/\s+/g, " ");
+      if (transcript) { text.current = transcript; setReview(transcript); }
+    };
+    r.onend = () => { setListening(false); rec.current = null; setReview(text.current); };
+    rec.current = r; r.start(); setListening(true);
   };
 
   const confirm = async () => {
