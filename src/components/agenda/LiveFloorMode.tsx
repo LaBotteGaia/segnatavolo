@@ -16,11 +16,10 @@ import { serviceClock } from "@/lib/no-show";
 import { isRoomClosedFor } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
 import { refreshService } from "@/lib/recycle-bin";
-import { liveCounters, liveTableState, movedTableIds, seatedSinceLabel, swappedTableIds, type LiveTableState } from "@/lib/live-floor";
+import { liveCounters, liveTableState, movedTableIds, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
 import { supabase } from "@/integrations/supabase/client";
 
 const CELL = 120;
-type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived" | "duration_min" | "buffer_min" | "no_show">;
 type Target = { res: LiveRes; tableId: string };
 
 function useIsLandscape() {

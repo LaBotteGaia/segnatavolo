@@ -7,7 +7,7 @@ export const SOON_MINUTES = 30;
 /** Tolleranza per chi è in ritardo di pochi minuti e non è ancora segnato arrivato. */
 export const LATE_GRACE_MINUTES = 15;
 
-type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived"> & {
+export type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived"> & {
   duration_min?: number | null;
   buffer_min?: number | null;
   no_show?: boolean;
