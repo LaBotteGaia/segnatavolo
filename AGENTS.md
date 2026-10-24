@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Multi-restaurant: rows carry restaurant_id (default my_restaurant_id()); RLS scopes to active restaurant_members; rooms/tables writable only by master. Invites use a token server function so staff cannot self-register. Pages in src/routes/_authenticated; hooks in src/lib/data.ts.
+- Multi-restaurant: rows carry restaurant_id; RLS scopes to active restaurant_members; rooms/tables writable only by master. Invites use a token server function so staff cannot self-register. Pages in src/routes/_authenticated; hooks in src/lib/data.ts.
 - Customer reliability is derived from reservation attendance and service deadlines in Europe/Rome; only manual no-show is persisted, and normalized phone is the history key to avoid duplicate counters and name-based identity.
 - Agenda layout uses the agenda-wide CSS variant for landscape screens from 768px and desktops from 1024px; keep toolbar and page visibility on the same variant to preserve orientation consistency.
 
@@ -26,7 +26,7 @@
 - The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub, never a duplicate tools page.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
-- Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables. Shared FloorPlan uses saved coordinates/walls.
+- Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables..
 - Public online booking uses narrow RPCs exposing only branding and aggregate availability; insertion validates tenant, cutoff, capacity and consent atomically under restaurant lock. Public pages use sessionless publishable clients, no management banners.
 - Online requests hold aggregate capacity while pending; operational queries and customer reliability read only confirmed rows. Decisions use a tenant-authorized locking RPC, so rejected requests never occupy tables and direct status edits are blocked.
 - Restaurant delivery credentials are encrypted server-side and kept in a service-only configuration store; SMTP accepts only approved public provider hosts with mandatory TLS, so tenants cannot probe arbitrary destinations.
