@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FloorPlan } from './FloorPlan';
 
 export function WalkInDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; onSaved: (date: string, shift: "colazione" | "pranzo" | "sera") => void }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92dvh] sm:max-w-4xl overflow-y-auto bg-paper"><WalkInForm onClose={() => onOpenChange(false)} onSaved={onSaved} /></DialogContent></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92dvh] w-[calc(100%-1rem)] max-w-[calc(100vw-1rem)] grid-cols-[minmax(0,1fr)] overflow-x-hidden sm:max-w-4xl overflow-y-auto bg-paper p-3 sm:p-6"><WalkInForm onClose={() => onOpenChange(false)} onSaved={onSaved} /></DialogContent></Dialog>;
 }
 function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date: string, shift: "colazione" | "pranzo" | "sera") => void }) {
   const settings = useSettings(); const now = useServiceClock(); const qc = useQueryClient();
