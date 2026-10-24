@@ -8,6 +8,9 @@ import { canJoin, gridOf, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables,
 import { RoomGrid, GRID_COLS, GRID_ROWS } from "./RoomGrid";
 import { isRoomClosedFor, isRoomClosed, tableState } from "@/lib/rotation";
 import { useMembership, useSettings } from "@/lib/membership";
+import { TableCards } from './TableCards';
+import { suggestTables } from '@/lib/allocation';
+import { compareTableNames } from '@/lib/data';
 
 export { GRID_COLS, GRID_ROWS };
 
@@ -30,7 +33,7 @@ export function TableDialog({
   date: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  reservation: Pick<Reservation, "id" | "name" | "people" | "shift" | "table_ids" | "time"> & { duration_min?: number | null; buffer_min?: number | null };
+  reservation: Pick<Reservation, "id" | "name" | "people" | "shift" | "table_ids" | "time"> & { duration_min?: number | null; buffer_min?: number | null; notes?: string; outside?: boolean };
   others: (Pick<Reservation, "id" | "name" | "table_ids" | "time"> & { duration_min?: number | null; buffer_min?: number | null })[];
   extras?: TableExtras;
   onConfirm: (ids: string[], extras: TableExtras) => void;
@@ -44,6 +47,7 @@ export function TableDialog({
   useEffect(() => {
     if (open) {
       setSelected(reservation.table_ids);
+      setForce(false);
       setEx(extras ? { extra_sponde: extras.extra_sponde, extra_barelle: extras.extra_barelle, barella_seats: extras.barella_seats || 2 } : NO_EXTRAS);
       const first = tables?.find((t) => reservation.table_ids.includes(t.id));
       setRoomId(first?.room_id ?? null);
@@ -60,7 +64,7 @@ export function TableDialog({
   }, [others, reservation, cfg.duration, cfg.buffer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roomTables = tables?.filter((t) => t.room_id === roomId) ?? [];
-  const nominal = tables?.filter((t) => selected.includes(t.id)).reduce((s, t) => s + t.seats, 0) ?? 0;
+  const nominal = tables?.filter((t) => selected.includes(t.id)).reduce((s, t) => s + (t.coperti_comodi ?? t.seats), 0) ?? 0;
   const effective = nominal + (selected.length ? extraSeats(ex) : 0);
   const room = rooms?.find((r) => r.id === roomId);
   const over = selected.length > 0 && nominal < reservation.people;
@@ -69,9 +73,13 @@ export function TableDialog({
   const selTables = tables?.filter((t) => selected.includes(t.id)) ?? [];
   const noExtras = selTables.length > 0 && selTables.every((t) => !t.allow_extras);
   const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
+  const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,wallsFor,me:reservation }) : null;
+  const [view,setView] = useState<'cards'|'map'>('cards');
+  const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy') || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
   const toggle = (id: string) => {
     if (selected.includes(id)) return setSelected((s) => s.filter((x) => x !== id));
     const t = tables?.find((x) => x.id === id);
+    if (!t || stateOf(id).kind==='busy') return;
     if (t && selTables.some((o) => !canJoin(o, t, wallsFor))) {
       toast.warning("⚠️ Impossibile unire questi tavoli: presenza di ostacolo o vincolo strutturale");
       return;
@@ -86,9 +94,9 @@ export function TableDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
             {room ? (
-              <button className="inline-flex items-center gap-1" onClick={() => setRoomId(null)}>
+              <Button variant="ghost" className="h-auto justify-start p-0 font-display text-2xl" onClick={() => setRoomId(null)}>
                 <ChevronLeft className="h-5 w-5" /> {room.name}
-              </button>
+              </Button>
             ) : "Scegli la sala"}
           </DialogTitle>
           <p className="font-hand text-lg text-muted-foreground">
@@ -143,7 +151,8 @@ export function TableDialog({
               {isMaster && <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> Forza comunque l'assegnazione (solo Master)</label>}
             </div>
           )}
-          <RoomGrid
+          <div className="flex gap-2"><Button variant={view==='cards'?'secondary':'ghost'} onClick={()=>setView('cards')}>Tavoli</Button><Button variant={view==='map'?'secondary':'ghost'} onClick={()=>setView('map')}>Mappa sala</Button></div>
+          {view==='cards' ? <TableCards tables={[...roomTables].sort((a,b)=>compareTableNames(a.name,b.name))} room={room} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} onToggle={toggle}/> : <RoomGrid
             cols={gridOf(room).cols}
             rows={gridOf(room).rows}
             tables={roomTables}
@@ -156,7 +165,7 @@ export function TableDialog({
               const shut = isRoomClosedFor(room, date, reservation.shift) && !force;
               return (
                 <button
-                  disabled={(!!busy && !sel) || (shut && !sel)}
+                  disabled={!!busy || (shut && !sel)}
                   onClick={() => toggle(t.id)}
                   className={cn(
                     "relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md p-0.5 text-center font-bold leading-tight transition",
@@ -171,13 +180,15 @@ export function TableDialog({
                 </button>
               );
             }}
-          />
+          />}
           </>
         )}
 
+        {selected.length>1&&<div className="rounded-full border border-dashed border-primary bg-primary/5 px-4 py-2 text-center text-sm font-semibold text-primary">Tavoli {selTables.map(t=>t.name).join(' + ')} uniti</div>}
+        {invalidSelected&&<p role="alert" className="text-sm text-destructive">Assegnazione non disponibile: rimuovi i tavoli occupati o incompatibili.</p>}
         <div className="flex justify-between gap-2">
           <Button variant="outline" onClick={() => { setSelected([]); setEx(NO_EXTRAS); }}>Libera tavoli</Button>
-          <Button onClick={() => { onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
+          <Button disabled={invalidSelected} onClick={() => { if (invalidSelected) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
         </div>
       </DialogContent>
     </Dialog>
