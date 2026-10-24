@@ -44,3 +44,6 @@
 - [x] Selettore tavoli condiviso a card/mappa: desktop e smartphone verificati, selezione confermata e riletta senza creare prenotazioni.
 - [x] Bozza Gemini validata e coperta da test; nessuna persistenza automatica.
 - [ ] Prova Gemini reale delle regole: chiave Gemini non configurata nel ristorante di prova.
+- [ ] v0.8.12-alpha: anteprima esplicita regole con conferma, modifica e scarto senza salvataggio automatico.
+- [ ] Mappa planimetrica predefinita condivisa, tab sale, zoom/pan touch, stati tavoli e raccordi; lista alternativa.
+- [ ] Verificare test e flussi autenticati su desktop e smartphone.
