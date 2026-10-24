@@ -218,6 +218,13 @@
       "when": 1792830920352,
       "tag": "0030_assignment_properties_and_master_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792831132199,
+      "tag": "0031_harden_assignment_configuration_guards",
+      "breakpoints": true
     }
   ]
 }
