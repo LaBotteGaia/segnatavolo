@@ -10,7 +10,6 @@
 <!-- LOVABLE:END -->
 
 - Multi-restaurant: data rows carry restaurant_id (defaults to my_restaurant_id()); RLS scopes to active membership in restaurant_members; rooms/tables writable only by role master. Invites are accepted via a token server function (admin createUser) so staff cannot self-register into a restaurant. Pages live under src/routes/_authenticated; data hooks in src/lib/data.ts.
-- Assigned tables are stored as uuid[] on reservations, so deleting a reservation frees its tables automatically.
 - Customer reliability is derived from reservation attendance and service deadlines in Europe/Rome; only manual no-show is persisted, and normalized phone is the history key to avoid duplicate counters and name-based identity.
 - Agenda layout uses the agenda-wide CSS variant for landscape screens from 768px and desktops from 1024px; keep toolbar and page visibility on the same variant to preserve orientation consistency.
 
@@ -23,8 +22,8 @@
 - Account deletion goes through the SECURITY DEFINER RPC delete_own_account(): it removes the caller's restaurant_members row and auth.users row while audit survives on copied operator-name text; the last active master of a restaurant is blocked from self-deletion.
 - Keep .env tracked in git (never in .gitignore): it holds only publishable keys and the published build reads VITE_* values from it; ignoring it ships a blank site.
 - Tenant isolation: operational queries and cache keys always use the active restaurant ID resolved by tenant.ts (assistance target or my_restaurant_id RPC); absent IDs fail closed. Global reads are restricted to the guarded /admin page, because Super Admin RLS bypass must never merge operational data.
-- Self-profile edits use a narrow authenticated database RPC deriving the caller from auth.uid(); operational_role is descriptive and never changes Master/Staff permissions. The profile reads actual account membership, not the synthetic assistance membership, to avoid editing another restaurant's staff identity.
-- The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub rather than creating a duplicate tools page.
+- Self-profile edits use a narrow authenticated database RPC deriving the caller from auth.uid(); operational_role is descriptive and never changes Master/Staff permissions. The profile reads actual account membership, not the synthetic assistance membership.
+- The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub, never a duplicate tools page.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
 - Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions. Gemini returns Master-only drafts, separate from saved rules until confirmation. tavolo_bloccato pins bookings. Shared FloorPlan uses saved coordinates/walls and react-zoom-pan-pinch; callers retain availability/join validation.
@@ -34,7 +33,6 @@
 - Editable numeric controls keep string drafts until blur or submission; shared NumberInput preserves numeric persisted state without coercing empty keystrokes.
 - Online double-turn windows are restaurant configuration, enforced by the same database predicate in slot listing and atomic submission; duration and cleaning buffer protect the second turn, while public results expose only aggregate slots and turn labels.
 - Booking email templates and staff destination live in the protected restaurant delivery settings; trusted reservation events derive recipients and tenant-scoped placeholder data server-side, never from a generic browser send endpoint.
-- Voice dictation uses each restaurant's own OpenAI/Gemini key, encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing runs in authenticated server functions (voice-ai.functions.ts), never Edge Functions, and only after the operator confirms the transcript.
-- Voice date context uses device-local calendar fields; shared pure date rules override AI arithmetic for supported expressions and use the selected agenda date when no temporal reference exists, preventing provider-dependent date drift.
+- Voice dictation uses each restaurant's own OpenAI/Gemini key, encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing runs in authenticated server functions (voice-ai.functions.ts), never Edge Functions, and only after the operator confirms the transcript. Date context uses device-local calendar fields; shared pure date rules override AI arithmetic and fall back to the selected agenda date, preventing provider-dependent drift.
 - Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.
-- Live floor mode (LiveFloorMode) is a landscape-only HUD over the agenda: live table states derive from arrived flags and rotation intervals in src/lib/live-floor.ts; moves/swaps update table_ids directly, while seating on an occupied table goes through the seat_walkin_freed RPC, which closes the previous reservation at the current time under restaurant locking.
+- Live floor mode (LiveFloorMode) is a landscape-only HUD over the agenda: live table states derive from arrived flags and rotation intervals in src/lib/live-floor.ts; moves/swaps update table_ids directly, while seating on an occupied table uses the seat_walkin_freed RPC (see walk-in rule).
