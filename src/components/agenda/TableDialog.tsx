@@ -132,7 +132,7 @@ export function TableDialog({
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div role="tablist" aria-label="Sale" className="flex min-w-0 flex-1 flex-wrap gap-1">
+          <div role="tablist" aria-label="Sale" className="flex min-w-0 basis-full flex-wrap gap-1 sm:flex-1 sm:basis-auto">
             {rooms?.map(r => <Button key={r.id} role="tab" aria-selected={roomId===r.id} variant={roomId===r.id?'secondary':'outline'} className="h-auto min-h-9 whitespace-normal" onClick={() => { setRoomId(r.id); setForce(false); }}>{r.name}{isRoomClosedFor(r,date,reservation.shift)&&' · Chiusa'}{tables?.some(t=>t.room_id===r.id&&selected.includes(t.id))&&' ✓'}</Button>)}
           </div>
           <div className="flex shrink-0 gap-1" role="group" aria-label="Visualizzazione tavoli">
