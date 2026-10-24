@@ -8,6 +8,7 @@ export const SOON_MINUTES = 30;
 export const LATE_GRACE_MINUTES = 15;
 
 export type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived" | "notes"> & {
+  max_stay_until?: string | null;
   duration_min?: number | null;
   buffer_min?: number | null;
   no_show?: boolean;
@@ -74,3 +75,45 @@ export function swappedTableIds(aIds: string[], bIds: string[], aTable: string, 
 
 /** Minuti da mezzanotte di "HH:MM"; NaN se non valido. */
 export { toMin };
+
+/* ---------- Incastro con permanenza massima (tavolo prenotato più tardi) ---------- */
+/** Margine minimo per proporre la permanenza vincolata. */
+export const MIN_LIMITED_STAY = 15;
+/** Soglia di allerta del badge "⏳ Max fino alle". */
+export const MAX_STAY_ALERT = 15;
+
+/** Prima prenotazione futura (inizio > adesso) su uno qualsiasi dei tavoli indicati. */
+export function nextBookingOn(tableIds: string[], rows: LiveRes[], nowMin: number): LiveRes | null {
+  let best: LiveRes | null = null;
+  for (const r of rows) {
+    if (r.no_show || !r.table_ids.some((id) => tableIds.includes(id))) continue;
+    const s = toMin(r.time);
+    if (isNaN(s) || s <= nowMin) continue;
+    if (!best || s < toMin(best.time)) best = r;
+  }
+  return best;
+}
+
+/**
+ * Permanenza vincolata: null se la seduta standard (durata + riassetto) sta prima della prossima prenotazione.
+ * Altrimenti uscita = prossima − riassetto; `allowed` false se restano meno di 15 minuti.
+ */
+export function limitedStay(nextStart: number, nowMin: number, cfg: RotationCfg): { untilMin: number; until: string; minutes: number; allowed: boolean } | null {
+  if (cfg.duration >= 0 && nowMin + cfg.duration + cfg.buffer <= nextStart) return null;
+  const untilMin = nextStart - cfg.buffer;
+  const minutes = untilMin - nowMin;
+  return { untilMin, until: fmt(untilMin), minutes, allowed: minutes >= MIN_LIMITED_STAY };
+}
+
+/** "1h 30m" / "45 min". */
+export function hoursMinutes(min: number): string {
+  return min < 60 ? `${min} min` : `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m`;
+}
+
+/** Badge ⏳ per chi ha una permanenza massima; urgent quando mancano meno di 15 minuti. */
+export function maxStayBadge(until: string | null | undefined, nowMin: number): { label: string; urgent: boolean } | null {
+  const u = toMin(until ?? "");
+  if (isNaN(u)) return null;
+  const left = Math.max(0, u - nowMin);
+  return { label: `⏳ Max fino alle ${until} (${left} min rimanenti)`, urgent: left < MAX_STAY_ALERT };
+}
