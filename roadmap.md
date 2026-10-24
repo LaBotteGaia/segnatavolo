@@ -48,3 +48,5 @@
 - [x] Mappa planimetrica predefinita condivisa, tab sale, zoom/pan touch, stati tavoli e raccordi; lista alternativa.
 - [x] Selettore reale autenticato verificato su desktop e smartphone: zoom, passaggio alla lista e conferma locale riletta, nessuna prenotazione creata.
 - [ ] Verifica dall’ingresso Agenda: in Playwright la rotta resta vuota con la sessione ripristinata; verificato il selettore condiviso montato temporaneamente nel browser con le query reali autenticate, non il flusso completo dall’agenda.
+- [x] v0.8.13-alpha: Modalità Sala Live solo orizzontale con mappa in tempo reale, contatori e tab sale.
+- [x] Sposta/scambia tavoli al volo e accomoda su tavolo appena liberato (RPC seat_walkin_freed con chiusura uscita all'orario attuale).
