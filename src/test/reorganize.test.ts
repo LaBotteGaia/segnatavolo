@@ -12,6 +12,8 @@ const res = (id: string, people: number, table_ids: string[] = [], extra: Partia
 const base = { date: "2026-06-10", shift: "sera", rooms: [room], cfg: { duration: 90, buffer: 15 }, wallsFor: () => [] as string[] };
 
 describe("riorganizzazione automatica della sala", () => {
+  it('non unisce isole',()=>{const out=reorganizeService({...base,reservations:[res('R',8)],tables:[t('A',4,0,0,{accoppiabile:false}),t('B',4,1,0)]});expect(out.unplaced.map(r=>r.id)).toEqual(['R']);});
+  it('seduta lunga e piccoli gruppi rispettano le priorità',()=>{const out=reorganizeService({...base,rules:{longStay:{enabled:true,from:'21:00'},protectModular:true},reservations:[res('R',2,[],{time:'21:00'})],tables:[t('A',2,0,0),t('B',4,1,0,{accoppiabile:false,adatto_seduta_lunga:true})]});expect(out.assignments.get('R')?.ids).toEqual(['B']);});
   it("sposta una comitiva sul tavolo comodo più adatto", () => {
     const out = reorganizeService({ ...base, reservations: [res("A", 2, ["T4"])], tables: [t("T4", 4, 0, 0), t("T2", 2, 3, 3)] });
     expect(out.moves).toHaveLength(1);

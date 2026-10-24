@@ -13,14 +13,14 @@ export type Suggestion = { ids: string[]; extras: TableExtras; kind: "single" | 
 export function suggestTables(p: {
   people: number; date: string; shift: string; time: string;
   tables: T[]; rooms: RoomLite[]; others: Other[]; cfg: RotationCfg;
-  outside?: boolean; wallsFor: (roomId: string) => string[];
+  outside?: boolean | undefined; wallsFor: (roomId: string) => string[];
   me?: { id: string; duration_min?: number | null; buffer_min?: number | null };
-  rules?: AssignmentRules; notes?: string;
+  rules?: AssignmentRules; notes?: string | undefined;
 }): Suggestion | null {
   if (!Number.isFinite(p.people) || p.people < 1) return null;
   const me = { id: p.me?.id ?? "new", time: p.time, duration_min: p.me?.duration_min ?? null, buffer_min: p.me?.buffer_min ?? null };
   const rules = p.rules ?? DEFAULT_ASSIGNMENT_RULES;
-  const preference = (t: T) => assignmentPreference(t, { ...me, notes: p.notes }, rules, p.rooms);
+  const preference = (t: T) => assignmentPreference(t, { ...me, notes: p.notes ?? '' }, rules, p.rooms);
   const comfort = (t: T) => t.coperti_comodi ?? t.seats;
   const openRooms = p.rooms.filter(r => !isRoomClosedFor(r as never, p.date, p.shift));
   const zone = p.outside === undefined ? openRooms : openRooms.filter(r => (r.environment === "esterno") === p.outside);
@@ -31,7 +31,7 @@ export function suggestTables(p: {
   type Candidate = Suggestion & { distance: number };
   let plain: Candidate | undefined;
   let extended: Candidate | undefined;
-  const score = (s: Candidate) => [s.ids.reduce((n,id) => n+preference(p.tables.find(t=>t.id===id) ?? {room_id:''}),0), s.extras.extra_sponde, s.ids.length, s.waste, s.distance];
+  const score = (s: Candidate) => [s.ids.reduce((n,id) => { const t=p.tables.find(t=>t.id===id); return n+(t?preference(t):0); },0), s.extras.extra_sponde, s.ids.length, s.waste, s.distance];
   const better = (a: Candidate, b?: Candidate) => {
     if (!b) return true;
     const left = score(a), right = score(b);

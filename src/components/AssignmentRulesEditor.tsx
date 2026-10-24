@@ -19,7 +19,7 @@ export function AssignmentRulesEditor() {
   const qc = useQueryClient();
   const settings = me?.restaurants?.settings;
   const raw = settings && typeof settings === 'object' ? settings as Record<string, unknown> : {};
-  const [rules, setRules] = useState(() => normalizeAssignmentRules(raw.assignmentRules));
+  const [rules, setRules] = useState(() => normalizeAssignmentRules(raw['assignmentRules']));
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState(false);
@@ -28,7 +28,7 @@ export function AssignmentRulesEditor() {
   const rec = useRef<Recognition | null>(null);
   const load = useServerFn(getAiSettings), parse = useServerFn(parseAssignmentRules);
   const { data: ai } = useQuery({ queryKey: ['ai-settings', me?.restaurant_id], enabled: !!me?.restaurant_id, queryFn: () => load({ data: { id: me?.restaurant_id ?? '' } }) });
-  useEffect(() => { setRules(normalizeAssignmentRules(raw.assignmentRules)); }, [settings]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setRules(normalizeAssignmentRules(raw['assignmentRules'])); }, [settings]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => rec.current?.abort(), []);
   const dictate = () => {
     if (listening) { rec.current?.stop(); return; }

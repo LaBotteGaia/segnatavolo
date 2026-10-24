@@ -16,6 +16,8 @@ import { RoomGrid } from "@/components/agenda/RoomGrid";
 import { useEffect } from "react";
 import { validTableName } from "@/lib/extras";
 import { doubleShiftRulesOf, periodsOf, type ClosedPeriod, type DoubleShiftRule } from "@/lib/rotation";
+import { configurationError } from '@/lib/assignment-rules';
+import { Switch } from '@/components/ui/switch';
 
 export const Route = createFileRoute("/_authenticated/sale")({
   head: () => ({
@@ -68,7 +70,7 @@ function SalePage() {
   const updateRoom = async (r: Room, patch: Partial<Room>) => {
     qc.setQueryData<Room[]>(["rooms", restaurantId], (old) => old?.map((x) => (x.id === r.id ? { ...x, ...patch } : x)));
     const { error } = await supabase.from("rooms").update(patch).eq("id", r.id).eq("restaurant_id", restaurantId ?? "");
-    if (error) toast.error("Salvataggio non riuscito");
+    if (error) toast.error(configurationError(error));
     else if (["open_days", "closed_shifts", "closed_periods", "double_shifts"].some((key) => key in patch)) toast.success("Configurazione servizi salvata");
     refresh();
   };
@@ -119,7 +121,10 @@ function SalePage() {
 
   const updateTable = async (t: RTable, patch: Partial<RTable>) => {
     qc.setQueryData<RTable[]>(["tables", restaurantId], (old) => old?.map((x) => (x.id === t.id ? { ...x, ...patch } : x)));
-    await supabase.from("restaurant_tables").update(patch).eq("id", t.id).eq("restaurant_id", restaurantId ?? "");
+    const {data,error} = await supabase.from("restaurant_tables").update(patch).eq("id", t.id).eq("restaurant_id", restaurantId ?? "").select('id');
+    if(error || !data?.length) toast.error(configurationError(error ?? {code:'42501'}));
+    else toast.success('Tavolo salvato');
+    refresh();
   };
 
   return (
@@ -314,9 +319,9 @@ function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) =>
   const [name, setName] = useState(t.name);
   const [comodi, setComodi] = useState(String(t.coperti_comodi ?? t.seats));
   const [max, setMax] = useState(String(t.coperti_max ?? t.seats));
-  const [ordine, setOrdine] = useState(String(t.ordine_riempimento ?? 99));
+  const [ordine, setOrdine] = useState(String(t.ordine_riempimento ?? 10));
   const [bad, setBad] = useState<{ name?: boolean; comodi?: boolean; max?: boolean; ordine?: boolean }>({});
-  useEffect(() => { setName(t.name); setComodi(String(t.coperti_comodi ?? t.seats)); setMax(String(t.coperti_max ?? t.seats)); setOrdine(String(t.ordine_riempimento ?? 99)); }, [t.name, t.seats, t.coperti_comodi, t.coperti_max, t.ordine_riempimento]);
+  useEffect(() => { setName(t.name); setComodi(String(t.coperti_comodi ?? t.seats)); setMax(String(t.coperti_max ?? t.seats)); setOrdine(String(t.ordine_riempimento ?? 10)); }, [t.name, t.seats, t.coperti_comodi, t.coperti_max, t.ordine_riempimento]);
   const save = () => {
     const c = Number(comodi), m = Number(max), o = Number(ordine);
     const b = {
@@ -329,7 +334,6 @@ function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) =>
     if (b.name || b.comodi || b.max || b.ordine) { toast.error("Inserisci valori validi: coperti max non inferiori ai comodi, ordine tra 1 e 99"); return; }
     if (name.trim() !== t.name || c !== t.coperti_comodi || m !== t.coperti_max || o !== t.ordine_riempimento) {
       onSave({ name: name.trim(), seats: c, coperti_comodi: c, coperti_max: m, ordine_riempimento: o });
-      toast.success("Tavolo salvato");
     }
   };
   const err = "border-destructive ring-1 ring-destructive";
@@ -356,6 +360,8 @@ function TableFields({ t, onSave }: { t: RTable; onSave: (p: Partial<RTable>) =>
         Posti scomodi solo in unione
       </label>
       <Button size="sm" onClick={save}>Conferma</Button>
+      <label className="flex w-full items-center justify-between gap-3 text-sm">Accoppiabile / componibile<Switch aria-label="Accoppiabile" checked={t.accoppiabile} onCheckedChange={accoppiabile=>onSave({accoppiabile})}/></label>
+      <label className="flex w-full items-center justify-between gap-3 text-sm">Adatto a Seduta Lunga<Switch aria-label="Adatto a Seduta Lunga" checked={t.adatto_seduta_lunga} onCheckedChange={adatto_seduta_lunga=>onSave({adatto_seduta_lunga})}/></label>
       {(bad.name || bad.comodi || bad.max || bad.ordine) && <p className="w-full text-sm font-semibold text-destructive">Inserisci valori validi: coperti max non inferiori ai comodi, ordine tra 1 e 99</p>}
     </div>
   );
