@@ -396,5 +396,5 @@ const toMinLocal = (t: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim(
 export function MaxStay({ until, now }: { until?: string | null; now: number }) {
   const b = maxStayBadge(until, now);
   if (!b) return null;
-  return <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-warning-foreground")}>{b.label}</span>;
+  return <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>;
 }
