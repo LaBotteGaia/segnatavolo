@@ -96,6 +96,10 @@
   --busy-foreground: oklch(0.99 0 0);
   --recommendation: oklch(0.64 0.13 235);
   --shadow-book: 0 30px 60px -20px oklch(0.15 0.03 40 / 0.6), 0 8px 20px -8px oklch(0.15 0.03 40 / 0.4);
+  --print-paper: #fff;
+  --print-ink: #000;
+  --print-secondary: #555;
+  --print-rule: #aaa;
 }
 
 @layer base {
@@ -155,3 +159,15 @@
 @keyframes live-rotate { 0%, 25% { transform: rotate(0deg); } 65%, 100% { transform: rotate(90deg); } }
 .live-rotate { display: inline-block; animation: live-rotate 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .live-flash, .live-rotate { animation: none; } }
+
+@page service-sheet { size: A4 portrait; margin: 12mm; }
+@media print {
+  body:has(.service-sheet) { background: var(--print-paper); color: var(--print-ink); }
+  .service-sheet { page: service-sheet; min-height: 0; }
+  .service-sheet, .service-sheet-paper { background: var(--print-paper); color: var(--print-ink); }
+  .service-sheet-table thead { display: table-header-group; }
+  .service-sheet-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .service-sheet-table th, .service-sheet-table td { border-color: var(--print-rule); }
+  .service-sheet-contact { color: var(--print-secondary); }
+  .service-sheet-notes, .service-sheet-arrival { border-color: var(--print-ink); }
+}
