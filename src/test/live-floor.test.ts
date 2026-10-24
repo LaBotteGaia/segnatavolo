@@ -69,3 +69,26 @@ describe("etichetta seduta", () => {
     expect(seatedSinceLabel(80)).toBe("Seduti da 1h 20m");
   });
 });
+
+import { limitedStay, maxStayBadge, nextBookingOn } from "@/lib/live-floor";
+describe("permanenza massima vincolata", () => {
+  const cfg = { duration: 90, buffer: 15 };
+  it("alle 19:45 con prenotazione alle 21:15 propone uscita alle 21:00 (75 min)", () => {
+    expect(limitedStay(21 * 60 + 15, 19 * 60 + 45, cfg)).toEqual({ untilMin: 21 * 60, until: "21:00", minutes: 75, allowed: true });
+  });
+  it("nessun vincolo se la seduta standard ci sta", () => {
+    expect(limitedStay(22 * 60, 19 * 60 + 45, cfg)).toBeNull();
+  });
+  it("rifiuta con meno di 15 minuti disponibili", () => {
+    expect(limitedStay(21 * 60, 20 * 60 + 35, cfg)?.allowed).toBe(false);
+  });
+  it("trova la prossima prenotazione sul tavolo", () => {
+    const rows = [{ id: "a", name: "Rossi", people: 2, time: "21:15", table_ids: ["T1"], arrived: false, notes: "" }];
+    expect(nextBookingOn(["T1"], rows, 19 * 60 + 45)?.name).toBe("Rossi");
+    expect(nextBookingOn(["T2"], rows, 19 * 60 + 45)).toBeNull();
+  });
+  it("badge urgente sotto i 15 minuti", () => {
+    expect(maxStayBadge("21:00", 20 * 60 + 50)).toEqual({ label: "⏳ Max fino alle 21:00 (10 min rimanenti)", urgent: true });
+    expect(maxStayBadge("21:00", 20 * 60)?.urgent).toBe(false);
+  });
+});

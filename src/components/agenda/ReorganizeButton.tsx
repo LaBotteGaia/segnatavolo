@@ -76,8 +76,13 @@ export function ReorganizeButton({ date, shift, rows }: { date: string; shift: S
               )}
               <p className="text-xs text-muted-foreground">
                 {result.unchanged} già ben piazzate · {result.locked} bloccate col lucchetto
-                {result.unplaced.length > 0 && <> · <span className="font-semibold text-destructive">{result.unplaced.length} senza posto ({result.unplaced.map((r) => r.name || "—").join(", ")})</span></>}
               </p>
+              {result.unplaced.length > 0 && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+                  <p className="font-semibold text-destructive">⚠️ In attesa di riallocazione / Conflitto orario da verificare manualmente ({result.unplaced.length})</p>
+                  <ul className="mt-1 list-disc pl-4">{result.unplaced.map((r) => <li key={r.id}>{r.name || "—"} ({r.people}p, {r.time || "--:--"}) — resta su {labelOf(r.table_ids)}</li>)}</ul>
+                </div>
+              )}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setResult(null)}>Annulla</Button>
                 {result.moves.length > 0 && <Button disabled={busy} onClick={apply}>{busy ? "Applicazione…" : "Applica modifiche in Agenda"}</Button>}
