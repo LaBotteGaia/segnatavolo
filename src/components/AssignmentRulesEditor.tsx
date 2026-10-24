@@ -78,7 +78,7 @@ export function AssignmentRulesEditor() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="h-auto min-h-9 whitespace-normal" disabled={busy || listening} onClick={() => save(preview)}>{busy ? <Loader2 className="animate-spin"/> : <Check/>}Conferma e Attiva Regola</Button>
-          <Button variant="outline" className="h-auto min-h-9 whitespace-normal" disabled={busy} onClick={() => { setRules(preview); setManual(true); requestAnimationFrame(() => { manualForm.current?.scrollIntoView({ behavior:'smooth', block:'start' }); manualForm.current?.querySelector<HTMLButtonElement>('button')?.focus(); }); }}><Pencil/>Modifica Manualmente</Button>
+          <Button variant="outline" className="h-auto min-h-9 whitespace-normal" disabled={busy} onClick={() => { setRules(preview); setManual(true); requestAnimationFrame(() => { manualForm.current?.scrollIntoView?.({ behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth', block:'start' }); manualForm.current?.querySelector<HTMLButtonElement>('button')?.focus(); }); }}><Pencil/>Modifica Manualmente</Button>
           <Button variant="ghost" disabled={busy} onClick={() => { setDraft(null); setManual(false); setRules(normalizeAssignmentRules(raw['assignmentRules'])); }}><X/>Annulla / Scarta</Button>
         </div>
       </section>}
