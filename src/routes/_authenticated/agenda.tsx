@@ -27,7 +27,8 @@ import { ReservationRow, ROW_GRID } from "@/components/agenda/ReservationRow";
 import { RestaurantGate } from "@/components/RestaurantGate";
 import { AppMenu } from "@/components/AppMenu";
 import { NewReservationDialog, type NewReservationInput } from "@/components/agenda/NewReservationDialog";
-import { Plus, Zap } from "lucide-react";
+import { Monitor, Plus, Zap } from "lucide-react";
+import { LiveFloorMode } from "@/components/agenda/LiveFloorMode";
 import { Switch } from "@/components/ui/switch";
 import { SearchBox, ServiceNotes, VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
@@ -74,6 +75,7 @@ function AgendaPage() {
   const qc = useQueryClient();
   const [newShift, setNewShift] = useState<Shift | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
   const [prefill, setPrefill] = useState<{ time: string; tables: string[] }>({ time: "", tables: [] });
   const [availShift, setAvailShift] = useState<Shift | null>(null);
   const [bookCustomer, setBookCustomer] = useState<string | undefined>(undefined);
@@ -399,6 +401,7 @@ function AgendaPage() {
         <div className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2">
           <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
+          <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
           <ServiceHub requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
@@ -438,6 +441,7 @@ function AgendaPage() {
       <footer className="mt-6 flex shrink-0 items-center agenda-wide:mt-0 agenda-wide:pb-1 justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} initialDraft={voiceDraft} />
       <WalkInDialog open={walkinOpen} onOpenChange={setWalkinOpen} onSaved={(d, s) => { setMobileShift(s); setDate(d); }} />
+      <LiveFloorMode open={liveOpen} onOpenChange={setLiveOpen} />
       <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
         rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />
     </div>
