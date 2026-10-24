@@ -109,3 +109,21 @@ describe("riorganizzazione automatica della sala", () => {
     expect(out.assignments.get("B")?.ids).toEqual(["T2"]);
   });
 });
+
+describe("non-sovrapposizione rigida", () => {
+  it("una prenotazione senza posto resta sul suo tavolo e nessun'altra vi viene sovrapposta", () => {
+    // G (6p) non trova posto e resta su T2; la piccola non può finire su T2 alla stessa ora.
+    const out = reorganizeService({ ...base, reservations: [res("G", 6, ["T2"]), res("P", 2, [])], tables: [t("T2", 2, 0, 0), t("T4", 2, 5, 5)] });
+    expect(out.unplaced.map((r) => r.id)).toEqual(["G"]);
+    expect(out.assignments.get("P")?.ids).toEqual(["T4"]);
+  });
+  it("la permanenza ridotta (durata personalizzata) libera il tavolo per la prenotazione successiva", () => {
+    const out = reorganizeService({ ...base, reservations: [res("A", 2, [], { time: "19:45", duration_min: 75, buffer_min: 15 }), res("B", 2, [], { time: "21:15" })], tables: [t("T2", 2, 0, 0)] });
+    expect(out.unplaced).toHaveLength(0);
+  });
+  it("tavoli uniti restano occupati per tutta la seduta", () => {
+    const out = reorganizeService({ ...base, reservations: [res("G", 8, []), res("P", 2, [], { time: "20:30" })], tables: [t("A", 4, 0, 0), t("B", 4, 1, 0)] });
+    expect(out.assignments.get("G")?.ids.sort()).toEqual(["A", "B"]);
+    expect(out.unplaced.map((r) => r.id)).toEqual(["P"]);
+  });
+});

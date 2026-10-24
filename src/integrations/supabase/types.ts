@@ -104,6 +104,7 @@ export type Database = {
           extra_sponde: number
           id: string
           is_new: boolean
+          max_stay_until: string | null
           name: string
           no_show: boolean
           notes: string
@@ -142,6 +143,7 @@ export type Database = {
           extra_sponde?: number
           id?: string
           is_new?: boolean
+          max_stay_until?: string | null
           name?: string
           no_show?: boolean
           notes?: string
@@ -180,6 +182,7 @@ export type Database = {
           extra_sponde?: number
           id?: string
           is_new?: boolean
+          max_stay_until?: string | null
           name?: string
           no_show?: boolean
           notes?: string
@@ -668,6 +671,10 @@ export type Database = {
         Returns: boolean
       }
       seat_walkin_freed: {
+        Args: { _name?: string; _people: number; _table: string }
+        Returns: string
+      }
+      seat_walkin_limited: {
         Args: { _name?: string; _people: number; _table: string }
         Returns: string
       }

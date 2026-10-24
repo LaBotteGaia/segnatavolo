@@ -17,7 +17,7 @@ import { serviceClock } from "@/lib/no-show";
 import { isRoomClosedFor } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
 import { refreshService } from "@/lib/recycle-bin";
-import { arrivalsLists, liveCounters, liveTableState, movedTableIds, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
+import { arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
 import { supabase } from "@/integrations/supabase/client";
 
 type Target = { res: LiveRes; tableId: string };
@@ -61,6 +61,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const [walkin, setWalkin] = useState<WalkinDraft | null>(null);
   const [seating, setSeating] = useState<{ people: number; name: string } | null>(null);
   const [confirmFreed, setConfirmFreed] = useState<{ table: RTable; occName: string; until: string } | null>(null);
+  const [limited, setLimited] = useState<{ table: RTable; w: { people: number; name: string }; nextName: string; nextAt: string; until: string; minutes: number } | null>(null);
   const [swap, setSwap] = useState<{ from: Target; to: Target } | null>(null);
   const [busy, setBusy] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -71,7 +72,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const tableName = (id: string) => tables.find((t) => t.id === id)?.name ?? "?";
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "Sala";
 
-  const reset = () => { setSelected(null); setMoving(null); setWalkin(null); setSeating(null); setConfirmFreed(null); setSwap(null); setBusy(false); setFocus(null); };
+  const reset = () => { setSelected(null); setMoving(null); setWalkin(null); setSeating(null); setConfirmFreed(null); setLimited(null); setSwap(null); setBusy(false); setFocus(null); };
   const close = () => { reset(); onOpenChange(false); };
 
   useEffect(() => {
@@ -142,6 +143,27 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
     } finally { setBusy(false); }
   };
 
+  /** Tavolo libero ora: se una prenotazione successiva taglia la seduta standard chiede la permanenza vincolata. */
+  const tryWalkin = (table: RTable, w: { people: number; name: string }) => {
+    const next = nextBookingOn([table.id], rows, clock.minutes);
+    const lim = next ? limitedStay(toMinLocal(next.time), clock.minutes, settings) : null;
+    if (!next || !lim) return void doWalkin(table, w);
+    if (!lim.allowed) return toast.warning(`Tavolo ${table.name} prenotato alle ${next.time}: tempo insufficiente`);
+    return setLimited({ table, w, nextName: next.name, nextAt: next.time, until: lim.until, minutes: lim.minutes });
+  };
+
+  const doWalkinLimited = async () => {
+    if (!limited) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("seat_walkin_limited", walkinValues(limited.w.name, limited.w.people, limited.table.id));
+      if (error) { toast.error(error.message); await refreshService(qc); return; }
+      toast.success(`${limited.w.name.trim() || "Passante"} accomodato al T.${limited.table.name}: uscita entro le ${data ?? limited.until}`);
+      await refreshService(qc);
+      setLimited(null); setSeating(null);
+    } finally { setBusy(false); }
+  };
+
   const doWalkinFreed = async () => {
     if (!confirmFreed || !seating) return;
     setBusy(true);
@@ -163,9 +185,8 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       setWalkin(null);
       if (!t) return;
       const st = stateOf(t.id);
-      if (st.kind === "free") return void doWalkin(t, w);
       if (st.kind === "seated") { setSeating(w); return setConfirmFreed({ table: t, occName: st.res.name, until: st.until }); }
-      return toast.warning(`Tavolo ${t.name} riservato a breve (${st.at})`);
+      return tryWalkin(t, w);
     }
     setSeating(w);
     setWalkin(null);
@@ -181,11 +202,10 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       return toast.warning(`Tavolo ${t.name} riservato a breve (${st.at})`);
     }
     if (seating) {
-      if (st.kind === "free") return void doWalkin(t, seating);
       if (st.kind === "seated") return setConfirmFreed({ table: t, occName: st.res.name, until: st.until });
-      return toast.warning(`Tavolo ${t.name} riservato a breve (${st.at})`);
+      return tryWalkin(t, seating);
     }
-    if (st.kind === "free") return setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante", targetId: t.id });
+    if (st.kind === "free" || st.kind === "incoming") return setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante", targetId: t.id });
     if (st.kind === "seated") setSelected({ res: st.res, tableId: t.id });
   };
 
@@ -214,6 +234,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
           <span>👥 {r.people} pax</span>
           <span>🕐 {r.time}</span>
         </p>
+        <MaxStay until={r.max_stay_until} now={clock.minutes} />
         {r.notes && <p className="mt-1 inline-block rounded-full bg-warning/25 px-2 py-0.5 text-[11px]">{r.notes}</p>}
       </div>
     </div>
@@ -280,6 +301,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
                       <>
                         <span className="max-w-full break-words text-xs font-semibold">{st.res.name} · {st.res.people}p</span>
                         <span className="text-[10px]">{seatedSinceLabel(st.sinceMin)}</span>
+                        <MaxStay until={st.res.max_stay_until} now={clock.minutes} />
                       </>
                     ) : st.kind === "incoming" ? (
                       <>
@@ -343,6 +365,17 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
         </div>
       )}
 
+      {limited && (
+        <div className="absolute inset-0 z-10 grid place-items-center bg-black/50 p-4" onClick={() => setLimited(null)}>
+          <div className="w-full max-w-md space-y-3 rounded-lg bg-card p-4 text-card-foreground shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-xl">⚠️ Tavolo {limited.table.name} prenotato alle {limited.nextAt} da {limited.nextName}</h3>
+            <p className="text-sm">Tempo massimo di permanenza disponibile: <b>{hoursMinutes(limited.minutes)}</b> (fino alle {limited.until}, riassetto incluso prima delle {limited.nextAt}).<br />Vuoi procedere con la permanenza vincolata?</p>
+            <Button className="h-14 w-full text-base" disabled={busy} onClick={doWalkinLimited}>✅ Conferma con uscita entro le {limited.until}</Button>
+            <Button variant="outline" className="h-12 w-full" onClick={() => setLimited(null)}>Annulla / Scegli altro tavolo</Button>
+          </div>
+        </div>
+      )}
+
       {confirmFreed && (
         <div className="absolute inset-0 z-10 grid place-items-center bg-black/50 p-4" onClick={() => setConfirmFreed(null)}>
           <div className="w-full max-w-md space-y-3 rounded-lg bg-card p-4 text-card-foreground shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -355,4 +388,13 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       )}
     </div>
   );
+}
+
+const toMinLocal = (t: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : NaN; };
+
+/** Badge ⏳ della permanenza massima; lampeggia in rosso negli ultimi 15 minuti. */
+export function MaxStay({ until, now }: { until?: string | null | undefined; now: number }) {
+  const b = maxStayBadge(until, now);
+  if (!b) return null;
+  return <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>;
 }

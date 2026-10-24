@@ -18,7 +18,8 @@ import { useSettings } from "@/lib/membership";
 import { TableDialog } from "./TableDialog";
 import { DURATION_PRESETS, WHOLE_EVENING, durLabel, rotationNote } from "@/lib/rotation";
 import { MoveDialog, DuplicateDialog } from "./MoveDuplicateDialogs";
-import { isNoShow } from "@/lib/no-show";
+import { isNoShow, serviceClock } from "@/lib/no-show";
+import { maxStayBadge } from "@/lib/live-floor";
 import { useServiceClock } from "@/lib/extras";
 import { MaskedPhone } from "@/components/MaskedPhone";
 
@@ -113,6 +114,7 @@ export function ReservationRow({
           </span>
           {label && <span className="truncate xl:whitespace-normal text-[11px] xl:text-xs font-semibold leading-tight text-primary">{label}</span>}
           {noShow && <span className="text-xs font-semibold text-destructive">No-Show</span>}
+          {(() => { const c = serviceClock(now); const b = r.date === c.date && !noShow ? maxStayBadge(r.max_stay_until, c.minutes) : null; return b && <span className={cn("w-fit rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>; })()}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
         <span className={cn("whitespace-nowrap text-sm", dim)}>{r.outside ? "☀️ Fuori" : "🏠 Dentro"}</span>

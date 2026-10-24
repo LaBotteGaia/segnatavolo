@@ -51,3 +51,4 @@
 - [x] v0.8.13-alpha: Modalità Sala Live solo orizzontale con mappa in tempo reale, contatori e tab sale.
 - [x] Sposta/scambia tavoli al volo e accomoda su tavolo appena liberato (RPC seat_walkin_freed con chiusura uscita all'orario attuale).
 - [x] v0.8.14-alpha: Sala Live riprogettata a due colonne — gestione arrivi con spunta sincronizzata e griglia tavoli ordinata per sala con zoom, focus dalla riga e sale chiuse nascoste.
+- [x] v0.8.15-alpha: permanenza massima vincolata (walk-in su tavolo prenotato), badge ⏳, non-sovrapposizione rigida nella riorganizzazione

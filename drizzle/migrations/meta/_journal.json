@@ -232,6 +232,13 @@
       "when": 1792841556064,
       "tag": "0032_seat_walkin_freed",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792861076774,
+      "tag": "0033_walkin_limited_stay",
+      "breakpoints": true
     }
   ]
 }
