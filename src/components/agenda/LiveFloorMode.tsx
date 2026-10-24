@@ -149,7 +149,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
     const lim = next ? limitedStay(toMinLocal(next.time), clock.minutes, settings) : null;
     if (!next || !lim) return void doWalkin(table, w);
     if (!lim.allowed) return toast.warning(`Tavolo ${table.name} prenotato alle ${next.time}: tempo insufficiente`);
-    setLimited({ table, w, nextName: next.name, nextAt: next.time, until: lim.until, minutes: lim.minutes });
+    return setLimited({ table, w, nextName: next.name, nextAt: next.time, until: lim.until, minutes: lim.minutes });
   };
 
   const doWalkinLimited = async () => {
@@ -393,7 +393,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
 const toMinLocal = (t: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : NaN; };
 
 /** Badge ⏳ della permanenza massima; lampeggia in rosso negli ultimi 15 minuti. */
-export function MaxStay({ until, now }: { until?: string | null; now: number }) {
+export function MaxStay({ until, now }: { until?: string | null | undefined; now: number }) {
   const b = maxStayBadge(until, now);
   if (!b) return null;
   return <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>;
