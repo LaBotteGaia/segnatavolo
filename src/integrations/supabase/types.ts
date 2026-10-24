@@ -667,6 +667,10 @@ export type Database = {
         Args: { _id: string; _without_tables?: boolean }
         Returns: boolean
       }
+      seat_walkin_freed: {
+        Args: { _name?: string; _people: number; _table: string }
+        Returns: string
+      }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
       submit_online_booking: {
         Args: { _data: Json; _slug: string }
