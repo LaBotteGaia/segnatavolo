@@ -39,6 +39,8 @@
 - [ ] Verifica calendario nell’agenda autenticata: la sessione locale ripristinata non rende la schermata; gesti e soppressione click verificati nei test del calendario reale.
 - [x] v0.8.10-alpha: riorganizzazione automatica della sala con doppia capienza tavoli, ordine di riempimento, lucchetto prenotazioni e switch globale; 14 test del motore superati.
 - [x] Prova reale della riorganizzazione in agenda autenticata: pulsanti a fondo turno e anteprima con spostamento proposto verificati (applicazione non eseguita per non toccare i dati reali).
-- [ ] v0.8.11-alpha: protezioni Master e proprietà isola/seduta lunga.
-- [ ] Regole manuali condivise dai motori e bozza Gemini con conferma.
-- [ ] Selettore tavoli a card in tutti i flussi e verifiche regole/interfaccia.
+- [x] v0.8.11-alpha: protezioni Master e proprietà isola/seduta lunga; schema e policy verificate.
+- [x] Regole manuali condivise dai motori; salvataggio/rilettura autenticati e ripristino valori originali verificati.
+- [x] Selettore tavoli condiviso a card/mappa: desktop e smartphone verificati, selezione confermata e riletta senza creare prenotazioni.
+- [x] Bozza Gemini validata e coperta da test; nessuna persistenza automatica.
+- [ ] Prova Gemini reale delle regole: chiave Gemini non configurata nel ristorante di prova.
