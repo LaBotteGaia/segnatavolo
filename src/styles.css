@@ -46,6 +46,7 @@
   --color-busy: var(--busy);
   --color-busy-foreground: var(--busy-foreground);
   --color-ink: var(--ink);
+  --color-recommendation: var(--recommendation);
   --animate-page-next: page-next 220ms ease-out;
   --animate-page-prev: page-prev 220ms ease-out;
 }
@@ -93,6 +94,7 @@
   --free-foreground: oklch(0.99 0 0);
   --busy: oklch(0.56 0.19 27);
   --busy-foreground: oklch(0.99 0 0);
+  --recommendation: oklch(0.64 0.13 235);
   --shadow-book: 0 30px 60px -20px oklch(0.15 0.03 40 / 0.6), 0 8px 20px -8px oklch(0.15 0.03 40 / 0.4);
 }
 
@@ -139,3 +141,11 @@
 @keyframes live-row-flash { from { background-color: var(--accent); } to { background-color: transparent; } }
 .live-row-flash { animation: live-row-flash 1.8s ease-out; }
 @media (prefers-reduced-motion: reduce) { .live-row-flash { animation: none; background-color: var(--accent); } }
+
+.floor-plan-transform { width: 100% !important; height: 100% !important; touch-action: none; }
+.floor-plan-content { cursor: grab; }
+.floor-plan-content:active { cursor: grabbing; }
+.floor-plan-surface { background-image: radial-gradient(var(--rule) 1px, transparent 1px); background-size: 31px 31px; }
+@keyframes recommendation-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in oklch, var(--recommendation) 25%, transparent); } }
+.floor-plan-recommended { animation: recommendation-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .floor-plan-recommended { animation: none; } }
