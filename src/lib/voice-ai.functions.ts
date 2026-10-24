@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { aiSettingsSchema, normalizeVoiceBooking, type VoiceBooking } from './voice-ai';
 import { dayNames, voiceDateSchema } from './voice-date';
+import { assignmentRulesSchema, MASTER_ONLY_MESSAGE } from './assignment-rules';
 
 const idInput = z.object({ id: z.string().uuid() });
 const aad = (id: string) => `ai:${id}`;
@@ -18,7 +19,7 @@ export const getAiSettings = createServerFn({ method: 'GET' }).middleware([requi
 
 export const saveAiSettings = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({ settings: aiSettingsSchema, key: z.string().max(500) }).parse(v)).handler(async ({ data, context }) => {
   const { data: allowed } = await context.supabase.rpc('can_configure_delivery', { _rid: data.id });
-  if (!allowed) throw new Error('Non autorizzato');
+  if (!allowed) throw new Error(MASTER_ONLY_MESSAGE);
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   const { encryptPassword } = await import('./restaurant-email.server');
   const key = data.key.trim();
@@ -38,12 +39,21 @@ async function loadKey(id: string) {
 
 export const testAiKey = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({ provider: z.enum(['openai', 'gemini']), key: z.string().max(500) }).parse(v)).handler(async ({ data, context }) => {
   const { data: allowed } = await context.supabase.rpc('can_configure_delivery', { _rid: data.id });
-  if (!allowed) throw new Error('Non autorizzato');
+  if (!allowed) throw new Error(MASTER_ONLY_MESSAGE);
   const key = data.key.trim() || (await loadKey(data.id))?.key;
   if (!key) return { ok: false, message: 'Inserisci una chiave API.' };
   const { callProvider } = await import('./voice-ai.server');
   const r = await callProvider(data.provider, key, 'Tavolo per 2 oggi alle 20:00 a nome Prova', new Date().toISOString().slice(0, 10), 60);
   return r.ok ? { ok: true, message: 'Chiave API valida e pronta all’uso' } : { ok: false, message: r.message };
+});
+
+export const parseAssignmentRules = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({ text: z.string().trim().min(3).max(1500) }).parse(v)).handler(async ({ data, context }) => {
+  const { data: allowed, error } = await context.supabase.rpc('can_configure_delivery', { _rid: data.id });
+  if (error || !allowed) throw new Error(MASTER_ONLY_MESSAGE);
+  const cfg = await loadKey(data.id);
+  if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Servizio.');
+  const { translateAssignmentRules } = await import('./assignment-ai.server');
+  return assignmentRulesSchema.parse(await translateAssignmentRules(cfg.key, data.text));
 });
 
 export const parseVoiceBooking = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => z.object({ restaurant_id: z.string().uuid(), transcript: z.string().trim().min(3).max(1000), current_date: voiceDateSchema, current_day_name: z.enum(dayNames).optional(), agenda_selected_date: voiceDateSchema.nullish() }).parse(v)).handler(async ({ data, context }): Promise<{ ok: true; booking: VoiceBooking } | { ok: false; message: string }> => {
