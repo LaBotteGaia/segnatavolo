@@ -99,6 +99,7 @@ export function NewReservationDialog({
   const suggestion = open && rooms && tables && time && pax > 0 && !closed
     ? suggestTables({
         people: pax, date, shift, time, tables, rooms, others, outside,
+        rules: settings.assignmentRules, notes,
         cfg: { duration: settings.duration, buffer: settings.buffer },
         wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
         me: { id: "new", duration_min: dur, buffer_min: buf },
@@ -315,7 +316,7 @@ export function NewReservationDialog({
         <Button size="lg" onClick={submit} disabled={busy || (closed && !(isMaster && force)) || (!!warning && acknowledged !== warning.key)}>Conferma prenotazione</Button>
 
         <TableDialog date={date} open={tableOpen} onOpenChange={setTableOpen}
-          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time }}
+          reservation={{ id: "new", name, people: Number(people) || 0, shift, table_ids: tableIds, time, notes, outside, duration_min: dur, buffer_min: buf }}
           others={others} extras={extras} onConfirm={(ids, ex) => { setTableIds(ids); setExtras(ex); setManual(true); }} />
       </DialogContent>
     </Dialog>

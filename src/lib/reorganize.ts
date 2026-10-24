@@ -1,18 +1,21 @@
 /** Motore di Riorganizzazione Automatica della Sala (logica pura, testata). */
 import { canJoin, NO_EXTRAS, type RTable, type Reservation, type TableExtras } from "./data";
 import { interval, isRoomClosedFor, type RotationCfg } from "./rotation";
+import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 
 export type ReorgTable = Pick<RTable, "id" | "name" | "seats" | "x" | "y" | "room_id" | "no_join" | "allow_extras"> & {
   coperti_comodi?: number | null;
   coperti_max?: number | null;
   posti_scomodi_solo_in_unione?: boolean | null;
   ordine_riempimento?: number | null;
+  accoppiabile?: boolean; adatto_seduta_lunga?: boolean;
 };
 export type ReorgReservation = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "outside"> & {
   duration_min?: number | null;
   buffer_min?: number | null;
   no_show?: boolean;
   tavolo_bloccato?: boolean | null;
+  notes?: string;
 };
 type RoomLite = { id: string; environment?: string | null; open_days?: number[] | null; closed_periods?: unknown; closed_shifts?: string[] | null };
 
@@ -61,8 +64,10 @@ export function reorganizeService(p: {
   rooms: RoomLite[];
   cfg: RotationCfg;
   wallsFor: (roomId: string) => string[];
+  rules?: AssignmentRules;
 }): ReorgResult {
   const openRooms = p.rooms.filter((r) => !isRoomClosedFor(r as never, p.date, p.shift));
+  const rules = p.rules ?? DEFAULT_ASSIGNMENT_RULES;
   const roomOrder = new Map(openRooms.map((r, i) => [r.id, i]));
   const tableById = new Map(p.tables.map((t) => [t.id, t]));
   const occ: Occupancy = new Map();
@@ -132,7 +137,8 @@ export function reorganizeService(p: {
 
     let pick: { ids: string[]; extras: TableExtras } | null = null;
     // PASSAGGIO 1a: tavolo singolo comodo, seguendo l'ordine di riempimento.
-    const single = singles.find((t) => comodi(t) >= r.people);
+    const eligible = protectSmallParty(singles.filter(t => comodi(t) >= r.people), r.people, rules);
+    const single = eligible.sort((a,b) => assignmentPreference(a,r,rules,p.rooms)-assignmentPreference(b,r,rules,p.rooms))[0];
     if (single) pick = { ids: [single.id], extras: NO_EXTRAS };
     // PASSAGGIO 1b: unione di tavoli contigui con la sola capienza comoda.
     if (!pick) pick = unions(r, me, (combo) => (combo.length > 1 && combo.reduce((s, t) => s + comodi(t), 0) >= r.people ? NO_EXTRAS : null));
