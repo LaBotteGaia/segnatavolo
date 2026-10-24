@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { liveCounters, liveTableState, movedTableIds, seatedSinceLabel, swappedTableIds } from "@/lib/live-floor";
+import { arrivalsLists, liveCounters, liveTableState, movedTableIds, seatedSinceLabel, swappedTableIds } from "@/lib/live-floor";
 
 const cfg = { duration: 90, buffer: 15 };
 const res = (id: string, time: string, table: string, arrived: boolean, extra: Record<string, unknown> = {}) =>
@@ -51,6 +51,15 @@ describe("sposta e scambia", () => {
   });
   it("lo scambio inverte i due tavoli tra le comitive", () => {
     expect(swappedTableIds(["t4"], ["t9", "t10"], "t4", "t9")).toEqual({ a: ["t9"], b: ["t4", "t10"] });
+  });
+});
+
+describe("colonna arrivi", () => {
+  it("separa in arrivo e seduti, ordinati per orario, senza no-show", () => {
+    const rows = [res("a", "20:30", "t1", false), res("b", "19:45", "t2", true), res("c", "20:00", "t3", false, { no_show: true }), res("d", "20:10", "t4", true)];
+    const { incoming, seated } = arrivalsLists(rows);
+    expect(incoming.map((r) => r.id)).toEqual(["a"]);
+    expect(seated.map((r) => r.id)).toEqual(["b", "d"]);
   });
 });
 
