@@ -65,13 +65,16 @@ export function TableDialog({
 
   const roomTables = tables?.filter((t) => t.room_id === roomId) ?? [];
   const nominal = tables?.filter((t) => selected.includes(t.id)).reduce((s, t) => s + (t.coperti_comodi ?? t.seats), 0) ?? 0;
-  const effective = nominal + (selected.length ? extraSeats(ex) : 0);
+  const physical = tables?.filter(t=>selected.includes(t.id)).reduce((n,t)=>n+(selected.length>1 || !t.posti_scomodi_solo_in_unione ? t.coperti_max : t.coperti_comodi),0) ?? 0;
+  const effective = physical + (selected.length ? extraSeats(ex) : 0);
   const room = rooms?.find((r) => r.id === roomId);
   const over = selected.length > 0 && nominal < reservation.people;
   const ok = effective >= reservation.people;
 
   const selTables = tables?.filter((t) => selected.includes(t.id)) ?? [];
-  const noExtras = selTables.length > 0 && selTables.every((t) => !t.allow_extras);
+  const noExtras = selTables.length > 0 && (reservation.people<=8 || selTables.every((t) => !t.allow_extras));
+  const extraLimit = selTables.filter(t=>t.allow_extras).length;
+  const invalidExtras = extraSeats(ex)>0 && (reservation.people<=8 || ex.extra_sponde+ex.extra_barelle>extraLimit);
   const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
   const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,wallsFor,me:reservation }) : null;
   const [view,setView] = useState<'cards'|'map'>('cards');
@@ -186,9 +189,10 @@ export function TableDialog({
 
         {selected.length>1&&<div className="rounded-full border border-dashed border-primary bg-primary/5 px-4 py-2 text-center text-sm font-semibold text-primary">Tavoli {selTables.map(t=>t.name).join(' + ')} uniti</div>}
         {invalidSelected&&<p role="alert" className="text-sm text-destructive">Assegnazione non disponibile: rimuovi i tavoli occupati o incompatibili.</p>}
+        {invalidExtras&&<p role="alert" className="text-sm text-destructive">Prolunghe solo oltre 8 persone, massimo una per tavolo abilitato.</p>}
         <div className="flex justify-between gap-2">
           <Button variant="outline" onClick={() => { setSelected([]); setEx(NO_EXTRAS); }}>Libera tavoli</Button>
-          <Button disabled={invalidSelected} onClick={() => { if (invalidSelected) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
+          <Button disabled={invalidSelected || invalidExtras} onClick={() => { if (invalidSelected || invalidExtras) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
         </div>
       </DialogContent>
     </Dialog>

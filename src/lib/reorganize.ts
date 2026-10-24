@@ -35,13 +35,13 @@ export type ReorgResult = {
 
 /** Confronto lessicografico: true se `a` è strettamente migliore di `b`. */
 const lexLess = (a: number[], b: number[]) => {
-  for (const [i, v] of a.entries()) if (v !== b[i]) return v < b[i]!;
+  for (const [i, v] of a.entries()) { const other=b[i]; if (other !== undefined && v !== other) return v < other; }
   return false;
 };
 
 const comodi = (t: ReorgTable) => t.coperti_comodi ?? t.seats;
 const maxi = (t: ReorgTable) => t.coperti_max ?? t.seats;
-const fillOrder = (t: ReorgTable) => t.ordine_riempimento ?? 99;
+const fillOrder = (t: ReorgTable) => t.ordine_riempimento ?? 10;
 const scomodiSoloInUnione = (t: ReorgTable) => t.posti_scomodi_solo_in_unione ?? true;
 
 type Occupancy = Map<string, { start: number; free: number }[]>;
@@ -110,7 +110,7 @@ export function reorganizeService(p: {
         visited.add(key);
         const extras = fits(combo);
         if (extras) {
-          const score = [combo.reduce((s, t) => s + fillOrder(t), 0), combo.length, Math.max(0, seats - r.people)];
+          const score = [combo.reduce((s,t)=>s+assignmentPreference(t,r,rules,p.rooms),0), combo.reduce((s, t) => s + fillOrder(t), 0), combo.length, Math.max(0, seats - r.people)];
           if (!box.best || lexLess(score, box.best.score)) box.best = { ids: combo.map((t) => t.id), extras, score };
         }
         if (seats >= r.people) return;

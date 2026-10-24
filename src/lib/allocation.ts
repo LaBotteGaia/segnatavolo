@@ -80,7 +80,10 @@ export function suggestTables(p: {
   }
   if (!plain && single) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: comfort(single)-p.people };
   const best = plain ?? extended;
-  if (!best) return null;
+  if (!best) {
+    const tight=free.filter(t=>t.posti_scomodi_solo_in_unione===false && (t.coperti_max ?? comfort(t))>=p.people).sort((a,b)=>preference(a)-preference(b) || (a.coperti_max ?? comfort(a))-(b.coperti_max ?? comfort(b)))[0];
+    return tight ? {ids:[tight.id],extras:NO_EXTRAS,kind:'single',waste:(tight.coperti_max ?? comfort(tight))-p.people} : null;
+  }
   const { distance: _distance, ...suggestion } = best;
   return suggestion;
 }
