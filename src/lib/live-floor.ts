@@ -7,7 +7,7 @@ export const SOON_MINUTES = 30;
 /** Tolleranza per chi è in ritardo di pochi minuti e non è ancora segnato arrivato. */
 export const LATE_GRACE_MINUTES = 15;
 
-export type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived"> & {
+export type LiveRes = Pick<Reservation, "id" | "name" | "people" | "time" | "table_ids" | "arrived" | "notes"> & {
   duration_min?: number | null;
   buffer_min?: number | null;
   no_show?: boolean;
@@ -45,6 +45,15 @@ export function liveCounters(tables: Pick<RTable, "id">[], rows: LiveRes[], nowM
     else freeTables++;
   }
   return { seatedCovers, freeTables, incomingTables };
+}
+
+/** Elenchi della colonna arrivi: in arrivo e arrivati/seduti, entrambi ordinati per orario; i no-show spariscono. */
+export function arrivalsLists(rows: LiveRes[]): { incoming: LiveRes[]; seated: LiveRes[] } {
+  const ok = rows.filter((r) => !r.no_show);
+  return {
+    incoming: ok.filter((r) => !r.arrived).sort((a, b) => toMin(a.time) - toMin(b.time)),
+    seated: ok.filter((r) => r.arrived).sort((a, b) => toMin(a.time) - toMin(b.time)),
+  };
 }
 
 /** "Seduti da 45 min" / "Seduti da 1h 20m". */
