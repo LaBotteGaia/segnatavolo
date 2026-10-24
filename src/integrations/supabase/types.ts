@@ -371,6 +371,8 @@ export type Database = {
       }
       restaurant_tables: {
         Row: {
+          accoppiabile: boolean
+          adatto_seduta_lunga: boolean
           allow_extras: boolean
           coperti_comodi: number
           coperti_max: number
@@ -387,6 +389,8 @@ export type Database = {
           y: number
         }
         Insert: {
+          accoppiabile?: boolean
+          adatto_seduta_lunga?: boolean
           allow_extras?: boolean
           coperti_comodi?: number
           coperti_max?: number
@@ -403,6 +407,8 @@ export type Database = {
           y?: number
         }
         Update: {
+          accoppiabile?: boolean
+          adatto_seduta_lunga?: boolean
           allow_extras?: boolean
           coperti_comodi?: number
           coperti_max?: number

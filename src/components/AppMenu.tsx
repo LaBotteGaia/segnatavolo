@@ -27,6 +27,7 @@ import { ConnectionDot } from "@/components/ConnectionDot";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 import { clearAssist, useIsSuperAdmin } from "@/lib/assist";
 import { scopeRestaurant } from "@/lib/tenant";
+import { configurationError } from '@/lib/assignment-rules';
 
 export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const { data: me } = useMembership();
@@ -102,6 +103,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
               <MenuHeading>Gestione struttura</MenuHeading>
               <MenuLink to="/sale" icon={<LayoutGrid />} close={() => setOpen(false)}>Sale, Muri &amp; Tavoli</MenuLink>
               <MenuItem icon={<Building2 />} onClick={() => { setOpen(false); setRestOpen(true); }}>Configurazione Servizio</MenuItem>
+              <MenuLink to="/regole" icon={<LayoutGrid/>} close={()=>setOpen(false)}>Regole di Assegnazione Sala</MenuLink>
               <MenuItem icon={<Users />} onClick={() => { setOpen(false); setUsersOpen(true); }}>Gestione Staff &amp; Inviti</MenuItem>
             </>}
             <MenuHeading>Account &amp; note legali</MenuHeading>
@@ -165,7 +167,7 @@ function LegalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
 function MenuHeading({ children }: { children: React.ReactNode }) {
   return <div className="mb-1 mt-3 border-t px-3 pb-1 pt-3 text-[10px] font-bold uppercase text-muted-foreground first:mt-0 first:border-0 first:pt-0">{children}</div>;
 }
-function MenuLink({ to, icon, close, children }: { to: "/agenda" | "/rubrica" | "/sale" | "/admin"; icon: React.ReactNode; close: () => void; children: React.ReactNode }) {
+function MenuLink({ to, icon, close, children }: { to: "/agenda" | "/rubrica" | "/sale" | "/admin" | "/regole"; icon: React.ReactNode; close: () => void; children: React.ReactNode }) {
   return <Button asChild variant="ghost" className="h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left [&_svg]:size-4 [&_svg]:shrink-0"><Link to={to} onClick={close}>{icon}<span className="min-w-0">{children}</span></Link></Button>;
 }
 
@@ -201,8 +203,8 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
     for (const s of active) if (st.shifts[s].from >= st.shifts[s].to) { toast.error(`${shiftName(s)}: l'orario di fine deve essere dopo l'inizio`); return; }
     if (st.holidays.some((h) => !h.from || !h.to || h.from > h.to)) { toast.error("Controlla le date delle ferie"); return; }
     const preserved = settings && typeof settings === "object" ? settings : {};
-    const { error } = await supabase.from("restaurants").update({ name: value.trim(), settings: { ...preserved, ...st } }).eq("id", id);
-    if (error) { toast.error("Salvataggio non riuscito"); return; }
+    const { data: saved, error } = await supabase.from("restaurants").update({ name: value.trim(), settings: { ...preserved, ...st } }).eq("id", id).select('id');
+    if (error || !saved?.length) { toast.error(configurationError(error ?? {code:'42501'})); return; }
     toast.success("Ristorante aggiornato");
     qc.invalidateQueries({ queryKey: ["membership"] });
     onOpenChange(false);
@@ -222,6 +224,7 @@ function RestaurantDialog({ open, onOpenChange, id, name, settings }: { open: bo
           </div>
           <p className="text-xs text-muted-foreground">La capienza si imposta per ogni sala in "Gestione Sale e Mappe".</p>
           <Button asChild variant="outline" className="w-full"><Link to="/sale" onClick={() => onOpenChange(false)}><LayoutGrid /> Regole Doppi Turni per sala e periodo</Link></Button>
+          <Button asChild variant="outline" className="w-full"><Link to="/regole" onClick={()=>onOpenChange(false)}><LayoutGrid/> Regole di Assegnazione Sala</Link></Button>
 
           <section className="space-y-2">
             <h3 className="font-display text-lg">Turni e orari</h3>

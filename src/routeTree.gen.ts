@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedFoglioRouteImport } from './routes/_authenticated/foglio'
+import { Route as AuthenticatedRegoleRouteImport } from './routes/_authenticated/regole'
 import { Route as AuthenticatedRubricaRouteImport } from './routes/_authenticated/rubrica'
 import { Route as AuthenticatedSaleRouteImport } from './routes/_authenticated/sale'
 import { Route as AuthenticatedSituazioneRouteImport } from './routes/_authenticated/situazione'
@@ -50,6 +51,11 @@ const AuthenticatedFoglioRoute = AuthenticatedFoglioRouteImport.update({
   path: '/foglio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRegoleRoute = AuthenticatedRegoleRouteImport.update({
+  id: '/regole',
+  path: '/regole',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRubricaRoute = AuthenticatedRubricaRouteImport.update({
   id: '/rubrica',
   path: '/rubrica',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/foglio': typeof AuthenticatedFoglioRoute
+  '/regole': typeof AuthenticatedRegoleRoute
   '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/foglio': typeof AuthenticatedFoglioRoute
+  '/regole': typeof AuthenticatedRegoleRoute
   '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/foglio': typeof AuthenticatedFoglioRoute
+  '/_authenticated/regole': typeof AuthenticatedRegoleRoute
   '/_authenticated/rubrica': typeof AuthenticatedRubricaRoute
   '/_authenticated/sale': typeof AuthenticatedSaleRoute
   '/_authenticated/situazione': typeof AuthenticatedSituazioneRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agenda'
     | '/foglio'
+    | '/regole'
     | '/rubrica'
     | '/sale'
     | '/situazione'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agenda'
     | '/foglio'
+    | '/regole'
     | '/rubrica'
     | '/sale'
     | '/situazione'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/agenda'
     | '/_authenticated/foglio'
+    | '/_authenticated/regole'
     | '/_authenticated/rubrica'
     | '/_authenticated/sale'
     | '/_authenticated/situazione'
@@ -206,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFoglioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/regole': {
+      id: '/_authenticated/regole'
+      path: '/regole'
+      fullPath: '/regole'
+      preLoaderRoute: typeof AuthenticatedRegoleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rubrica': {
       id: '/_authenticated/rubrica'
       path: '/rubrica'
@@ -248,6 +267,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedFoglioRoute: typeof AuthenticatedFoglioRoute
+  AuthenticatedRegoleRoute: typeof AuthenticatedRegoleRoute
   AuthenticatedRubricaRoute: typeof AuthenticatedRubricaRoute
   AuthenticatedSaleRoute: typeof AuthenticatedSaleRoute
   AuthenticatedSituazioneRoute: typeof AuthenticatedSituazioneRoute
@@ -257,6 +277,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedFoglioRoute: AuthenticatedFoglioRoute,
+  AuthenticatedRegoleRoute: AuthenticatedRegoleRoute,
   AuthenticatedRubricaRoute: AuthenticatedRubricaRoute,
   AuthenticatedSaleRoute: AuthenticatedSaleRoute,
   AuthenticatedSituazioneRoute: AuthenticatedSituazioneRoute,

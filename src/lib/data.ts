@@ -1,4 +1,5 @@
 import { confirmedBooking } from "./online-booking";
+import { normalizeAssignmentRules, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
@@ -287,6 +288,7 @@ export type RestaurantSettings = {
   reserve: number;
   /** Riorganizzazione intelligente della sala (pulsante a fondo turno) */
   reorganize: boolean;
+  assignmentRules: AssignmentRules;
 };
 
 export const DEFAULT_SETTINGS: RestaurantSettings = {
@@ -303,13 +305,14 @@ export const DEFAULT_SETTINGS: RestaurantSettings = {
   printPhones: false,
   reserve: 4,
   reorganize: true,
+  assignmentRules: DEFAULT_ASSIGNMENT_RULES,
 };
 
 export function normalizeSettings(raw: unknown): RestaurantSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<RestaurantSettings>;
   const shifts = { ...DEFAULT_SETTINGS.shifts };
   for (const s of ALL_SHIFTS) if (r.shifts?.[s]) shifts[s] = { ...shifts[s], ...r.shifts[s] };
-  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4, reorganize: r.reorganize !== false };
+  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4, reorganize: r.reorganize !== false, assignmentRules: normalizeAssignmentRules(r.assignmentRules) };
 }
 
 export const rangesOf = (st: RestaurantSettings): Ranges =>
@@ -403,9 +406,10 @@ export function wallBetween(a: Pick<RTable, "x" | "y">, b: Pick<RTable, "x" | "y
   return false;
 }
 
-type JoinT = Pick<RTable, "id" | "x" | "y" | "room_id" | "no_join">;
+type JoinT = Pick<RTable, "id" | "x" | "y" | "room_id" | "no_join"> & { accoppiabile?: boolean };
 /** Due tavoli si possono unire? No se uno esclude l'altro o se c'è una parete tra loro (stessa sala). */
 export function canJoin(a: JoinT, b: JoinT, wallsByRoom: (roomId: string) => string[]): boolean {
+  if (a.accoppiabile === false || b.accoppiabile === false) return false;
   if (a.no_join?.includes(b.id) || b.no_join?.includes(a.id)) return false;
   if (a.room_id === b.room_id && wallBetween(a, b, wallsByRoom(a.room_id))) return false;
   return true;

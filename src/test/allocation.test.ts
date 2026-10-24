@@ -8,6 +8,11 @@ const t = (id: string, seats: number, x: number, y: number, extra = {}) => ({ id
 const base = { date: "2026-06-10", shift: "sera", time: "20:00", rooms: [room], others: [] as never[], cfg: { duration: 90, buffer: 15 }, wallsFor: () => [] };
 
 describe("assegnazione intelligente", () => {
+  it('posti scomodi singoli solo se consentiti, dopo le soluzioni comode',()=>{const tables=[t('A',2,0,0,{coperti_comodi:2,coperti_max:3,posti_scomodi_solo_in_unione:false})];expect(suggestTables({...base,people:3,tables})?.ids).toEqual(['A']);expect(suggestTables({...base,people:3,tables:[t('A',2,0,0,{coperti_comodi:2,coperti_max:3,posti_scomodi_solo_in_unione:true})]})).toBeNull();});
+  it('non unisce un tavolo isola',()=>expect(suggestTables({...base,people:8,tables:[t('A',4,0,0,{accoppiabile:false}),t('B',4,1,0)]})).toBeNull());
+  it('isola resta assegnabile singolarmente',()=>expect(suggestTables({...base,people:2,tables:[t('A',2,0,0,{accoppiabile:false})]})?.ids).toEqual(['A']));
+  it('seduta lunga preferisce tavolo dedicato',()=>expect(suggestTables({...base,time:'21:00',people:2,rules:{longStay:{enabled:true,from:'21:00'},protectModular:false},tables:[t('A',2,0,0),t('B',4,1,0,{adatto_seduta_lunga:true})]})?.ids).toEqual(['B']));
+  it('coppia preserva componibili se isola sufficiente libera',()=>expect(suggestTables({...base,people:2,rules:{longStay:{enabled:false,from:'21:00'},protectModular:true},tables:[t('A',2,0,0),t('B',4,1,0,{accoppiabile:false})]})?.ids).toEqual(['B']));
   it("preferisce il tavolo da 2 per 2 persone", () => expect(suggestTables({ ...base, people: 2, tables: [t("T4", 4, 0, 0), t("T2", 2, 3, 3)] })?.ids).toEqual(["T2"]));
   it("3 persone: tavolo da 4 senza sponde", () => {
     const s = suggestTables({ ...base, people: 3, tables: [t("T4", 4, 0, 0), t("T2", 2, 3, 3)] });
