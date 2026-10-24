@@ -149,3 +149,9 @@
 @keyframes recommendation-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in oklch, var(--recommendation) 25%, transparent); } }
 .floor-plan-recommended { animation: recommendation-pulse 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .floor-plan-recommended { animation: none; } }
+
+@keyframes live-flash { 50% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--free) 45%, transparent); } }
+.live-flash { animation: live-flash 1.2s ease-in-out infinite; }
+@keyframes live-rotate { 0%, 25% { transform: rotate(0deg); } 65%, 100% { transform: rotate(90deg); } }
+.live-rotate { display: inline-block; animation: live-rotate 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .live-flash, .live-rotate { animation: none; } }
