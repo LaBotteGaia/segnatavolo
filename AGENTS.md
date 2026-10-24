@@ -26,7 +26,7 @@
 - The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub, never a duplicate tools page.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
-- Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables..
+- Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables.
 - Public online booking uses narrow RPCs exposing only branding and aggregate availability; insertion validates tenant, cutoff, capacity and consent atomically under restaurant lock. Public pages use sessionless publishable clients, no management banners.
 - Online requests hold aggregate capacity while pending; operational queries and customer reliability read only confirmed rows. Decisions use a tenant-authorized locking RPC, so rejected requests never occupy tables and direct status edits are blocked.
 - Restaurant delivery credentials are encrypted server-side and kept in a service-only configuration store; SMTP accepts only approved public provider hosts with mandatory TLS, so tenants cannot probe arbitrary destinations.
