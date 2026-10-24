@@ -45,7 +45,7 @@ const fillOrder = (t: ReorgTable) => t.ordine_riempimento ?? 10;
 const scomodiSoloInUnione = (t: ReorgTable) => t.posti_scomodi_solo_in_unione ?? true;
 
 type Occupancy = Map<string, { start: number; free: number }[]>;
-const overlaps = (a: { start: number; free: number }, b: { start: number; free: number }) => a.start < b.free && b.start < a.free;
+const overlaps = (a: { start: number; free: number }, b: { start: number; free: number }) => !intervalsCompatible(a, b);
 const isFree = (occ: Occupancy, tableId: string, me: { start: number; free: number }) =>
   !(occ.get(tableId) ?? []).some((o) => overlaps(o, me));
 const occupy = (occ: Occupancy, tableId: string, me: { start: number; free: number }) => {
@@ -56,7 +56,28 @@ const occupy = (occ: Occupancy, tableId: string, me: { start: number; free: numb
  * Riorganizza le prenotazioni di un turno: comitive più grandi prima, tavoli comodi
  * e ordine di riempimento prima, posti scomodi e prolunghe solo come ultima spiaggia.
  */
-export function reorganizeService(p: {
+export type ReorgParams = Parameters<typeof reorganizeOnce>[0];
+
+/**
+ * Vincolo rigido di non-sovrapposizione: le prenotazioni senza posto restano sui tavoli attuali,
+ * quindi il calcolo si ripete considerando quei tavoli occupati finché nessuno viene sovrapposto.
+ */
+export function reorganizeService(p: ReorgParams): ReorgResult {
+  let pinned = new Set<string>();
+  let out = reorganizeOnce(p, pinned);
+  for (let i = 0; i < 5; i++) {
+    const add = out.unplaced.filter((r) => r.table_ids.length && !pinned.has(r.id));
+    if (!add.length) break;
+    pinned = new Set([...pinned, ...add.map((r) => r.id)]);
+    out = reorganizeOnce(p, pinned);
+  }
+  return out;
+}
+
+/** Due intervalli [inizio, fine) sono compatibili solo se max(inizi) >= min(fini). */
+export const intervalsCompatible = (a: { start: number; free: number }, b: { start: number; free: number }) => Math.max(a.start, b.start) >= Math.min(a.free, b.free);
+
+function reorganizeOnce(p: {
   date: string;
   shift: string;
   reservations: ReorgReservation[];
@@ -65,7 +86,7 @@ export function reorganizeService(p: {
   cfg: RotationCfg;
   wallsFor: (roomId: string) => string[];
   rules?: AssignmentRules;
-}): ReorgResult {
+}, pinned: Set<string> = new Set()): ReorgResult {
   const openRooms = p.rooms.filter((r) => !isRoomClosedFor(r as never, p.date, p.shift));
   const rules = p.rules ?? DEFAULT_ASSIGNMENT_RULES;
   const roomOrder = new Map(openRooms.map((r, i) => [r.id, i]));
@@ -74,8 +95,9 @@ export function reorganizeService(p: {
 
   const active = p.reservations.filter((r) => !r.no_show);
   const locked = active.filter((r) => r.tavolo_bloccato && r.table_ids.length);
+  const held = active.filter((r) => !r.tavolo_bloccato && pinned.has(r.id));
   const toPlace = active
-    .filter((r) => !r.tavolo_bloccato)
+    .filter((r) => !r.tavolo_bloccato && !pinned.has(r.id))
     .sort((a, b) => b.people - a.people || (a.time || "99").localeCompare(b.time || "99"));
 
   // I tavoli delle prenotazioni bloccate sono occupati e intoccabili.
@@ -85,7 +107,14 @@ export function reorganizeService(p: {
     for (const id of r.table_ids) occupy(occ, id, it);
   }
 
-  const result: ReorgResult = { moves: [], unchanged: 0, locked: locked.length, unplaced: [], assignments: new Map() };
+  // Prenotazioni in conflitto orario: restano dove sono e tengono occupati i loro tavoli.
+  for (const r of held) {
+    const it = interval(r, p.cfg);
+    if (isNaN(it.start)) continue;
+    for (const id of r.table_ids) occupy(occ, id, it);
+  }
+
+  const result: ReorgResult = { moves: [], unchanged: 0, locked: locked.length, unplaced: [...held], assignments: new Map() };
 
   const sortTables = (list: ReorgTable[]) =>
     [...list].sort(
