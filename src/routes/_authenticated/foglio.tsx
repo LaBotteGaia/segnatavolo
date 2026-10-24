@@ -53,7 +53,7 @@ function Foglio() {
               <p className="font-semibold">Totale coperti: {c.total} (Interni {c.inside} · Fuori {c.outside})</p>
               {note && <p className="mt-2 whitespace-pre-line break-words text-sm"><b>Note di servizio:</b> {note}</p>}
             </td></tr>
-            <tr className="border-b-2 text-left">
+            <tr className="border-b-2 text-left text-xs sm:text-sm print:text-sm">
               <th scope="col" className="py-2 pr-2">Cliente e contatto</th><th scope="col" className="px-1 py-2 text-center">Orario</th><th scope="col" className="px-1 py-2 text-center">Tavolo</th><th scope="col" className="px-1 py-2 text-center">Coperti</th><th scope="col" className="py-2 text-center"><span className="sr-only">Arrivo</span>✓</th>
             </tr>
           </thead>

@@ -52,4 +52,4 @@
 - [x] Sposta/scambia tavoli al volo e accomoda su tavolo appena liberato (RPC seat_walkin_freed con chiusura uscita all'orario attuale).
 - [x] v0.8.14-alpha: Sala Live riprogettata a due colonne — gestione arrivi con spunta sincronizzata e griglia tavoli ordinata per sala con zoom, focus dalla riga e sale chiuse nascoste.
 - [x] v0.8.15-alpha: permanenza massima vincolata (walk-in su tavolo prenotato), badge ⏳, non-sovrapposizione rigida nella riorganizzazione
-- [ ] v0.8.16-alpha: Foglio di Sala cronologico con contatti, note e stampa A4; test e verifica autenticata.
+- [x] v0.8.16-alpha: Foglio di Sala cronologico con contatti, note e stampa A4; 7 test superati e verifica autenticata su 23 prenotazioni, senza modificare dati.

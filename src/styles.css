@@ -167,7 +167,7 @@
   .service-sheet, .service-sheet-paper { background: var(--print-paper); color: var(--print-ink); }
   .service-sheet-table thead { display: table-header-group; }
   .service-sheet-table tr { break-inside: avoid; page-break-inside: avoid; }
-  .service-sheet-table th, .service-sheet-table td { border-color: var(--print-rule); }
+  .service-sheet-table tr, .service-sheet-table th, .service-sheet-table td { border-color: var(--print-rule); }
   .service-sheet-contact { color: var(--print-secondary); }
   .service-sheet-notes, .service-sheet-arrival { border-color: var(--print-ink); }
 }
