@@ -24,7 +24,7 @@
 - Keep .env tracked in git (never in .gitignore): it holds only publishable keys and the published build reads VITE_* values from it; ignoring it ships a blank site.
 - Tenant isolation: operational queries and cache keys use the active restaurant ID from tenant.ts; absent IDs fail closed. Global reads only on the guarded /admin page, since Super Admin RLS bypass must never merge operational data.
 - Self-profile edits use a narrow authenticated database RPC deriving the caller from auth.uid(); operational_role is descriptive and never changes Master/Staff permissions. The profile reads actual account membership, not the synthetic assistance membership.
-- The hamburger service entry opens the existing Agenda ServiceHub through a validated search flag; keep one shared service hub, never a duplicate tools page.
+- Settings: one Master-only /settings tab hub reusing shared editors; menu opens ServiceHub/Live via search flags, no duplicate pages.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
 - Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables.
@@ -36,4 +36,4 @@
 - Booking email templates and staff destination live in the protected restaurant delivery settings; trusted reservation events derive recipients and tenant-scoped placeholder data server-side, never from a generic browser send endpoint.
 - Voice dictation: per-restaurant OpenAI/Gemini key encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing in authenticated server functions only after transcript confirmation; pure date rules override AI arithmetic, falling back to the agenda date.
 - Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.
-- Live floor (LiveFloorMode, src/lib/live-floor.ts): landscape HUD, arrivals sidebar + ordered grid; states from arrived flags and rotation intervals. Occupied-table seating uses seat_walkin_freed; seating before a later booking uses seat_walkin_limited, which sets max_stay_until and a shorter duration_min server-side so interval checks honour it.
+- Live floor (src/lib/live-floor.ts): states from arrived flags and rotation intervals; occupied tables use seat_walkin_freed, earlier-than-booking seating uses seat_walkin_limited (server-side max_stay_until + shorter duration_min).

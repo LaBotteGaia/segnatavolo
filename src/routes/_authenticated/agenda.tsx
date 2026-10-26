@@ -41,10 +41,11 @@ import { ReorganizeButton } from "@/components/agenda/ReorganizeButton";
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string; service?: boolean } => {
+  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string; service?: boolean; live?: boolean } => {
     const d = s["d"], h = s["h"], c = s["c"];
     return {
       ...(s["service"] === true || s["service"] === "true" ? { service: true } : {}),
+      ...(s["live"] === true || s["live"] === "true" ? { live: true } : {}),
       ...(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {}),
       ...(typeof h === "string" && h ? { h } : {}),
       ...(typeof c === "string" && c ? { c } : {}),
@@ -70,6 +71,11 @@ export const Route = createFileRoute("/_authenticated/agenda")({
 function AgendaPage() {
   const restaurantId = useActiveRestaurantId();
   const search = Route.useSearch();
+  useEffect(() => {
+    if (!search.live) return;
+    setLiveOpen(true);
+    navigate({ search: ({ live: _live, ...rest }) => rest, replace: true });
+  }, [search.live]);
   const date = search.d ?? todayStr();
   const navigate = useNavigate({ from: "/agenda" });
   const qc = useQueryClient();

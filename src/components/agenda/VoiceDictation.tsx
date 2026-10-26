@@ -27,7 +27,7 @@ export function VoiceDictation({ onResult, className, selectedDate }: { onResult
 
   const stop = () => { rec.current?.stop(); };
   const start = () => {
-    if (!cfg?.ready) { toast.info("Per usare la dettatura vocale, inserisci prima la tua chiave API in Configurazione Servizio"); return; }
+    if (!cfg?.ready) { toast.info("Per usare la dettatura vocale, inserisci prima la tua chiave API in Configurazione Ristorante → Integrazioni"); return; }
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { toast.error("Questo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari"); return; }
