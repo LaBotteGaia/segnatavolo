@@ -105,11 +105,11 @@ export function SpacesEditor({ embedded = false }: { embedded?: boolean } = {}) 
   };
 
   return (
-    <div className="min-h-screen p-3 sm:p-6">
+    <div className={embedded ? "" : "min-h-screen p-3 sm:p-6"}>
       <div className="w-full max-w-none">
-        <Button asChild variant="secondary" size="sm" className="mb-4">
+        {!embedded && <Button asChild variant="secondary" size="sm" className="mb-4">
           <Link to="/agenda"><ArrowLeft /> Torna all'agenda</Link>
-        </Button>
+        </Button>}
         <div className="paper-page rounded-md py-6 pl-14 pr-4 sm:pr-8">
           <h1 className="font-display text-3xl text-primary">Gestione Sale e Mappe</h1>
           <div className="mb-3 flex flex-wrap gap-4 text-sm"><span>Capienza totale interna: <b>{caps.inside}</b></span><span>Capienza totale esterna: <b>{caps.outside}</b></span></div>

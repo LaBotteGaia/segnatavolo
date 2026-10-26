@@ -1,21 +1,28 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/ui/number-input";
 import { RestaurantGate } from "@/components/RestaurantGate";
-import { useMembership, useSettings } from "@/lib/membership";
-import { useActiveRestaurantId } from "@/lib/tenant";
-import { cn } from "@/lib/utils";
-import { activeShifts, shiftName, roomCapacity, totalCapacities, useRooms, useTables, type RTable, type Room, wallsOf, toggleWall, gridOf, wallBetween, isObstacle, obstacleKey } from "@/lib/data";
-import { RoomGrid } from "@/components/agenda/RoomGrid";
-import { useEffect } from "react";
-import { validTableName } from "@/lib/extras";
-import { doubleShiftRulesOf, periodsOf, type ClosedPeriod, type DoubleShiftRule } from "@/lib/rotation";
-import { configurationError } from '@/lib/assignment-rules';
-import { Switch } from '@/components/ui/switch';
+import { useMembership } from "@/lib/membership";
+import { SpacesEditor } from "@/components/settings/SpacesEditor";
 
+export const Route = createFileRoute("/_authenticated/sale")({
+  head: () => ({
+    meta: [
+      { title: "Gestione Sale — Segnatavolo" },
+      { name: "description", content: "Crea le sale e disponi i tavoli sulla mappa." },
+      { property: "og:title", content: "Gestione Sale — Segnatavolo" },
+      { property: "og:description", content: "Crea le sale e disponi i tavoli sulla mappa." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: () => (
+    <RestaurantGate>
+      <MasterOnly />
+    </RestaurantGate>
+  ),
+});
+
+function MasterOnly() {
+  const { data: me } = useMembership();
+  if (me?.role !== "master") return <Navigate to="/agenda" />;
+  return <SpacesEditor />;
+}
