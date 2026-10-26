@@ -51,7 +51,7 @@ export const parseAssignmentRules = createServerFn({ method: 'POST' }).middlewar
   const { data: allowed, error } = await context.supabase.rpc('can_configure_delivery', { _rid: data.id });
   if (error || !allowed) throw new Error(MASTER_ONLY_MESSAGE);
   const cfg = await loadKey(data.id);
-  if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Servizio.');
+  if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Ristorante → Integrazioni.');
   const { translateAssignmentRules } = await import('./assignment-ai.server');
   return assignmentRulesSchema.parse(await translateAssignmentRules(cfg.key, data.text));
 });
