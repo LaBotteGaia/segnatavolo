@@ -18,6 +18,7 @@ import { Route as AuthenticatedFoglioRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedRegoleRouteImport } from './routes/_authenticated/regole'
 import { Route as AuthenticatedRubricaRouteImport } from './routes/_authenticated/rubrica'
 import { Route as AuthenticatedSaleRouteImport } from './routes/_authenticated/sale'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSituazioneRouteImport } from './routes/_authenticated/situazione'
 import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
 import { Route as PrenotaSlugRouteImport } from './routes/prenota.$slug'
@@ -66,6 +67,11 @@ const AuthenticatedSaleRoute = AuthenticatedSaleRouteImport.update({
   path: '/sale',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSituazioneRoute = AuthenticatedSituazioneRouteImport.update({
   id: '/situazione',
   path: '/situazione',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/regole': typeof AuthenticatedRegoleRoute
   '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/regole': typeof AuthenticatedRegoleRoute
   '/rubrica': typeof AuthenticatedRubricaRoute
   '/sale': typeof AuthenticatedSaleRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/regole': typeof AuthenticatedRegoleRoute
   '/_authenticated/rubrica': typeof AuthenticatedRubricaRoute
   '/_authenticated/sale': typeof AuthenticatedSaleRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/situazione': typeof AuthenticatedSituazioneRoute
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/regole'
     | '/rubrica'
     | '/sale'
+    | '/settings'
     | '/situazione'
     | '/invito/$token'
     | '/prenota/$slug'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/regole'
     | '/rubrica'
     | '/sale'
+    | '/settings'
     | '/situazione'
     | '/invito/$token'
     | '/prenota/$slug'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/regole'
     | '/_authenticated/rubrica'
     | '/_authenticated/sale'
+    | '/_authenticated/settings'
     | '/_authenticated/situazione'
     | '/invito/$token'
     | '/prenota/$slug'
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSaleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/situazione': {
       id: '/_authenticated/situazione'
       path: '/situazione'
@@ -270,6 +289,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRegoleRoute: typeof AuthenticatedRegoleRoute
   AuthenticatedRubricaRoute: typeof AuthenticatedRubricaRoute
   AuthenticatedSaleRoute: typeof AuthenticatedSaleRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSituazioneRoute: typeof AuthenticatedSituazioneRoute
 }
 
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRegoleRoute: AuthenticatedRegoleRoute,
   AuthenticatedRubricaRoute: AuthenticatedRubricaRoute,
   AuthenticatedSaleRoute: AuthenticatedSaleRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSituazioneRoute: AuthenticatedSituazioneRoute,
 }
 

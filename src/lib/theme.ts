@@ -9,7 +9,7 @@ export function applyTheme(t: Theme) {
 
 export function useTheme(): [Theme, (t: Theme) => void] {
   const [theme, setTheme] = useState<Theme>("light");
-  useEffect(() => { setTheme(localStorage.getItem(KEY) === "dark" ? "dark" : "light"); }, []);
+  useEffect(() => { const t: Theme = localStorage.getItem(KEY) === "dark" ? "dark" : "light"; setTheme(t); applyTheme(t); }, []);
   const set = (t: Theme) => { setTheme(t); localStorage.setItem(KEY, t); applyTheme(t); };
   return [theme, set];
 }
