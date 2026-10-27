@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { List, Map, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { canJoin, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
 import { GRID_COLS, GRID_ROWS } from "./RoomGrid";
 import { FloorPlan } from "./FloorPlan";
@@ -96,8 +97,12 @@ export function TableDialog({
       toast.warning("⚠️ Impossibile unire questi tavoli: presenza di ostacolo o vincolo strutturale");
       return;
     }
+    const comodi = t.coperti_comodi ?? t.seats, max = Math.max(t.coperti_max ?? comodi, comodi);
+    if (!selTables.length && reservation.people > comodi && reservation.people <= max) return setAskScomodo(id);
     setSelected((s) => [...s, id]);
   };
+  const [askScomodo, setAskScomodo] = useState<string | null>(null);
+  const scomodoTable = tables?.find((t) => t.id === askScomodo);
   useEffect(() => { if (noExtras && (ex.extra_sponde || ex.extra_barelle)) setEx((e) => ({ ...e, extra_sponde: 0, extra_barelle: 0 })); }, [noExtras]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -165,6 +170,13 @@ export function TableDialog({
           <Button disabled={invalidSelected || invalidExtras} onClick={() => { if (invalidSelected || invalidExtras) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
         </div>
       </DialogContent>
+      <AlertDialog open={!!scomodoTable} onOpenChange={(o) => { if (!o) setAskScomodo(null); }}>
+        {scomodoTable && <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>⚠️ Assegnazione con Posti Scomodi</AlertDialogTitle>
+            <AlertDialogDescription>Il Tavolo {scomodoTable.name} offre {scomodoTable.coperti_comodi ?? scomodoTable.seats} posti comodi (max {Math.max(scomodoTable.coperti_max ?? 0, scomodoTable.coperti_comodi ?? scomodoTable.seats)}). Per {reservation.people} persone la seduta sarà stretta o a ridosso del passaggio. Vuoi procedere?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Annulla / Scegli altro</AlertDialogCancel><AlertDialogAction onClick={() => { setSelected((s) => [...s, scomodoTable.id]); setAskScomodo(null); }}>✅ Sì, Accomoda Comunque</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>}
+      </AlertDialog>
     </Dialog>
   );
 }

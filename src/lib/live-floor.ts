@@ -117,3 +117,27 @@ export function maxStayBadge(until: string | null | undefined, nowMin: number): 
   const left = Math.max(0, u - nowMin);
   return { label: `⏳ Max fino alle ${until} (${left} min rimanenti)`, urgent: left < MAX_STAY_ALERT };
 }
+
+/* ---------- Timer di disponibilità residua sui tavoli liberi ---------- */
+/** Sotto questa soglia il tempo non basta per un servizio completo. */
+export const IMMINENT_MINUTES = 45;
+
+export type FreeWindow =
+  | { kind: "all"; label: string; short: string }
+  | { kind: "timer" | "imminent"; minutes: number; next: string; label: string; short: string };
+
+/** Finestra libera di un tavolo libero adesso: tutto il turno, timer fino al prossimo arrivo o arrivo imminente (<45 min). */
+export function freeWindow(tableId: string, rows: LiveRes[], nowMin: number): FreeWindow {
+  const next = nextBookingOn([tableId], rows, nowMin);
+  if (!next) return { kind: "all", label: "🟢 Libero (tutto il turno)", short: "Libero: tutto il turno" };
+  const minutes = toMin(next.time) - nowMin;
+  if (minutes < IMMINENT_MINUTES) return { kind: "imminent", minutes, next: next.time, label: `⏳ Arrivo imminente alle ${next.time} (${minutes} min rimasti)`, short: `Libero: ${minutes} min` };
+  const hm = `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return { kind: "timer", minutes, next: next.time, label: `⏱️ Libero per ${hm} (fino alle ${next.time})`, short: `Libero: ${hm}` };
+}
+
+/** Posti scomodi: coperti oltre i comodi ma entro il massimo (anche se il massimo vale solo in unione). */
+export function isScomodo(t: Pick<RTable, "seats" | "coperti_comodi" | "coperti_max">, people: number): boolean {
+  const comodi = t.coperti_comodi ?? t.seats, max = Math.max(t.coperti_max ?? comodi, comodi);
+  return people > comodi && people <= max;
+}
