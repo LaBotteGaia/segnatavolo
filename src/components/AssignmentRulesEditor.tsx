@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getAiSettings, parseAssignmentRules } from '@/lib/voice-ai.functions';
 import { configurationError, normalizeAssignmentRules, type AssignmentRules } from '@/lib/assignment-rules';
 import { useMembership } from '@/lib/membership';
+import { CustomRulesPanel } from './CustomRulesPanel';
 
 type Recognition = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; abort(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
 const times = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2,'0')}:${String(i % 4 * 15).padStart(2,'0')}`);
@@ -64,6 +65,7 @@ export function AssignmentRulesEditor() {
   };
   const preview = manual ? rules : draft;
   return <div className="space-y-6">
+    <CustomRulesPanel />
     {ai?.provider === 'gemini' && ai.keySaved ? <section className="space-y-3 border-b pb-6">
       <h2 className="flex items-center gap-2 font-display text-xl"><Sparkles className="size-5 text-primary" /> Configura con il linguaggio naturale</h2>
       <div className="flex items-start gap-2"><Textarea aria-label="Descrizione regole" value={text} onChange={e=>setText(e.target.value)} placeholder="Chi prenota dalle 21:00 in poi va nei tavoli isola o fuori…" rows={3}/><Button variant="outline" size="icon" aria-label={listening?'Termina ascolto':'Detta regole'} title="Detta regole" onClick={dictate}><Mic/></Button></div>
