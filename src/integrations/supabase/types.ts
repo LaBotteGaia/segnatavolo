@@ -263,6 +263,7 @@ export type Database = {
           parsed_logic: Json
           raw_text: string
           restaurant_id: string
+          rule_hash: string | null
         }
         Insert: {
           created_at?: string
@@ -271,6 +272,7 @@ export type Database = {
           parsed_logic?: Json
           raw_text: string
           restaurant_id?: string
+          rule_hash?: string | null
         }
         Update: {
           created_at?: string
@@ -279,6 +281,7 @@ export type Database = {
           parsed_logic?: Json
           raw_text?: string
           restaurant_id?: string
+          rule_hash?: string | null
         }
         Relationships: [
           {

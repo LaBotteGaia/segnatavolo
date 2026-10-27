@@ -44,7 +44,7 @@ export function ReorganizeButton({ date, shift, rows }: { date: string; shift: S
     for (const [id, a] of result.assignments) {
       const { error } = await supabase
         .from("reservations")
-        .update({ table_ids: a.ids, extra_sponde: a.extras.extra_sponde, extra_barelle: 0 })
+        .update({ table_ids: a.ids, extra_sponde: a.extras.extra_sponde, extra_barelle: 0, ha_posti_scomodi: a.ha_posti_scomodi })
         .eq("id", id)
         .eq("restaurant_id", restaurantId ?? "");
       if (error) failed = true;
@@ -81,7 +81,7 @@ export function ReorganizeButton({ date, shift, rows }: { date: string; shift: S
               </p>
               {result.unplaced.length > 0 && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
-                  <p className="font-semibold text-destructive">⚠️ In attesa di riallocazione / Conflitto orario da verificare manualmente ({result.unplaced.length})</p>
+                  <p className="font-semibold text-destructive">⚠️ Da allocare manualmente / Conflitto orario da verificare ({result.unplaced.length})</p>
                   <ul className="mt-1 list-disc pl-4">{result.unplaced.map((r) => <li key={r.id}>{r.name || "—"} ({r.people}p, {r.time || "--:--"}) — resta su {labelOf(r.table_ids)}</li>)}</ul>
                 </div>
               )}

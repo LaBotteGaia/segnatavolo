@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { getAiSettings, parseCustomRule } from '@/lib/voice-ai.functions';
 import { useCustomRules } from '@/lib/data';
-import { parsedRuleSchema, ruleTags, type ParsedRule } from '@/lib/custom-rules';
+import { storedRules, parsedRulesSchema, ruleTags, type ParsedRule } from '@/lib/custom-rules';
 import { configurationError } from '@/lib/assignment-rules';
 import { useMembership } from '@/lib/membership';
 
@@ -26,47 +26,57 @@ export function CustomRulesPanel() {
   const [text, setText] = useState('');
   const [draft, setDraft] = useState<ParsedRule[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
+  const nextSubmit = useRef(0);
+  const [draftText, setDraftText] = useState('');
   const [listening, setListening] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
   const rec = useRef<Recognition | null>(null);
   useEffect(() => () => rec.current?.abort(), []);
-  const refresh = () => qc.invalidateQueries({ queryKey: ['custom-rules'] });
+  const refresh = () => qc.invalidateQueries({ queryKey: ['custom-rules', me?.restaurant_id] });
   const gemini = ai?.provider === 'gemini' && ai.keySaved;
 
   const dictate = () => {
+    if (busy || submitting.current) return;
     if (listening) { rec.current?.stop(); return; }
     const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { toast.info('Microfono non supportato: scrivi la regola.'); return; }
     const r = new Ctor(); r.lang = 'it-IT'; r.continuous = false; r.interimResults = false;
-    r.onresult = e => { const last = e.results[e.results.length - 1]; setText((last?.[0]?.transcript ?? '').trim().replace(/\s+/g, ' ')); };
+    r.onresult = e => { const last = e.results[e.results.length - 1]; setText((last?.[0]?.transcript ?? '').trim().replace(/\s+/g, ' ')); setDraft(null); };
     r.onend = () => { setListening(false); rec.current = null; };
     r.onerror = () => { toast.error('Dettatura non disponibile: controlla il permesso microfono.'); setListening(false); };
     rec.current = r; r.start(); setListening(true);
   };
   const interpret = async () => {
-    if (!me) return;
-    setBusy(true);
-    try { setDraft((await parse({ data: { id: me.restaurant_id, text } })).rules); }
+    if (!me || submitting.current || Date.now() < nextSubmit.current) return;
+    submitting.current = true; nextSubmit.current = Date.now() + 1000;
+    setBusy(true); setDraft(null);
+    const source = text.trim().replace(/\s+/g, ' ');
+    try { setDraft(parsedRulesSchema.parse(await parse({ data: { id: me.restaurant_id, text: source } })).rules); setDraftText(source); }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Regola non interpretabile'); }
-    finally { setBusy(false); }
+    finally { submitting.current = false; setBusy(false); }
   };
   const confirm = async () => {
-    if (!me || !draft) return;
-    setBusy(true);
-    const { error } = await supabase.from('restaurant_assignment_rules').insert(draft.map(logic => ({ restaurant_id: me.restaurant_id, raw_text: text.trim(), parsed_logic: logic, is_active: true })));
-    setBusy(false);
-    if (error) { toast.error(configurationError(error)); return; }
-    setDraft(null); setText(''); await refresh(); toast.success(draft.length > 1 ? `${draft.length} regole attivate` : 'Regola attivata');
+    if (!me || !draft || submitting.current || Date.now() < nextSubmit.current) return;
+    submitting.current = true; nextSubmit.current = Date.now() + 1000; setBusy(true);
+    try {
+      const logic = parsedRulesSchema.parse({ rules: draft });
+      // Una sola riga per frase: tutte le condizioni restano nello stesso documento formalizzato.
+      const { error } = await supabase.from('restaurant_assignment_rules').insert({ restaurant_id: me.restaurant_id, raw_text: draftText, parsed_logic: logic, is_active: true });
+      if (error) { toast.error(error.code === '23505' ? 'Questa regola è già stata salvata negli ultimi 10 secondi.' : configurationError(error)); await refresh(); return; }
+      setDraft(null); setText(''); await refresh(); toast.success('Regola salvata e applicata');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Regola non salvata'); }
+    finally { submitting.current = false; setBusy(false); }
   };
   const toggle = async (id: string, is_active: boolean) => {
-    const { data, error } = await supabase.from('restaurant_assignment_rules').update({ is_active }).eq('id', id).select('id');
+    const { data, error } = await supabase.from('restaurant_assignment_rules').update({ is_active }).eq('id', id).eq('restaurant_id', me?.restaurant_id ?? '').select('id');
     if (error || !data?.length) toast.error(configurationError(error ?? { code: '42501' }));
     await refresh();
   };
   const remove = async () => {
-    if (!toDelete) return;
-    const { data, error } = await supabase.from('restaurant_assignment_rules').delete().eq('id', toDelete).select('id');
+    if (!toDelete || !me) return;
+    const { data, error } = await supabase.from('restaurant_assignment_rules').delete().eq('id', toDelete).eq('restaurant_id', me.restaurant_id).select('id');
     setToDelete(null);
     if (error || !data?.length) { toast.error(configurationError(error ?? { code: '42501' })); return; }
     await refresh(); toast.success('Regola eliminata');
@@ -76,8 +86,8 @@ export function CustomRulesPanel() {
     <h2 className="flex items-center gap-2 font-display text-xl"><ListChecks className="size-5 text-primary" /> Regole personalizzate dei tavoli</h2>
     {gemini ? <>
       <div className="flex items-start gap-2">
-        <Textarea aria-label="Testo regola personalizzata" rows={3} value={text} maxLength={1500} onChange={e => setText(e.target.value)} placeholder="Riserva i tavoli 1, 2 e 3 per comitive da 4, abbinando prima 1 con 2 e poi 2 con 3; le coppie sui tavoli non abbinabili in ordine crescente" />
-        <Button variant="outline" size="icon" aria-label={listening ? 'Termina ascolto' : 'Detta regola personalizzata'} onClick={dictate}><Mic /></Button>
+        <Textarea aria-label="Testo regola personalizzata" rows={3} value={text} maxLength={1500} disabled={busy} onChange={e => { setText(e.target.value); setDraft(null); }} placeholder="Riserva i tavoli 1, 2 e 3 per comitive da 4, abbinando prima 1 con 2 e poi 2 con 3; le coppie sui tavoli non abbinabili in ordine crescente" />
+        <Button variant="outline" size="icon" aria-label={listening ? 'Termina ascolto' : 'Detta regola personalizzata'} disabled={busy} onClick={dictate}><Mic /></Button>
       </div>
       {listening && <p role="status" className="text-sm text-primary">🎙️ Ti sto ascoltando… Parla liberamente</p>}
       <Button variant="secondary" disabled={busy || listening || text.trim().length < 3} onClick={interpret}>{busy && !draft ? <Loader2 className="animate-spin" /> : <Sparkles />} Interpreta regola</Button>
@@ -87,7 +97,7 @@ export function CustomRulesPanel() {
       <h3 className="font-bold">🔍 Verifica prima di attivare</h3>
       {draft.map((r, i) => <div key={i} className="space-y-1"><p className="text-sm font-semibold">{r.human_summary}</p><Tags rule={r} /></div>)}
       <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} onClick={confirm}>{busy ? <Loader2 className="animate-spin" /> : <Check />} Conferma e Attiva</Button>
+        <Button disabled={busy} onClick={confirm}>{busy ? <Loader2 className="animate-spin" /> : <Check />} Salva e Applica</Button>
         <Button variant="ghost" disabled={busy} onClick={() => setDraft(null)}><X /> Scarta</Button>
       </div>
     </div>}
@@ -97,12 +107,13 @@ export function CustomRulesPanel() {
       {isLoading && <Loader2 className="animate-spin" />}
       {!isLoading && !rows.length && <p className="text-sm text-muted-foreground">Nessuna regola personalizzata.</p>}
       {rows.map(row => {
-        const parsed = parsedRuleSchema.safeParse(row.parsed_logic);
+        const parsed = storedRules(row.parsed_logic);
         return <article key={row.id} className={`space-y-2 rounded-lg border bg-card p-4 ${row.is_active ? '' : 'opacity-60'}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <p className="font-hand text-lg leading-snug">“{row.raw_text}”</p>
-              {parsed.success ? <><p className="text-sm font-semibold">{parsed.data.human_summary}</p><Tags rule={parsed.data} /></> : <p className="text-sm text-destructive">Regola non valida: non viene applicata.</p>}
+              {parsed.map((r,i) => <div key={i} className="space-y-1"><p className="font-semibold">{r.human_summary}</p><Tags rule={r} /></div>)}
+              <p className="text-sm italic text-muted-foreground break-words">“{row.raw_text}”</p>
+              {!parsed.length ? <p className="text-sm text-destructive">Regola non valida: non viene applicata.</p> : null}
             </div>
             <label className="flex shrink-0 items-center gap-2 text-xs font-semibold">{row.is_active ? 'Attiva' : 'Spenta'}<Switch aria-label={`Attiva regola: ${row.raw_text}`} checked={row.is_active} onCheckedChange={v => toggle(row.id, v)} /></label>
           </div>

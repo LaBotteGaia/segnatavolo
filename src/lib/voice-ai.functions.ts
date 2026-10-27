@@ -63,10 +63,14 @@ export const parseCustomRule = createServerFn({ method: 'POST' }).middleware([re
   if (error || !allowed) throw new Error(MASTER_ONLY_MESSAGE);
   const cfg = await loadKey(data.id);
   if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Ristorante → Integrazioni.');
-  const { data: tables } = await context.supabase.from('restaurant_tables').select('name').eq('restaurant_id', data.id);
+  const [{ data: tables, error: tableError }, { data: zones, error: zoneError }] = await Promise.all([context.supabase.from('restaurant_tables').select('name').eq('restaurant_id', data.id), context.supabase.from('rooms').select('id,name').eq('restaurant_id', data.id)]);
+  if (tableError || zoneError) throw new Error('Impossibile leggere tavoli e sale del ristorante.');
   const { translateCustomRule } = await import('./assignment-ai.server');
-  const parsed = parsedRulesSchema.safeParse(await translateCustomRule(cfg.key, data.text, (tables ?? []).map(t => t.name)));
+  const parsed = parsedRulesSchema.safeParse(await translateCustomRule(cfg.key, data.text, (tables ?? []).map(t => t.name), zones ?? []));
   if (!parsed.success) throw new Error('Regola non interpretabile: riformulala indicando tavoli e numero di persone.');
+  const names = new Set((tables ?? []).map(t => t.name.trim().toLowerCase()));
+  const zoneIds = new Set((zones ?? []).map(z => z.id));
+  if (parsed.data.rules.some(r => (r.actions.force_zone_id && !zoneIds.has(r.actions.force_zone_id)) || [...r.actions.preferred_table_numbers, ...r.actions.pairing_sequence.flat()].some(n => !names.has(n.trim().toLowerCase())))) throw new Error('La regola contiene tavoli o sale non presenti nel ristorante.');
   return parsed.data;
 });
 

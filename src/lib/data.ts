@@ -84,7 +84,8 @@ export function useCustomRules() {
 /** Regole personalizzate attive e valide, pronte per suggerimenti e riorganizzazione. */
 export function useActiveCustomRules() {
   const { data } = useCustomRules();
-  return useMemo(() => activeRules(data), [data]);
+  const restaurantId = useActiveRestaurantId();
+  return useMemo(() => restaurantId ? activeRules(data, restaurantId) : [], [data, restaurantId]);
 }
 
 export function useRooms() {
