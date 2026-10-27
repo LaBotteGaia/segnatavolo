@@ -6,9 +6,9 @@ import { gridOf, wallsOf, type Room, type RTable } from '@/lib/data';
 import type { TableState } from '@/lib/rotation';
 
 const CELL = 124;
-export function FloorPlan({ room, tables, selected, suggested, people, stateOf, closed, extended, onToggle }: {
+export function FloorPlan({ room, tables, selected, suggested, people, stateOf, closed, extended, onToggle, pillOf }: {
   room: Room; tables: RTable[]; selected: string[]; suggested: string[]; people: number;
-  stateOf: (id: string) => TableState; closed: boolean; extended: boolean; onToggle: (id: string) => void;
+  stateOf: (id: string) => TableState; closed: boolean; extended: boolean; onToggle: (id: string) => void; pillOf?: (id: string) => string | null;
 }) {
   const grid = gridOf(room);
   const cols = Math.max(grid.cols, ...tables.map(t => t.x + 1));
@@ -52,8 +52,9 @@ export function FloorPlan({ room, tables, selected, suggested, people, stateOf, 
                     recommended && 'floor-plan-recommended ring-2 ring-recommendation', sel && 'border-primary ring-2 ring-primary bg-primary/10')}>
                   <span className="flex max-w-full items-center gap-1 break-all text-lg font-bold">T.{t.name}{sel && <Check className="size-3"/>}</span>
                   <span className="text-xs">{comfort} comodi · max {max}</span>
-                  {busy ? <span className="line-clamp-2 text-[10px]">Occupato · {state.name} · fino {state.until}</span> : tight ? <span className="flex items-center gap-1 text-[10px]"><TriangleAlert className="size-3"/>{sel && extended ? 'Prolunga' : 'Unione / posti scomodi'}</span> : state.kind === 'limited' ? <span className="text-[10px]">Libero fino {state.until}</span> : !t.accoppiabile ? <span className="text-[10px]">Isola</span> : null}
+                  {busy ? <span className="line-clamp-2 text-[10px]">Occupato · {state.name} · fino {state.until}</span> : tight ? <span className="flex items-center gap-1 text-[10px]"><TriangleAlert className="size-3"/>{sel && extended ? 'Prolunga' : people <= max ? `⚠️ Posti Scomodi (Max ${max}p)` : 'Unione / prolunga'}</span> : state.kind === 'limited' ? <span className="text-[10px]">Libero fino {state.until}</span> : !t.accoppiabile ? <span className="text-[10px]">Isola</span> : null}
                 </Button>
+                {!busy && pillOf?.(t.id) && <span className="pointer-events-none absolute -bottom-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-free bg-card px-2 py-0.5 text-[10px] font-bold text-foreground">{pillOf(t.id)}</span>}
                 {recommended && <span className="pointer-events-none absolute -top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-recommendation bg-card px-2 py-0.5 text-[10px] font-bold text-foreground"><Sparkles className="size-3 text-recommendation"/>Consigliato</span>}
               </div>;
             })}
