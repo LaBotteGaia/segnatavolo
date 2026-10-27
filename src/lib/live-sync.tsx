@@ -47,7 +47,7 @@ export function LiveSync() {
       try { sessionStorage.setItem(storageKey, JSON.stringify({ at: Date.now(), rows })); } catch { /* Quota/private browsing. */ }
     };
     const unsubscribe = qc.getQueryCache().subscribe((event) => { if (event.type === "updated" && event.action.type === "success") persist(); });
-    const refresh = () => [...LIVE_QUERY_KEYS, "rooms", "tables"].forEach((key) => { void qc.invalidateQueries({ queryKey: [key] }); });
+    const refresh = () => [...LIVE_QUERY_KEYS, "rooms", "tables", "custom-rules"].forEach((key) => { void qc.invalidateQueries({ queryKey: [key] }); });
     const change = (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
       const row = payload.eventType === "DELETE" ? payload.old : payload.new;
       if (payload.eventType !== "DELETE" && row["restaurant_id"] !== me.restaurant_id) return;
@@ -61,6 +61,7 @@ export function LiveSync() {
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, change)
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_tables" }, change)
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_members" }, change)
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_assignment_rules" }, (payload: { eventType: string; new: Record<string, unknown> }) => { if (payload.eventType === "DELETE" || payload.new["restaurant_id"] === me.restaurant_id) void qc.invalidateQueries({ queryKey: ["custom-rules"] }); })
       .subscribe((status) => { if (status === "SUBSCRIBED") refresh(); });
     const visible = () => { if (document.visibilityState === "visible" && navigator.onLine) refresh(); };
     window.addEventListener("online", refresh);
