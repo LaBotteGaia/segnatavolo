@@ -57,7 +57,7 @@ function SettingsPage() {
         </TabsList>
         <div className="min-w-0 flex-1">
           <TabsContent value="spazi" className="mt-0"><SpacesEditor embedded /></TabsContent>
-          <TabsContent value="orari" className="mt-0 max-w-3xl"><ServiceSettingsForm id={me.restaurant_id} settings={settings} /></TabsContent>
+          <TabsContent value="orari" className="mt-0 max-w-3xl"><ServiceSettingsForm id={me.restaurant_id} settings={settings} walkinBuffer={me.restaurants?.tempo_riassetto_minuti ?? 5} /></TabsContent>
           <TabsContent value="regole" className="mt-0 max-w-4xl"><AssignmentRulesEditor /></TabsContent>
           <TabsContent value="integrazioni" className="mt-0 max-w-3xl"><OnlineBookingSettings id={me.restaurant_id} name={me.restaurants?.name ?? ""} /></TabsContent>
           <TabsContent value="dati" className="mt-0 max-w-3xl"><RestaurantProfileForm id={me.restaurant_id} name={me.restaurants?.name ?? ""} settings={settings} /></TabsContent>

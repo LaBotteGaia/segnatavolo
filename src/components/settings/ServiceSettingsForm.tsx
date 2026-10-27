@@ -15,8 +15,10 @@ const ALL_TIMES = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 
 const WEEKDAYS: [string, string][] = [["1", "Lunedì"], ["2", "Martedì"], ["3", "Mercoledì"], ["4", "Giovedì"], ["5", "Venerdì"], ["6", "Sabato"], ["0", "Domenica"]];
 
 /** Orari, turni, rotazione, riserva, privacy e chiusure del ristorante (solo Master: RLS blocca gli altri). */
-export function ServiceSettingsForm({ id, settings }: { id: string; settings: unknown }) {
+export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: string; settings: unknown; walkinBuffer?: number }) {
   const qc = useQueryClient();
+  const [riassetto, setRiassetto] = useState(walkinBuffer);
+  useEffect(() => { setRiassetto(walkinBuffer); }, [walkinBuffer]);
   const [st, setSt] = useState<RestaurantSettings>(() => normalizeSettings(settings));
   useEffect(() => { setSt(normalizeSettings(settings)); }, [settings]);
   const setShift = (s: Shift, patch: Partial<RestaurantSettings["shifts"][Shift]>) =>
@@ -35,7 +37,7 @@ export function ServiceSettingsForm({ id, settings }: { id: string; settings: un
     for (const s of active) if (st.shifts[s].from >= st.shifts[s].to) { toast.error(`${shiftName(s)}: l'orario di fine deve essere dopo l'inizio`); return; }
     if (st.holidays.some((h) => !h.from || !h.to || h.from > h.to)) { toast.error("Controlla le date delle ferie"); return; }
     const preserved = settings && typeof settings === "object" ? settings : {};
-    const { data: saved, error } = await supabase.from("restaurants").update({ settings: { ...preserved, ...st } }).eq("id", id).select("id");
+    const { data: saved, error } = await supabase.from("restaurants").update({ settings: { ...preserved, ...st }, tempo_riassetto_minuti: Math.min(60, Math.max(0, Math.round(riassetto))) }).eq("id", id).select("id");
     if (error || !saved?.length) { toast.error(configurationError(error ?? { code: "42501" })); return; }
     toast.success("Orari e turni salvati");
     qc.invalidateQueries({ queryKey: ["membership"] });
@@ -87,6 +89,14 @@ export function ServiceSettingsForm({ id, settings }: { id: string; settings: un
             </select>
           </label>
         </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-display text-lg">Accomoda al Volo</h3>
+        <label className="flex flex-wrap items-center gap-2 text-sm">Tempo di riassetto e sparecchio tavolo (minuti)
+          <NumberInput min={0} max={60} className="w-24" value={riassetto} onCommit={(n) => setRiassetto(Math.min(60, Math.max(0, n)))} aria-label="Tempo di riassetto e sparecchio tavolo (minuti)" />
+        </label>
+        <p className="text-xs text-muted-foreground">Minuti di cuscinetto sottratti all'orario della prenotazione successiva per calcolare la permanenza massima consentita per le sistemazioni al volo (walk-in).</p>
       </section>
 
       <section className="space-y-2">

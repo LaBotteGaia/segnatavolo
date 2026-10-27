@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { compareTables, shiftName, useReservations, useRooms, useTables, type RTable } from "@/lib/data";
-import { useSettings } from "@/lib/membership";
+import { useSettings, useWalkinBuffer } from "@/lib/membership";
 import { useActiveRestaurantId } from "@/lib/tenant";
 import { useServiceClock } from "@/lib/extras";
 import { serviceClock } from "@/lib/no-show";
