@@ -11,7 +11,7 @@
 
 - Multi-restaurant: rows carry restaurant_id; RLS scopes to active restaurant_members; rooms/tables writable only by master. Invites use a token server function so staff cannot self-register. Pages in src/routes/_authenticated; hooks in src/lib/data.ts.
 - Customer reliability is derived from reservation attendance and service deadlines in Europe/Rome; only manual no-show is persisted, and normalized phone is the history key to avoid duplicate counters and name-based identity.
-- Agenda layout uses the agenda-wide CSS variant for landscape screens from 768px and desktops from 1024px; keep toolbar and page visibility on the same variant to preserve orientation consistency.
+- Agenda layout: agenda-wide CSS variant (landscape ≥768px, desktop ≥1024px) drives toolbar and page visibility, for orientation consistency.
 
 - Shared service data uses one restaurant-scoped root Realtime subscriber with wildcard cache invalidation, so every date/view updates together, including DELETE and reconnect.
 - Reservation operator audit is populated by a database trigger from active membership, not client-supplied labels, so attribution cannot be forged.
@@ -37,3 +37,4 @@
 - Voice dictation: per-restaurant OpenAI/Gemini key encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing in authenticated server functions only after transcript confirmation; pure date rules override AI arithmetic, falling back to the agenda date.
 - Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.
 - Live floor (src/lib/live-floor.ts): states from arrived flags and rotation intervals; occupied tables use seat_walkin_freed, earlier-than-booking seating uses seat_walkin_limited (server-side max_stay_until + shorter duration_min).
+- Custom table rules: rows in restaurant_assignment_rules (members read, Master write) parsed by Gemini server fn; custom-rules.ts adds soft scores to allocation and reorganization, never hard blocks.
