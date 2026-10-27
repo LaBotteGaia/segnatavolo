@@ -15,6 +15,8 @@ import { compareTableNames } from '@/lib/data';
 import { useActiveCustomRules } from '@/lib/data';
 
 export { GRID_COLS, GRID_ROWS };
+/** Vista preferita del selettore tavoli, ricordata sul dispositivo. */
+export const VIEW_KEY = "segnatavolo-table-view";
 
 function Stepper({ label, value, onChange, disabled }: { label: string; value: number; onChange: (n: number) => void; disabled?: boolean }) {
   return (
@@ -52,7 +54,7 @@ export function TableDialog({
       setForce(false);
       setEx(extras ? { extra_sponde: extras.extra_sponde, extra_barelle: extras.extra_barelle, barella_seats: extras.barella_seats || 2 } : NO_EXTRAS);
       const first = tables?.find((t) => reservation.table_ids.includes(t.id));
-      setView("map");
+      try { setView(localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "map"); } catch { setView("map"); }
       setRoomId(first?.room_id ?? rooms?.find(r => !isRoomClosedFor(r, date, reservation.shift))?.id ?? rooms?.[0]?.id ?? null);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -84,6 +86,7 @@ export function TableDialog({
   const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
   const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,customRules,wallsFor,me:reservation }) : null;
   const [view,setView] = useState<'cards'|'map'>('map');
+  const pickView = (v: 'cards'|'map') => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage opzionale */ } };
   const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy') || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
   const toggle = (id: string) => {
     if (selected.includes(id)) return setSelected((s) => s.filter((x) => x !== id));
@@ -137,9 +140,9 @@ export function TableDialog({
           <div role="tablist" aria-label="Sale" className="flex min-w-0 basis-full flex-wrap gap-1 sm:flex-1 sm:basis-auto">
             {rooms?.map(r => <Button key={r.id} role="tab" aria-selected={roomId===r.id} variant={roomId===r.id?'secondary':'outline'} className="h-auto min-h-9 whitespace-normal" onClick={() => { setRoomId(r.id); setForce(false); }}>{r.name}{isRoomClosedFor(r,date,reservation.shift)&&' · Chiusa'}{tables?.some(t=>t.room_id===r.id&&selected.includes(t.id))&&' ✓'}</Button>)}
           </div>
-          <div className="flex shrink-0 gap-1" role="group" aria-label="Visualizzazione tavoli">
-            <Button variant={view==='map'?'secondary':'ghost'} aria-pressed={view==='map'} onClick={()=>setView('map')}><Map/>Mappa</Button>
-            <Button variant={view==='cards'?'secondary':'ghost'} aria-pressed={view==='cards'} onClick={()=>setView('cards')}><List/>Lista</Button>
+          <div className="flex shrink-0 overflow-hidden rounded-md border bg-card sm:ml-auto" role="group" aria-label="Visualizzazione tavoli">
+            <Button className="rounded-none" variant={view==='cards'?'secondary':'ghost'} aria-pressed={view==='cards'} onClick={()=>pickView('cards')}><List/>🔲 Elenco Bottoni</Button>
+            <Button className="rounded-none border-l" variant={view==='map'?'secondary':'ghost'} aria-pressed={view==='map'} onClick={()=>pickView('map')}><Map/>🗺️ Mappa Sala</Button>
           </div>
         </div>
         {!rooms?.length && <p className="text-muted-foreground">Nessuna sala. Creala dal menù ☰ → Gestione Sale e Mappe.</p>}
@@ -150,7 +153,7 @@ export function TableDialog({
               {isMaster && <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> Forza comunque l'assegnazione (solo Master)</label>}
             </div>
           )}
-          {view==='cards' ? <TableCards tables={[...roomTables].sort((a,b)=>compareTableNames(a.name,b.name))} room={room} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} onToggle={toggle}/> : <FloorPlan room={room} tables={roomTables} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} extended={extraSeats(ex)>0} onToggle={toggle}/>}
+          {view==='cards' ? <TableCards tables={[...roomTables].sort((a,b)=>(a.ordine_riempimento ?? 10)-(b.ordine_riempimento ?? 10)||compareTableNames(a.name,b.name))} room={room} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} onToggle={toggle}/> : <FloorPlan room={room} tables={roomTables} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} extended={extraSeats(ex)>0} onToggle={toggle}/>}
         </>}
         <p role="status" aria-live="polite" className="min-h-10 rounded-md border bg-card px-3 py-2 text-sm font-semibold">{selected.length ? `Selezionato: ${selTables.map(t=>`Tavolo ${t.name}`).join(' + ')} · ${nominal} coperti comodi` : 'Nessun tavolo selezionato'}</p>
 
