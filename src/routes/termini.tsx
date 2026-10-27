@@ -13,5 +13,5 @@ export const Route = createFileRoute('/termini')({
       { name: 'twitter:card', content: 'summary' },
     ],
   }),
-  component: () => <main className="mx-auto max-w-3xl bg-paper px-4 py-8"><h1 className="mb-6 font-display text-3xl">{TERMS_TITLE}</h1><LegalTermsContent /></main>,
+  component: () => <main className="min-h-dvh bg-paper"><div className="mx-auto max-w-3xl px-4 py-8"><h1 className="mb-6 font-display text-3xl">{TERMS_TITLE}</h1><LegalTermsContent /></div></main>,
 });

@@ -31,7 +31,7 @@ export function LegalTermsContent({ restaurant }: { restaurant?: string | undefi
       <h3 className="font-bold">Base giuridica</h3>
       <p>Esecuzione di misure contrattuali e precontrattuali su richiesta dell'interessato (art. 6.1.b GDPR) e adempimento di obblighi di legge (art. 6.1.c GDPR); consenso (art. 6.1.a GDPR) per il solo marketing.</p>
       <h3 className="font-bold">Conservazione e sicurezza</h3>
-      <p>I dati sono conservati per il tempo necessario alla gestione del servizio e agli obblighi di legge, su {SERVER_REGION_LINE.toLowerCase()}, con accesso riservato agli operatori autorizzati del ristorante e credenziali cifrate.</p>
+      <p>I dati sono conservati per il tempo necessario alla gestione del servizio e agli obblighi di legge, in conformità a quanto indicato ({SERVER_REGION_LINE}), con accesso riservato agli operatori autorizzati del ristorante e credenziali cifrate.</p>
       <h3 className="font-bold">Diritti dell'interessato</h3>
       <p>Puoi esercitare in ogni momento i diritti di accesso, rettifica, cancellazione (oblio), limitazione, portabilità e opposizione (artt. 15-22 GDPR), oltre a proporre reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).</p>
       <h3 className="font-bold">Contatti (Titolare / DPO)</h3>
