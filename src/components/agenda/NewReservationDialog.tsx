@@ -33,7 +33,7 @@ import { useActiveCustomRules } from '@/lib/data';
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
   is_new: boolean; outside: boolean; notes: string; table_ids: string[]; extras: TableExtras; customer?: Customer | undefined;
-  duration_min?: number | null; buffer_min?: number | null; tags?: string[];
+  duration_min?: number | null; buffer_min?: number | null; tags?: string[]; ha_posti_scomodi?: boolean;
 };
 
 const field = "w-full rounded-md border bg-paper px-3 py-2";
@@ -149,6 +149,7 @@ export function NewReservationDialog({
     const ok = await onCreate({
       date, shift, time, name: name.trim(), people: Number(people), phone: normPhone(match ? match.phone || phone : phone),
       is_new: isNew, outside, notes: notes.trim(), table_ids: tableIds, extras, customer: match,
+      ha_posti_scomodi: pax > (tables ?? []).filter(t=>tableIds.includes(t.id)).reduce((n,t)=>n+(t.coperti_comodi ?? t.seats),0) && tableIds.length > 0,
       duration_min: dur, buffer_min: buf, tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
     });
     setBusy(false);

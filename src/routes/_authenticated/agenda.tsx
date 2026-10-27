@@ -225,6 +225,7 @@ function AgendaPage() {
     const { error } = await supabase.from("reservations").insert({
       date: v.date, shift: v.shift, time: v.time, name: v.name, people: v.people, phone: v.phone || null,
       is_new: v.is_new, outside: v.outside, notes: v.notes, customer_id: customerId, table_ids: v.table_ids, ...v.extras,
+      ha_posti_scomodi: v.ha_posti_scomodi ?? false,
       duration_min: v.duration_min ?? null, buffer_min: v.buffer_min ?? null, tags: v.tags ?? [],
       ...(assist ? { restaurant_id: assist } : {}),
     });
