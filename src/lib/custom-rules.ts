@@ -84,7 +84,8 @@ export function customScore(combo: Tbl[], people: number, time: string, rules: A
   matching.forEach((r, i) => { total += component(r.logic, combo) * 1000 ** (matching.length - i); });
   const names = combo.map(t => normName(t.name));
   const reservedByOthers = rules.some(r => r.logic.rule_type === 'table_reservation' && !ruleMatches(r.logic, people, time) && r.logic.actions.preferred_tables.some(p => names.includes(normName(p))));
-  return total + (reservedByOthers ? 1 : 0);
+  // La riserva prevale sull'ordinamento delle altre regole, ma resta non bloccante.
+  return total + (reservedByOthers ? 1000 ** (matching.length + 1) : 0);
 }
 
 export const hasMatchingRule = (people: number, time: string, rules: ActiveRule[] | undefined) => !!rules?.some(r => ruleMatches(r.logic, people, time));
