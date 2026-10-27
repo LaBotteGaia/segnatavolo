@@ -76,6 +76,7 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
         if(s) return {...s,stage:1,ruleId:r.id};
       }
     }
+    if(a.pairing_sequence.length && !a.preferred_table_numbers.length && !a.avoid_pairable && !a.force_zone_id) continue;
     const combos=allCombos(ordered);
     for(const [sacrifice,extend] of [[false,false],[true,false],[true,true]] as const) {
       for(const combo of combos) {const s=fit(combo,sacrifice,extend);if(s) return {...s,stage:1,ruleId:r.id};}
