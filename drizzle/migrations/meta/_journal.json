@@ -253,6 +253,13 @@
       "when": 1793128254582,
       "tag": "0035_walkin_posti_scomodi",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793128711204,
+      "tag": "0036_tempo_riassetto_walkin",
+      "breakpoints": true
     }
   ]
 }
