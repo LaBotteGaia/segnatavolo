@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { compareTables, shiftName, useReservations, useRooms, useTables, type RTable } from "@/lib/data";
+import { compareTables, useActiveCustomRules, wallsOf, shiftName, useReservations, useRooms, useTables, type RTable } from "@/lib/data";
 import { useSettings, useWalkinBuffer } from "@/lib/membership";
 import { useActiveRestaurantId } from "@/lib/tenant";
 import { useServiceClock } from "@/lib/extras";
@@ -18,6 +18,8 @@ import { isRoomClosedFor } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
 import { refreshService } from "@/lib/recycle-bin";
 import { arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
+import { calculateBestTableAssignment } from '@/lib/allocation';
+import { tableState } from '@/lib/rotation';
 import { supabase } from "@/integrations/supabase/client";
 
 type Target = { res: LiveRes; tableId: string };
@@ -41,6 +43,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const landscape = useIsLandscape();
   const now = useServiceClock();
   const settings = useSettings();
+  const customRules = useActiveCustomRules();
   const qc = useQueryClient();
   const restaurantId = useActiveRestaurantId();
   const clock = serviceClock(now);
@@ -71,6 +74,8 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const stateOf = (id: string): LiveTableState => liveTableState(id, rows, clock.minutes, settings);
   const counters = liveCounters(gridTables, rows, clock.minutes, settings);
   const tableName = (id: string) => tables.find((t) => t.id === id)?.name ?? "?";
+  const recommended = (people: number) => calculateBestTableAssignment({ people,date:clock.date,shift,time:walk.time,tables:gridTables.filter(t=>tableState(t.id,{id:'walkin',time:walk.time,duration_min:15,buffer_min:0},rows,settings).kind!=='busy' && (limitedStay(toMinLocal(nextBookingOn([t.id],rows,clock.minutes)?.time ?? ''),clock.minutes,{...settings,buffer:walkinBuffer})?.allowed ?? true)),rooms:openRooms,others:[],cfg:{...settings,buffer:walkinBuffer},wallsFor:id=>wallsOf(rooms.find(r=>r.id===id)),customRules,rules:settings.assignmentRules,singleOnly:true,allowSingleMax:true });
+  const recommendedId = (walkin || seating) ? recommended((walkin ?? seating)?.people ?? 2)?.ids[0] : undefined;
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "Sala";
 
   const reset = () => { setSelected(null); setMoving(null); setWalkin(null); setSeating(null); setConfirmFreed(null); setLimited(null); setSwap(null); setBusy(false); setFocus(null); };
@@ -294,7 +299,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
                   <button key={t.id} id={`live-t-${t.id}`} type="button" onClick={() => onTableTap(t)} aria-label={`Tavolo ${t.name}`}
                     className={cn("flex min-h-28 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-2 text-center leading-tight transition-colors",
                       st.kind === "seated" ? "border-busy bg-busy text-busy-foreground" : st.kind === "incoming" ? "border-warning bg-warning/25 text-primary-foreground" : "border-free bg-free/15 text-primary-foreground",
-                      flashing && "live-flash", focus === t.id && "ring-4 ring-free")}>
+                      flashing && "live-flash", focus === t.id && "ring-4 ring-free", recommendedId === t.id && "ring-4 ring-recommendation")}>
                     <span className="text-2xl font-bold">T.{t.name}</span>
                     <span className="text-[10px] uppercase tracking-wide opacity-80">{roomName(t.room_id)}</span>
                     <span className="text-[10px]">{(t.coperti_comodi ?? t.seats)}-{(t.coperti_max ?? t.seats)} pax</span>
@@ -360,6 +365,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
               <Label htmlFor="live-walkin-name">Nome / Riferimento (facoltativo)</Label>
               <Input id="live-walkin-name" value={walkin.name} onChange={(e) => setWalkin({ ...walkin, name: e.target.value })} />
             </div>
+            {!walkin.targetId && recommendedId && <Button variant="secondary" className="w-full border border-recommendation" onClick={()=>setWalkin({...walkin,targetId:recommendedId})}>💡 Tavolo suggerito: {tableName(recommendedId)}</Button>}
             <Button className="h-12 w-full" onClick={confirmWalkin}>{walkin.targetId ? "Accomoda su questo tavolo" : "Scegli il tavolo sulla griglia"}</Button>
             <Button variant="outline" className="w-full" onClick={() => setWalkin(null)}>Annulla</Button>
           </div>

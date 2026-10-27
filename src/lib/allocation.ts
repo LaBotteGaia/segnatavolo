@@ -3,15 +3,15 @@ import { canJoin, NO_EXTRAS, type RTable, type TableExtras } from './data';
 import { interval, isRoomClosedFor, tableState, type RotationCfg } from './rotation';
 import { customScore, normName, ruleMatches, type ActiveRule } from './custom-rules';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
-export type AssignmentTable = Pick<RTable, 'id' | 'name' | 'seats' | 'x' | 'y' | 'room_id' | 'no_join' | 'allow_extras'> & Partial<Pick<RTable, 'accoppiabile' | 'adatto_seduta_lunga' | 'coperti_comodi' | 'coperti_max' | 'posti_scomodi_solo_in_unione' | 'ordine_riempimento'>>;
+export type AssignmentTable = Pick<RTable, 'id' | 'name' | 'seats' | 'x' | 'y' | 'room_id' | 'no_join' | 'allow_extras'> & { accoppiabile?: boolean; adatto_seduta_lunga?: boolean; coperti_comodi?: number | null; coperti_max?: number | null; posti_scomodi_solo_in_unione?: boolean | null; ordine_riempimento?: number | null };
 type RoomLite = { id: string; environment?: string | null; open_days?: number[] | null; closed_periods?: unknown; closed_shifts?: string[] | null; walls?: unknown };
 type Other = { id: string; name: string; table_ids: string[]; time: string; duration_min?: number | null; buffer_min?: number | null; no_show?: boolean; tavolo_bloccato?: boolean | null };
 export type Suggestion = { ids: string[]; extras: TableExtras; kind: 'single' | 'extension' | 'join'; waste: number; ha_posti_scomodi: boolean; stage: 1 | 2 | 3; ruleId?: string };
 export type AssignmentParams = {
   people: number; date: string; shift: string; time: string; tables: AssignmentTable[]; rooms: RoomLite[]; others: Other[]; cfg: RotationCfg;
-  outside?: boolean; wallsFor: (roomId: string) => string[];
+  outside?: boolean | undefined; wallsFor: (roomId: string) => string[];
   me?: { id: string; duration_min?: number | null; buffer_min?: number | null };
-  rules?: AssignmentRules; notes?: string; customRules?: ActiveRule[];
+  rules?: AssignmentRules; notes?: string | undefined; customRules?: ActiveRule[];
   /** Gli accomodamenti al volo restano singoli; unioni ed extra richiedono il flusso prenotazione. */
   singleOnly?: boolean; allowSingleMax?: boolean;
 };
@@ -77,7 +77,7 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
       }
     }
     const combos=allCombos(ordered);
-    for(const [sacrifice,extend] of [[false,false],[true,false],[true,true]]) {
+    for(const [sacrifice,extend] of [[false,false],[true,false],[true,true]] as const) {
       for(const combo of combos) {const s=fit(combo,sacrifice,extend);if(s) return {...s,stage:1,ruleId:r.id};}
     }
   }
@@ -85,7 +85,7 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
   const singles=protectSmallParty(free.filter(t=>comfort(t)>=p.people),p.people,rules).sort((a,b)=>reservationPenalty(a)-reservationPenalty(b)||pref(a)-pref(b)||comfort(a)-comfort(b)||stable(a,b));
   const single=singles[0]; if(single) return fit([single],false,false);
   const combos=allCombos(free);
-  const ranked=(sacrifice:boolean,extend:boolean)=>combos.flatMap(combo=>{const s=fit(combo,sacrifice,extend);return s?[{s,combo}]:[];}).sort((a,b)=>a.s.extras.extra_sponde-b.s.extras.extra_sponde || a.combo.reduce((s,t)=>s+pref(t),0)-b.combo.reduce((s,t)=>s+pref(t),0) || a.s.waste-b.s.waste || a.combo.length-b.combo.length || stable(a.combo[0] ?? free[0],b.combo[0] ?? free[0]));
+  const ranked=(sacrifice:boolean,extend:boolean)=>combos.flatMap(combo=>{const s=fit(combo,sacrifice,extend);return s?[{s,combo}]:[];}).sort((a,b)=>a.s.extras.extra_sponde-b.s.extras.extra_sponde || a.combo.reduce((s,t)=>s+pref(t),0)-b.combo.reduce((s,t)=>s+pref(t),0) || a.s.waste-b.s.waste || a.combo.length-b.combo.length || (a.combo[0] && b.combo[0] ? stable(a.combo[0],b.combo[0]) : 0));
   return ranked(false,false)[0]?.s ?? ranked(true,false)[0]?.s ?? ranked(true,true)[0]?.s ?? null;
 }
 /** Compatibilità per tutti i chiamanti esistenti. */
