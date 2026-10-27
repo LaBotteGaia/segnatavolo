@@ -239,6 +239,13 @@
       "when": 1792861076774,
       "tag": "0033_walkin_limited_stay",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793126869338,
+      "tag": "0034_restaurant_assignment_rules",
+      "breakpoints": true
     }
   ]
 }
