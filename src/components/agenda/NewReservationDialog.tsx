@@ -99,7 +99,7 @@ export function NewReservationDialog({
   const suggestion = open && rooms && tables && time && pax > 0 && !closed
     ? suggestTables({
         people: pax, date, shift, time, tables, rooms, others, outside,
-        rules: settings.assignmentRules, notes,
+        rules: settings.assignmentRules, notes, customRules,
         cfg: { duration: settings.duration, buffer: settings.buffer },
         wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
         me: { id: "new", duration_min: dur, buffer_min: buf },

@@ -80,7 +80,7 @@ export function TableDialog({
   const extraLimit = selTables.filter(t=>t.allow_extras).length;
   const invalidExtras = extraSeats(ex)>0 && (reservation.people<=8 || ex.extra_sponde+ex.extra_barelle>extraLimit);
   const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
-  const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,wallsFor,me:reservation }) : null;
+  const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,customRules,wallsFor,me:reservation }) : null;
   const [view,setView] = useState<'cards'|'map'>('map');
   const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy') || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
   const toggle = (id: string) => {

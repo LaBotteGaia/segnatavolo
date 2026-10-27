@@ -1,6 +1,8 @@
 import { confirmedBooking } from "./online-booking";
 import { normalizeAssignmentRules, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { activeRules } from "./custom-rules";
 import { supabase } from "@/integrations/supabase/client";
 import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
 import type { Tables } from "@/integrations/supabase/types";
@@ -66,6 +68,24 @@ export const reservationsQuery = (date: string, restaurantId: string | null = nu
     return data;
   },
 });
+
+export const customRulesQuery = (restaurantId: string | null = null) => ({
+  queryKey: ["custom-rules", restaurantId],
+  enabled: !!restaurantId,
+  queryFn: async () => {
+    const { data, error } = await scopeRestaurant(supabase.from("restaurant_assignment_rules").select("*"), restaurantId).order("created_at");
+    if (error) throw error;
+    return data;
+  },
+});
+export function useCustomRules() {
+  return useQuery(customRulesQuery(useActiveRestaurantId()));
+}
+/** Regole personalizzate attive e valide, pronte per suggerimenti e riorganizzazione. */
+export function useActiveCustomRules() {
+  const { data } = useCustomRules();
+  return useMemo(() => activeRules(data), [data]);
+}
 
 export function useRooms() {
   return useQuery(roomsQuery(useActiveRestaurantId()));

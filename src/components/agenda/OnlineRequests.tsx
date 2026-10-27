@@ -41,7 +41,7 @@ export function OnlineRequests() {
     if (!restaurantId || !tables || !rooms) return;
     const { data, error } = await supabase.from('reservations').select('*').eq('restaurant_id', restaurantId).eq('date', r.date).eq('status', 'confirmed').is('deleted_at', null);
     if (error) { toast.error('Disponibilità non raggiungibile'); return; }
-    const suggestion = suggestTables({ people: r.people, date: r.date, shift: r.shift, time: r.time, tables, rooms, others: data, cfg: settings, outside: r.outside, notes:r.notes, rules:settings.assignmentRules, wallsFor: id => wallsOf(rooms.find(room => room.id === id)), me: r });
+    const suggestion = suggestTables({ people: r.people, date: r.date, shift: r.shift, time: r.time, tables, rooms, others: data, cfg: settings, outside: r.outside, notes:r.notes, rules:settings.assignmentRules, customRules, wallsFor: id => wallsOf(rooms.find(room => room.id === id)), me: r });
     setExtras(suggestion?.extras ?? NO_EXTRAS);
     setAssign({ ...r, table_ids: suggestion?.ids ?? [] });
   };

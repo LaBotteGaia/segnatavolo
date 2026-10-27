@@ -28,7 +28,7 @@ export function ReorganizeButton({ date, shift, rows }: { date: string; shift: S
     setResult(
       reorganizeService({
         date, shift, reservations: rows, tables, rooms,
-        rules: settings.assignmentRules,
+        rules: settings.assignmentRules, customRules,
         cfg: { duration: settings.duration, buffer: settings.buffer },
         wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
       }),
