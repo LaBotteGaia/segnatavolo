@@ -8,3 +8,8 @@ export const SERVER_REGION_LINE = "Server dati in Unione Europea (regione UE, co
 /** Avviso mostrato prima dell'eliminazione definitiva dell'account operatore. */
 export const DELETE_ACCOUNT_WARNING =
   "Sei sicuro di voler eliminare il tuo profilo operatore? Il tuo accesso all'applicazione verrà revocato immediatamente. Le prenotazioni storiche già registrate conserveranno il log di audit per fini di servizio.";
+
+/** Recapito per l'esercizio dei diritti privacy (Responsabile del trattamento Segnatavolo). */
+export const PRIVACY_CONTACT_EMAIL = "privacy@labottegaia.it";
+export const PRIVACY_ANCHOR = "informativa-privacy";
+export const TERMS_TITLE = "Termini d'Uso e Condizioni Generali di Servizio";

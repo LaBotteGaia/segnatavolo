@@ -252,6 +252,41 @@ export type Database = {
           },
         ]
       }
+      restaurant_assignment_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          parsed_logic: Json
+          raw_text: string
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parsed_logic?: Json
+          raw_text: string
+          restaurant_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parsed_logic?: Json
+          raw_text?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_assignment_rules_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_delivery_settings: {
         Row: {
           encrypted_password: string | null

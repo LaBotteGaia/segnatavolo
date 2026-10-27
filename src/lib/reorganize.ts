@@ -1,6 +1,7 @@
 /** Motore di Riorganizzazione Automatica della Sala (logica pura, testata). */
 import { canJoin, NO_EXTRAS, type RTable, type Reservation, type TableExtras } from "./data";
 import { interval, isRoomClosedFor, type RotationCfg } from "./rotation";
+import { customScore, hasMatchingRule, type ActiveRule } from './custom-rules';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 
 export type ReorgTable = Pick<RTable, "id" | "name" | "seats" | "x" | "y" | "room_id" | "no_join" | "allow_extras"> & {
@@ -86,6 +87,7 @@ function reorganizeOnce(p: {
   cfg: RotationCfg;
   wallsFor: (roomId: string) => string[];
   rules?: AssignmentRules;
+  customRules?: ActiveRule[];
 }, pinned: Set<string> = new Set()): ReorgResult {
   const openRooms = p.rooms.filter((r) => !isRoomClosedFor(r as never, p.date, p.shift));
   const rules = p.rules ?? DEFAULT_ASSIGNMENT_RULES;
@@ -139,7 +141,7 @@ function reorganizeOnce(p: {
         visited.add(key);
         const extras = fits(combo);
         if (extras) {
-          const score = [combo.reduce((s,t)=>s+assignmentPreference(t,r,rules,p.rooms),0), combo.reduce((s, t) => s + fillOrder(t), 0), combo.length, Math.max(0, seats - r.people)];
+          const score = [customScore(combo, r.people, r.time, p.customRules), combo.reduce((s,t)=>s+assignmentPreference(t,r,rules,p.rooms),0), combo.reduce((s, t) => s + fillOrder(t), 0), combo.length, Math.max(0, seats - r.people)];
           if (!box.best || lexLess(score, box.best.score)) box.best = { ids: combo.map((t) => t.id), extras, score };
         }
         if (seats >= r.people) return;
@@ -167,8 +169,14 @@ function reorganizeOnce(p: {
     let pick: { ids: string[]; extras: TableExtras } | null = null;
     // PASSAGGIO 1a: tavolo singolo comodo, seguendo l'ordine di riempimento.
     const eligible = protectSmallParty(singles.filter(t => comodi(t) >= r.people), r.people, rules);
-    const single = eligible.sort((a,b) => assignmentPreference(a,r,rules,p.rooms)-assignmentPreference(b,r,rules,p.rooms))[0];
+    const cs = (t: ReorgTable) => customScore([t], r.people, r.time, p.customRules);
+    const single = eligible.sort((a,b) => cs(a)-cs(b) || assignmentPreference(a,r,rules,p.rooms)-assignmentPreference(b,r,rules,p.rooms))[0];
     if (single) pick = { ids: [single.id], extras: NO_EXTRAS };
+    // Regole personalizzate: un'unione preferita (es. 1+2) prevale su un tavolo singolo non indicato.
+    if (single && cs(single) > 0 && hasMatchingRule(r.people, r.time, p.customRules)) {
+      const union = unions(r, me, (combo) => (combo.length > 1 && combo.reduce((s, t) => s + comodi(t), 0) >= r.people ? NO_EXTRAS : null));
+      if (union && customScore(union.ids.map(id => tableById.get(id)!).filter(Boolean), r.people, r.time, p.customRules) < cs(single)) pick = union;
+    }
     // PASSAGGIO 1b: unione di tavoli contigui con la sola capienza comoda.
     if (!pick) pick = unions(r, me, (combo) => (combo.length > 1 && combo.reduce((s, t) => s + comodi(t), 0) >= r.people ? NO_EXTRAS : null));
     // PASSAGGIO 2a: unione sfruttando la capienza estesa (i posti scomodi si attivano in unione).

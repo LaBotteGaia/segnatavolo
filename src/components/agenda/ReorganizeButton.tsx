@@ -10,12 +10,14 @@ import { useSettings } from "@/lib/membership";
 import { useActiveRestaurantId } from "@/lib/tenant";
 import { reorganizeService, type ReorgResult } from "@/lib/reorganize";
 import { wallsOf } from "@/lib/data";
+import { useActiveCustomRules } from '@/lib/data';
 
 /** Pulsante a fondo colonna: calcola la disposizione ottimale del turno e la applica dopo conferma. */
 export function ReorganizeButton({ date, shift, rows }: { date: string; shift: Shift; rows: Reservation[] }) {
   const { data: rooms = [] } = useRooms();
   const { data: tables = [] } = useTables();
   const settings = useSettings();
+  const customRules = useActiveCustomRules();
   const restaurantId = useActiveRestaurantId();
   const qc = useQueryClient();
   const [result, setResult] = useState<ReorgResult | null>(null);
@@ -28,7 +30,7 @@ export function ReorganizeButton({ date, shift, rows }: { date: string; shift: S
     setResult(
       reorganizeService({
         date, shift, reservations: rows, tables, rooms,
-        rules: settings.assignmentRules,
+        rules: settings.assignmentRules, customRules,
         cfg: { duration: settings.duration, buffer: settings.buffer },
         wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
       }),

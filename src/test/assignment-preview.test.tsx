@@ -8,6 +8,7 @@ vi.mock('@/lib/membership',()=>({useMembership:()=>({data:{restaurant_id:'restau
 vi.mock('@/lib/voice-ai.functions',()=>({getAiSettings:'load',parseAssignmentRules:'parse'}));
 vi.mock('@tanstack/react-start',()=>({useServerFn:(name:string)=>name==='load'?mocks.load:mocks.parse}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{from:()=>({select:()=>({eq:()=>({single:mocks.read})}),update:(value:unknown)=>{mocks.update(value);return {eq:()=>({select:async()=>({data:[{id:'restaurant-1'}],error:null})})};}})}}));
+vi.mock('@/components/CustomRulesPanel',()=>({CustomRulesPanel:()=>null}));
 afterEach(()=>{cleanup();vi.clearAllMocks();});
 const draft={longStay:{enabled:true,from:'21:00'},protectModular:true};
 async function prepare(){

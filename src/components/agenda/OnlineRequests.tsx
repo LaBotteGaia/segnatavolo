@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { useActiveRestaurantId } from '@/lib/tenant';
 import { useSettings } from '@/lib/membership';
-import { NO_EXTRAS, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from '@/lib/data';
+import { NO_EXTRAS, useActiveCustomRules, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from '@/lib/data';
 import { suggestTables } from '@/lib/allocation';
 import { decideOnlineBooking } from '@/lib/online-approval.functions';
 import { TableDialog } from './TableDialog';
@@ -21,6 +21,7 @@ export function OnlineRequests() {
   const { data: rooms } = useRooms();
   const { data: tables } = useTables();
   const settings = useSettings();
+  const customRules = useActiveCustomRules();
   const [open, setOpen] = useState(false);
   const [assign, setAssign] = useState<Reservation | null>(null);
   const [reject, setReject] = useState<Reservation | null>(null);
@@ -41,7 +42,7 @@ export function OnlineRequests() {
     if (!restaurantId || !tables || !rooms) return;
     const { data, error } = await supabase.from('reservations').select('*').eq('restaurant_id', restaurantId).eq('date', r.date).eq('status', 'confirmed').is('deleted_at', null);
     if (error) { toast.error('Disponibilità non raggiungibile'); return; }
-    const suggestion = suggestTables({ people: r.people, date: r.date, shift: r.shift, time: r.time, tables, rooms, others: data, cfg: settings, outside: r.outside, notes:r.notes, rules:settings.assignmentRules, wallsFor: id => wallsOf(rooms.find(room => room.id === id)), me: r });
+    const suggestion = suggestTables({ people: r.people, date: r.date, shift: r.shift, time: r.time, tables, rooms, others: data, cfg: settings, outside: r.outside, notes:r.notes, rules:settings.assignmentRules, customRules, wallsFor: id => wallsOf(rooms.find(room => room.id === id)), me: r });
     setExtras(suggestion?.extras ?? NO_EXTRAS);
     setAssign({ ...r, table_ids: suggestion?.ids ?? [] });
   };

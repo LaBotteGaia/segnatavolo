@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { aiSettingsSchema, normalizeVoiceBooking, type VoiceBooking } from './voice-ai';
 import { dayNames, voiceDateSchema } from './voice-date';
 import { assignmentRulesSchema, MASTER_ONLY_MESSAGE } from './assignment-rules';
+import { parsedRulesSchema } from './custom-rules';
 
 const idInput = z.object({ id: z.string().uuid() });
 const aad = (id: string) => `ai:${id}`;
@@ -54,6 +55,19 @@ export const parseAssignmentRules = createServerFn({ method: 'POST' }).middlewar
   if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Ristorante → Integrazioni.');
   const { translateAssignmentRules } = await import('./assignment-ai.server');
   return assignmentRulesSchema.parse(await translateAssignmentRules(cfg.key, data.text));
+});
+
+/** Bozza di regole personalizzate da Gemini: solo Master, nessun salvataggio automatico. */
+export const parseCustomRule = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({ text: z.string().trim().min(3).max(1500) }).parse(v)).handler(async ({ data, context }) => {
+  const { data: allowed, error } = await context.supabase.rpc('can_configure_delivery', { _rid: data.id });
+  if (error || !allowed) throw new Error(MASTER_ONLY_MESSAGE);
+  const cfg = await loadKey(data.id);
+  if (!cfg || cfg.provider !== 'gemini') throw new Error('Inserisci la chiave Gemini in Configurazione Ristorante → Integrazioni.');
+  const { data: tables } = await context.supabase.from('restaurant_tables').select('name').eq('restaurant_id', data.id);
+  const { translateCustomRule } = await import('./assignment-ai.server');
+  const parsed = parsedRulesSchema.safeParse(await translateCustomRule(cfg.key, data.text, (tables ?? []).map(t => t.name)));
+  if (!parsed.success) throw new Error('Regola non interpretabile: riformulala indicando tavoli e numero di persone.');
+  return parsed.data;
 });
 
 export const parseVoiceBooking = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => z.object({ restaurant_id: z.string().uuid(), transcript: z.string().trim().min(3).max(1000), current_date: voiceDateSchema, current_day_name: z.enum(dayNames).optional(), agenda_selected_date: voiceDateSchema.nullish() }).parse(v)).handler(async ({ data, context }): Promise<{ ok: true; booking: VoiceBooking } | { ok: false; message: string }> => {
