@@ -61,6 +61,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const [walkin, setWalkin] = useState<WalkinDraft | null>(null);
   const [seating, setSeating] = useState<{ people: number; name: string } | null>(null);
   const [confirmFreed, setConfirmFreed] = useState<{ table: RTable; occName: string; until: string } | null>(null);
+  const walkinBuffer = useWalkinBuffer();
   const [limited, setLimited] = useState<{ table: RTable; w: { people: number; name: string }; nextName: string; nextAt: string; until: string; minutes: number } | null>(null);
   const [swap, setSwap] = useState<{ from: Target; to: Target } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -146,7 +147,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   /** Tavolo libero ora: se una prenotazione successiva taglia la seduta standard chiede la permanenza vincolata. */
   const tryWalkin = (table: RTable, w: { people: number; name: string }) => {
     const next = nextBookingOn([table.id], rows, clock.minutes);
-    const lim = next ? limitedStay(toMinLocal(next.time), clock.minutes, settings) : null;
+    const lim = next ? limitedStay(toMinLocal(next.time), clock.minutes, { ...settings, buffer: walkinBuffer }) : null;
     if (!next || !lim) return void doWalkin(table, w);
     if (!lim.allowed) return toast.warning(`Tavolo ${table.name} prenotato alle ${next.time}: tempo insufficiente`);
     return setLimited({ table, w, nextName: next.name, nextAt: next.time, until: lim.until, minutes: lim.minutes });
@@ -369,7 +370,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
         <div className="absolute inset-0 z-10 grid place-items-center bg-black/50 p-4" onClick={() => setLimited(null)}>
           <div className="w-full max-w-md space-y-3 rounded-lg bg-card p-4 text-card-foreground shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display text-xl">⚠️ Tavolo {limited.table.name} prenotato alle {limited.nextAt} da {limited.nextName}</h3>
-            <p className="text-sm">Tempo massimo di permanenza disponibile: <b>{hoursMinutes(limited.minutes)}</b> (fino alle {limited.until}, riassetto incluso prima delle {limited.nextAt}).<br />Vuoi procedere con la permanenza vincolata?</p>
+            <p className="text-sm">Tempo massimo di permanenza disponibile: <b>{hoursMinutes(limited.minutes)}</b> (fino alle {limited.until}).<br />Considerando {walkinBuffer} minuti di riassetto, la permanenza massima è fino alle {limited.until}.<br />Vuoi procedere con la permanenza vincolata?</p>
             <Button className="h-14 w-full text-base" disabled={busy} onClick={doWalkinLimited}>✅ Conferma con uscita entro le {limited.until}</Button>
             <Button variant="outline" className="h-12 w-full" onClick={() => setLimited(null)}>Annulla / Scegli altro tavolo</Button>
           </div>

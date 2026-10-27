@@ -20,7 +20,7 @@ export const membershipQuery = () => {
       if (!u.user) return null;
       // Modalità Assistenza: il Super Admin vede il ristorante scelto come se fosse il suo.
       if (assist) {
-        const { data: r, error } = await supabase.from("restaurants").select("id, name, settings").eq("id", assist.id).maybeSingle();
+        const { data: r, error } = await supabase.from("restaurants").select("id, name, settings, tempo_riassetto_minuti").eq("id", assist.id).maybeSingle();
         if (error) throw error;
         if (!r) return null;
         return {
@@ -33,19 +33,19 @@ export const membershipQuery = () => {
           status: "active",
           created_at: "",
           phone: "", notes: "", operational_role: "",
-          restaurants: { name: r.name, settings: r.settings },
-        } as Member & { restaurants: { name: string; settings: unknown } | null };
+          restaurants: { name: r.name, settings: r.settings, tempo_riassetto_minuti: r.tempo_riassetto_minuti },
+        } as Member & { restaurants: { name: string; settings: unknown; tempo_riassetto_minuti?: number | null } | null };
       }
       const restaurantId = await ownRestaurantId();
       if (!restaurantId) return null;
       const { data, error } = await scopeRestaurant(supabase
         .from("restaurant_members")
-        .select("*, restaurants(name, settings)"), restaurantId)
+        .select("*, restaurants(name, settings, tempo_riassetto_minuti)"), restaurantId)
         .eq("user_id", u.user.id)
         .eq("status", "active")
         .maybeSingle();
       if (error) throw error;
-      return data as (Member & { restaurants: { name: string; settings: unknown } | null }) | null;
+      return data as (Member & { restaurants: { name: string; settings: unknown; tempo_riassetto_minuti?: number | null } | null }) | null;
     },
   };
 };
@@ -61,4 +61,11 @@ export function inviteLink(token: string) {
 export function useSettings() {
   const { data } = useMembership();
   return normalizeSettings(data?.restaurants?.settings);
+}
+
+/** Minuti di riassetto per l'Accomoda al Volo (impostazione del Master, predefinito 5). */
+export function useWalkinBuffer() {
+  const { data } = useMembership();
+  const v = data?.restaurants?.tempo_riassetto_minuti;
+  return typeof v === "number" && v >= 0 ? v : 5;
 }
