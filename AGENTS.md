@@ -37,4 +37,4 @@
 - Voice dictation: per-restaurant OpenAI/Gemini key encrypted (AES-GCM, AAD ai:<id>) in service-only restaurant_ai_settings; parsing in authenticated server functions only after transcript confirmation; pure date rules override AI arithmetic, falling back to the agenda date.
 - Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.
 - Live floor (src/lib/live-floor.ts): states from arrived flags and rotation intervals; occupied tables use seat_walkin_freed, earlier-than-booking seating uses seat_walkin_limited (server-side max_stay_until + shorter duration_min).
-- Custom rules use strict JSON and legacy adapters; allocation.ts shares deterministic assignment. One text stores one confirmed bundle; tenant-locked fingerprints prevent recent duplicates.
+- Custom rules use strict JSON and legacy adapters; allocation.ts shares deterministic assignment. One confirmed bundle per text; tenant-locked fingerprints block recent duplicates.
