@@ -126,14 +126,18 @@ export type FreeWindow =
   | { kind: "all"; label: string; short: string }
   | { kind: "timer" | "imminent"; minutes: number; next: string; label: string; short: string };
 
-/** Finestra libera di un tavolo libero adesso: tutto il turno, timer fino al prossimo arrivo o arrivo imminente (<45 min). */
-export function freeWindow(tableId: string, rows: LiveRes[], nowMin: number): FreeWindow {
+/** Riassetto predefinito per l'Accomoda al Volo quando il locale non l'ha impostato. */
+export const DEFAULT_WALKIN_BUFFER = 5;
+
+/** Finestra libera di un tavolo libero adesso: tutto il turno, timer fino all'uscita massima (prossimo arrivo − riassetto) o arrivo imminente (<45 min). */
+export function freeWindow(tableId: string, rows: LiveRes[], nowMin: number, buffer: number = DEFAULT_WALKIN_BUFFER): FreeWindow {
   const next = nextBookingOn([tableId], rows, nowMin);
   if (!next) return { kind: "all", label: "🟢 Libero (tutto il turno)", short: "Libero: tutto il turno" };
-  const minutes = toMin(next.time) - nowMin;
+  const untilMin = toMin(next.time) - buffer;
+  const minutes = Math.max(0, untilMin - nowMin);
   if (minutes < IMMINENT_MINUTES) return { kind: "imminent", minutes, next: next.time, label: `⏳ Arrivo imminente alle ${next.time} (${minutes} min rimasti)`, short: `Libero: ${minutes} min` };
   const hm = `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return { kind: "timer", minutes, next: next.time, label: `⏱️ Libero per ${hm} (fino alle ${next.time})`, short: `Libero: ${hm}` };
+  return { kind: "timer", minutes, next: next.time, label: `⏱️ Libero fino alle ${fmt(untilMin)} (${hm} disponibili)`, short: `Libero: ${hm}` };
 }
 
 /** Posti scomodi: coperti oltre i comodi ma entro il massimo (anche se il massimo vale solo in unione). */

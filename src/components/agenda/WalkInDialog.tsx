@@ -8,7 +8,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { compareTables, isShiftClosed, shiftName, useReservations, useRooms, useTables } from "@/lib/data";
-import { useSettings } from "@/lib/membership";
+import { useSettings, useWalkinBuffer } from "@/lib/membership";
 import { useServiceClock } from "@/lib/extras";
 import { isRoomClosedFor, tableState } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
@@ -25,6 +25,8 @@ export function WalkInDialog({ open, onOpenChange, onSaved }: { open: boolean; o
 function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date: string, shift: "colazione" | "pranzo" | "sera") => void }) {
   const settings = useSettings(); const now = useServiceClock(); const qc = useQueryClient();
   const clock = walkinClock(now, settings);
+  const walkinBuffer = useWalkinBuffer(); const walkCfg = { ...settings, buffer: walkinBuffer };
+  const [confirmLim, setConfirmLim] = useState<{ next: string; until: string } | null>(null);
   const { data: rows = [], isSuccess: rowsReady } = useReservations(clock.date);
   const { data: rooms = [], isSuccess: roomsReady } = useRooms();
   const { data: tables = [], isSuccess: tablesReady } = useTables();
@@ -36,8 +38,8 @@ function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date:
   const nowMin = toMin(clock.time);
   const nowState = (id: string) => tableState(id, { id: "walkin", time: clock.time, duration_min: 15, buffer_min: 0 }, shiftRows, settings);
   const maxOf = (t: (typeof tables)[number]) => Math.max(t.coperti_max ?? t.seats, t.seats);
-  const free = closed || !ready ? [] : tables.filter((t) => maxOf(t) >= people && !isRoomClosedFor(rooms.find((r) => r.id === t.room_id), clock.date, clock.shift) && nowState(t.id).kind !== "busy" && (limitedStay(toMin(nextBookingOn([t.id], shiftRows, nowMin)?.time ?? ""), nowMin, settings)?.allowed ?? true)).sort(compareTables(rooms));
-  const win = (id: string) => freeWindow(id, shiftRows, nowMin);
+  const free = closed || !ready ? [] : tables.filter((t) => maxOf(t) >= people && !isRoomClosedFor(rooms.find((r) => r.id === t.room_id), clock.date, clock.shift) && nowState(t.id).kind !== "busy" && (limitedStay(toMin(nextBookingOn([t.id], shiftRows, nowMin)?.time ?? ""), nowMin, walkCfg)?.allowed ?? true)).sort(compareTables(rooms));
+  const win = (id: string) => freeWindow(id, shiftRows, nowMin, walkinBuffer);
   const [askScomodo, setAskScomodo] = useState<string | null>(null);
   const pick = (id: string) => {
     if (id === table) return setTable("");
@@ -51,13 +53,15 @@ function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date:
   const [view, setView] = useState<'map'|'list'>('map');
   useEffect(() => { if (!roomId && rooms.length) setRoomId(rooms.find(r => !isRoomClosedFor(r,clock.date,clock.shift))?.id ?? rooms[0]?.id ?? ''); }, [rooms, roomId, clock.date, clock.shift]);
   const room = rooms.find(r => r.id === roomId);
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!selected || busy) return;
+  const save = async (e?: React.FormEvent, confirmed = false) => {
+    e?.preventDefault(); if (!selected || busy) return;
     setBusy(true);
     try {
       const next = nextBookingOn([table], shiftRows, nowMin);
-      const lim = next ? limitedStay(toMin(next.time), nowMin, settings) : null;
+      const lim = next ? limitedStay(toMin(next.time), nowMin, walkCfg) : null;
+      if (lim && next && !confirmed) { setConfirmLim({ next: next.time, until: lim.until }); return; }
       if (lim) {
+        setConfirmLim(null);
         const { data, error } = await supabase.rpc("seat_walkin_limited", walkinValues(name, people, table));
         if (error) { toast.error(error.message); await refreshService(qc); return; }
         await refreshService(qc); toast.success(`Tavolo assegnato con uscita prevista entro le ${data ?? lim.until}`); onSaved(clock.date, clock.shift); onClose(); return;
@@ -80,6 +84,13 @@ function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date:
       <div><Label htmlFor="walkin-name">Nome / Riferimento (facoltativo)</Label><Input id="walkin-name" value={name} onChange={(e) => setName(e.target.value)} /></div>
       <Button type="submit" className="h-12 w-full" disabled={!selected || busy}><Zap /> {busy ? "Salvataggio…" : `Accomoda ${people} ${people === 1 ? "persona" : "persone"}`}</Button>
     </form>
+    <AlertDialog open={!!confirmLim} onOpenChange={(o) => { if (!o) setConfirmLim(null); }}>
+      <AlertDialogContent>{confirmLim && <>
+        <AlertDialogHeader><AlertDialogTitle>⚠️ Tavolo prenotato alle {confirmLim.next}.</AlertDialogTitle>
+          <AlertDialogDescription>Considerando {walkinBuffer} minuti di riassetto, la permanenza massima è fino alle {confirmLim.until}.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter><AlertDialogCancel>Annulla / Scegli altro</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void save(undefined, true); }}>✅ Conferma con uscita entro le {confirmLim.until}</AlertDialogAction></AlertDialogFooter>
+      </>}</AlertDialogContent>
+    </AlertDialog>
     <AlertDialog open={!!askScomodo} onOpenChange={(o) => { if (!o) setAskScomodo(null); }}>
       <AlertDialogContent>{(() => { const t = tables.find((x) => x.id === askScomodo); if (!t) return null; return <>
         <AlertDialogHeader><AlertDialogTitle>⚠️ Assegnazione con Posti Scomodi</AlertDialogTitle>

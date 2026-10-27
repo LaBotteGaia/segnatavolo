@@ -492,6 +492,7 @@ export type Database = {
           public_address: string
           public_logo_url: string
           settings: Json
+          tempo_riassetto_minuti: number
           web_slug: string | null
         }
         Insert: {
@@ -503,6 +504,7 @@ export type Database = {
           public_address?: string
           public_logo_url?: string
           settings?: Json
+          tempo_riassetto_minuti?: number
           web_slug?: string | null
         }
         Update: {
@@ -514,6 +516,7 @@ export type Database = {
           public_address?: string
           public_logo_url?: string
           settings?: Json
+          tempo_riassetto_minuti?: number
           web_slug?: string | null
         }
         Relationships: []
