@@ -17,7 +17,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { UsersDialog } from "@/components/UsersDialog";
 import { useMembership } from "@/lib/membership";
 import { APP_NAME, APP_VERSION, toCsv } from "@/lib/extras";
-import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, LEGAL_URL, SERVER_REGION_LINE } from "@/lib/legal";
+import { COPYRIGHT_LINE, LEGAL_LINK_LABEL, SERVER_REGION_LINE } from "@/lib/legal";
+import { LegalTermsDialog, LegalTermsLink } from "@/components/LegalTerms";
 import { VersionBadge } from "@/components/agenda/Extras";
 import { ConnectionDot } from "@/components/ConnectionDot";
 import { shiftName, type Shift } from "@/lib/data";
@@ -34,6 +35,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [binOpen, setBinOpen] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const isMaster = me?.role === "master";
   const { data: isSuperAdmin } = useIsSuperAdmin();
@@ -122,7 +124,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
             <MenuItem icon={<Download />} onClick={() => { setOpen(false); exportCsv(); }}>Esporta Dati (Backup CSV)</MenuItem>
             <MenuItem icon={<CircleHelp />} onClick={() => { setOpen(false); setTutorialOpen(true); }}>Guida Rapida / Tutorial</MenuItem>
             <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setLegalOpen(true); }}>Informazioni app e legali</MenuItem>
-            <Button asChild variant="ghost" className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left"><a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}><Scale className="size-4 shrink-0" /> Termini &amp; Privacy</a></Button>
+            <MenuItem icon={<Scale />} onClick={() => { setOpen(false); setTermsOpen(true); }}>Termini &amp; Privacy</MenuItem>
             <MenuItem icon={<Trash2 />} onClick={() => { setOpen(false); setDeleteOpen(true); }}>Elimina il mio account</MenuItem>
           </nav>
 
@@ -139,6 +141,7 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
       <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
       <RecycleBinDialog open={binOpen} onOpenChange={setBinOpen} />
       <LegalDialog open={legalOpen} onOpenChange={setLegalOpen} />
+      <LegalTermsDialog open={termsOpen} onOpenChange={setTermsOpen} restaurant={me?.restaurants?.name} />
       {me && (isMaster || isSuperAdmin) && <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} me={me} />}
     </>
   );
@@ -150,9 +153,9 @@ function LegalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
       <DialogContent>
         <DialogHeader><DialogTitle>Informazioni legali e Privacy</DialogTitle></DialogHeader>
         <div className="space-y-4 text-sm">
-          <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" className="block rounded-md border p-3 font-semibold text-primary underline">
+          <LegalTermsLink className="block rounded-md border p-3 font-semibold text-primary underline">
             {LEGAL_LINK_LABEL}
-          </a>
+          </LegalTermsLink>
           <dl className="space-y-2">
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Versione app</dt><dd className="font-semibold">{APP_NAME} {APP_VERSION}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Copyright</dt><dd className="font-semibold">{COPYRIGHT_LINE}</dd></div>
