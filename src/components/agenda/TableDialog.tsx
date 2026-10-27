@@ -12,6 +12,7 @@ import { useMembership, useSettings } from "@/lib/membership";
 import { TableCards } from './TableCards';
 import { suggestTables } from '@/lib/allocation';
 import { compareTableNames } from '@/lib/data';
+import { useActiveCustomRules } from '@/lib/data';
 
 export { GRID_COLS, GRID_ROWS };
 
@@ -57,6 +58,7 @@ export function TableDialog({
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const settings = useSettings();
+  const customRules = useActiveCustomRules();
   const isMaster = useMembership().data?.role === "master";
   const [force, setForce] = useState(false);
   const cfg = { duration: settings.duration, buffer: settings.buffer };

@@ -28,6 +28,7 @@ import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { reliabilityStats } from "@/lib/no-show";
 import { suggestTables } from "@/lib/allocation";
 import { wallsOf } from "@/lib/data";
+import { useActiveCustomRules } from '@/lib/data';
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -71,6 +72,7 @@ export function NewReservationDialog({
   const [tags, setTags] = useState("");
   const [manual, setManual] = useState(false);
   const settings = useSettings();
+  const customRules = useActiveCustomRules();
   const { data: history = [] } = useCustomerHistory();
   const now = useServiceClock();
   const ranges = rangesOf(settings);
