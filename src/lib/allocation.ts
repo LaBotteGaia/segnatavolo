@@ -1,6 +1,7 @@
 /** Assegnazione intelligente del tavolo (logica pura, testata). */
 import { canJoin, type RTable, type TableExtras, NO_EXTRAS } from "./data";
 import { isRoomClosedFor, tableState, type RotationCfg } from "./rotation";
+import { customScore, hasMatchingRule, type ActiveRule } from './custom-rules';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 
 type T = Pick<RTable, "id" | "name" | "seats" | "x" | "y" | "room_id" | "no_join" | "allow_extras"> & Partial<Pick<RTable, 'accoppiabile' | 'adatto_seduta_lunga' | 'coperti_comodi' | 'coperti_max' | 'posti_scomodi_solo_in_unione' | 'ordine_riempimento'>>;
@@ -15,23 +16,25 @@ export function suggestTables(p: {
   tables: T[]; rooms: RoomLite[]; others: Other[]; cfg: RotationCfg;
   outside?: boolean | undefined; wallsFor: (roomId: string) => string[];
   me?: { id: string; duration_min?: number | null; buffer_min?: number | null };
-  rules?: AssignmentRules; notes?: string | undefined;
+  rules?: AssignmentRules; notes?: string | undefined; customRules?: ActiveRule[];
 }): Suggestion | null {
   if (!Number.isFinite(p.people) || p.people < 1) return null;
   const me = { id: p.me?.id ?? "new", time: p.time, duration_min: p.me?.duration_min ?? null, buffer_min: p.me?.buffer_min ?? null };
   const rules = p.rules ?? DEFAULT_ASSIGNMENT_RULES;
   const preference = (t: T) => assignmentPreference(t, { ...me, notes: p.notes ?? '' }, rules, p.rooms);
   const comfort = (t: T) => t.coperti_comodi ?? t.seats;
+  const custom = (combo: T[]) => customScore(combo, p.people, p.time, p.customRules);
+  const customActive = hasMatchingRule(p.people, p.time, p.customRules);
   const openRooms = p.rooms.filter(r => !isRoomClosedFor(r as never, p.date, p.shift));
   const zone = p.outside === undefined ? openRooms : openRooms.filter(r => (r.environment === "esterno") === p.outside);
   const roomIds = new Set((zone.length ? zone : openRooms).map(r => r.id));
   const free = p.tables.filter(t => roomIds.has(t.room_id) && tableState(t.id, me, p.others, p.cfg).kind !== "busy");
-  const single = protectSmallParty(free.filter(t => comfort(t) >= p.people), p.people, rules).sort((a,b) => preference(a)-preference(b) || comfort(a)-comfort(b) || (a.ordine_riempimento ?? 10)-(b.ordine_riempimento ?? 10) || a.name.localeCompare(b.name, "it", { numeric: true }))[0];
-  if (single && p.people <= 8) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: comfort(single)-p.people };
+  const single = protectSmallParty(free.filter(t => comfort(t) >= p.people), p.people, rules).sort((a,b) => custom([a])-custom([b]) || preference(a)-preference(b) || comfort(a)-comfort(b) || (a.ordine_riempimento ?? 10)-(b.ordine_riempimento ?? 10) || a.name.localeCompare(b.name, "it", { numeric: true }))[0];
+  if (single && p.people <= 8 && (!customActive || custom([single]) === 0)) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: comfort(single)-p.people };
   type Candidate = Suggestion & { distance: number };
   let plain: Candidate | undefined;
   let extended: Candidate | undefined;
-  const score = (s: Candidate) => [s.ids.reduce((n,id) => { const t=p.tables.find(t=>t.id===id); return n+(t?preference(t):0); },0), s.extras.extra_sponde, s.ids.length, s.waste, s.distance];
+  const score = (s: Candidate) => [custom(s.ids.flatMap(id => p.tables.filter(t => t.id === id))), s.ids.reduce((n,id) => { const t=p.tables.find(t=>t.id===id); return n+(t?preference(t):0); },0), s.extras.extra_sponde, s.ids.length, s.waste, s.distance];
   const better = (a: Candidate, b?: Candidate) => {
     if (!b) return true;
     const left = score(a), right = score(b);
@@ -79,6 +82,7 @@ export function suggestTables(p: {
     for (const t of group) explore([t],comfort(t));
   }
   if (!plain && single) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: comfort(single)-p.people };
+  if (plain && single && p.people <= 8 && custom([single]) <= custom(plain.ids.flatMap(id => p.tables.filter(t => t.id === id)))) return { ids: [single.id], extras: NO_EXTRAS, kind: "single", waste: comfort(single)-p.people };
   const best = plain ?? extended;
   if (!best) {
     const tight=free.filter(t=>t.posti_scomodi_solo_in_unione===false && (t.coperti_max ?? comfort(t))>=p.people).sort((a,b)=>preference(a)-preference(b) || (a.coperti_max ?? comfort(a))-(b.coperti_max ?? comfort(b)))[0];
