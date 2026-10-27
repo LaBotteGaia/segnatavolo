@@ -102,6 +102,7 @@ export type Database = {
           duration_min: number | null
           extra_barelle: number
           extra_sponde: number
+          ha_posti_scomodi: boolean
           id: string
           is_new: boolean
           max_stay_until: string | null
@@ -141,6 +142,7 @@ export type Database = {
           duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
+          ha_posti_scomodi?: boolean
           id?: string
           is_new?: boolean
           max_stay_until?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           duration_min?: number | null
           extra_barelle?: number
           extra_sponde?: number
+          ha_posti_scomodi?: boolean
           id?: string
           is_new?: boolean
           max_stay_until?: string | null

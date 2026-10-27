@@ -246,6 +246,13 @@
       "when": 1793126869338,
       "tag": "0034_restaurant_assignment_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793128254582,
+      "tag": "0035_walkin_posti_scomodi",
+      "breakpoints": true
     }
   ]
 }
