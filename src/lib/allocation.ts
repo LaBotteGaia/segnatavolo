@@ -11,7 +11,7 @@ export type AssignmentParams = {
   people: number; date: string; shift: string; time: string; tables: AssignmentTable[]; rooms: RoomLite[]; others: Other[]; cfg: RotationCfg;
   outside?: boolean | undefined; wallsFor: (roomId: string) => string[];
   me?: { id: string; duration_min?: number | null; buffer_min?: number | null };
-  rules?: AssignmentRules; notes?: string | undefined; customRules?: ActiveRule[];
+  rules?: AssignmentRules; notes?: string | undefined; customRules?: ActiveRule[] | undefined;
   /** Gli accomodamenti al volo restano singoli; unioni ed extra richiedono il flusso prenotazione. */
   singleOnly?: boolean; allowSingleMax?: boolean;
 };
