@@ -16,14 +16,22 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
   const rid = useActiveRestaurantId();
   const {data:me} = useMembership();
   const settings = useSettings();
-  const weather = weatherSettingsOf(me?.restaurants?.settings);
+  const location = useQuery({queryKey:['weather-location',rid],enabled:!!rid,staleTime:30*60*1000,queryFn:async()=>{
+    const {data,error} = await supabase.from('restaurants').select('public_address,name').eq('id',rid ?? '').single();
+    if(error) throw error;
+    return data;
+  }});
+  const savedWeather = weatherSettingsOf(me?.restaurants?.settings);
+  const addressCity = location.data?.public_address?.match(/\b\d{5}\s+(.+?)(?:\s+[A-Z]{2})?$/)?.[1] ?? '';
+  const weather = {...savedWeather,city:savedWeather.city || addressCity || location.data?.name.split(' - ')[1] || ''};
   const {data:rooms=[]} = useRooms();
   const {data:tables=[]} = useTables();
   const customRules = useActiveCustomRules();
   const qc = useQueryClient();
   const [open,setOpen] = useState(false);
+  const [detailOpen,setDetailOpen] = useState(false);
   const [report,setReport] = useState<{moved:number;unplaced:Reservation[]} | null>(null);
-  const forecast = useQuery({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid,staleTime:30*60*1000,refetchInterval:30*60*1000,retry:1,queryFn:({signal})=>fetchWeather(weather,date,signal)});
+  const forecast = useQuery({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid && !location.isPending,staleTime:30*60*1000,refetchInterval:30*60*1000,retry:1,queryFn:({signal})=>fetchWeather(weather,date,signal)});
   const summary = forecast.data ? serviceWeather(forecast.data,date,shift,weather) : null;
   const outdoor = new Set(rooms.filter(r=>r.is_outdoor).map(r=>r.id));
   const outsideTables = new Set(tables.filter(t=>outdoor.has(t.room_id)).map(t=>t.id));
@@ -41,9 +49,9 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
     return {moved:result.moves.length,unplaced:current.filter(r=>result.unplaced.some(u=>u.id===r.id))};
   },onSuccess:async result=>{setReport(result); await Promise.all(['rooms','reservations','reservations-month','online-requests','customer-history'].map(key=>qc.invalidateQueries({queryKey:[key]})));toast.success('Dehors chiusi per questo turno');},onError:e=>toast.error(e.message)});
   return <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 text-xs" data-no-swipe>
-    <Popover><PopoverTrigger asChild><Button size="sm" variant="outline" className={summary?.critical?'border-warning text-warning':'text-foreground'} aria-label={`Meteo ${shiftName(shift)}`}>
+    <Popover open={detailOpen} onOpenChange={setDetailOpen}><PopoverTrigger asChild><Button size="sm" variant="outline" className={summary?.critical?'border-warning text-warning':'text-foreground'} onMouseEnter={()=>setDetailOpen(true)} aria-label={`Meteo ${shiftName(shift)}`}>
       {summary?`${summary.icon} ${Math.round(summary.temperature)}°C`:forecast.isFetching?'Meteo…':'Meteo —'}
-    </Button></PopoverTrigger><PopoverContent className="w-72 max-w-[90vw] text-sm" onMouseEnter={()=>{}}>
+    </Button></PopoverTrigger><PopoverContent className="w-72 max-w-[90vw] text-sm" onMouseLeave={()=>setDetailOpen(false)}>
       <p className="font-semibold">{shiftName(shift)} · {date.split('-').reverse().join('/')}</p>
       {forecast.isError?<p className="mt-2 text-muted-foreground">{forecast.error.message}</p>:!summary?<p className="mt-2">Previsioni non disponibili</p>:<>
         <p className={summary.critical?'my-2 font-semibold text-warning':'my-2 text-free'}>{summary.critical?summary.reasons.join(' · '):'Favorevole'}</p>
