@@ -31,7 +31,7 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
   const [open,setOpen] = useState(false);
   const [detailOpen,setDetailOpen] = useState(false);
   const [report,setReport] = useState<{moved:number;unplaced:Reservation[]} | null>(null);
-  const forecast = useQuery({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid && !location.isPending,staleTime:30*60*1000,refetchInterval:30*60*1000,retry:1,queryFn:({signal})=>fetchWeather(weather,date,signal)});
+  const forecast = useQuery({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid && !location.isPending,staleTime:30*60*1000,gcTime:60*60*1000,refetchInterval:30*60*1000,retry:1,queryFn:({signal})=>fetchWeather(weather,date,signal)});
   const summary = forecast.data ? serviceWeather(forecast.data,date,shift,weather) : null;
   const outdoor = new Set(rooms.filter(r=>r.is_outdoor).map(r=>r.id));
   const outsideTables = new Set(tables.filter(t=>outdoor.has(t.room_id)).map(t=>t.id));

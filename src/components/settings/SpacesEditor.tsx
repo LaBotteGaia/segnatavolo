@@ -198,6 +198,10 @@ export function SpacesEditor({ embedded = false }: { embedded?: boolean } = {}) 
               </div>
               </fieldset>
               <RoomSchedule room={room} onChange={(p) => updateRoom(room, p)} />
+              {room.closed_shifts.filter(s=>/^\d{4}-\d{2}-\d{2}\|/.test(s)).length>0 && <section className="mb-3 space-y-2 border-t pt-3">
+                <h3 className="text-sm font-semibold">Chiusure per maltempo</h3>
+                {room.closed_shifts.filter(s=>/^\d{4}-\d{2}-\d{2}\|/.test(s)).map(s=><div key={s} className="flex items-center justify-between gap-2 text-sm"><span>{s.split('|')[0]?.split('-').reverse().join('/')} · {shiftName(s.split('|')[1] ?? '')}</span><Button size="sm" variant="outline" onClick={()=>updateRoom(room,{closed_shifts:room.closed_shifts.filter(x=>x!==s)})}>Riapri</Button></div>)}
+              </section>}
               <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
 
 
