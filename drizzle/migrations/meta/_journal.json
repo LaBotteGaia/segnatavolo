@@ -267,6 +267,13 @@
       "when": 1793131660935,
       "tag": "0037_assignment_rules_recent_dedup",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793267382772,
+      "tag": "0038_weather_service_closure",
+      "breakpoints": true
     }
   ]
 }

@@ -631,6 +631,16 @@ export type Database = {
     Functions: {
       can_configure_delivery: { Args: { _rid: string }; Returns: boolean }
       can_use_restaurant: { Args: { _rid: string }; Returns: boolean }
+      close_weather_service: {
+        Args: {
+          _date: string
+          _expected: Json
+          _plan: Json
+          _rid: string
+          _shift: string
+        }
+        Returns: Json
+      }
       create_restaurant: {
         Args: { _display_name: string; _name: string }
         Returns: string
@@ -712,6 +722,14 @@ export type Database = {
       }
       restore_service_reservation: {
         Args: { _id: string; _without_tables?: boolean }
+        Returns: boolean
+      }
+      room_weather_closed: {
+        Args: {
+          _date: string
+          _room: Database["public"]["Tables"]["rooms"]["Row"]
+          _shift: string
+        }
         Returns: boolean
       }
       seat_walkin_freed: {
