@@ -37,6 +37,7 @@ import { TutorialAutoOpen } from "@/components/TutorialDialog";
 import { APP_NAME } from "@/lib/extras";
 import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 import { ReorganizeButton } from "@/components/agenda/ReorganizeButton";
+import { WeatherBadge } from '@/components/agenda/WeatherBadge';
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -323,6 +324,7 @@ function AgendaPage() {
             <Counter label="Fuori" value={c.outside} />
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
+          <WeatherBadge date={date} shift={shift} rows={all} />
         </header>
         <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>

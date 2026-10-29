@@ -38,3 +38,4 @@
 - Monthly agenda calendar gestures are opt-in through CalendarDayGesture; pointer timers and a shared same-cell tap tracker suppress consultation clicks on navigation, leaving other date pickers unchanged.
 - Live floor (src/lib/live-floor.ts): states from arrived flags and rotation intervals; occupied tables use seat_walkin_freed, earlier-than-booking seating uses seat_walkin_limited (server-side max_stay_until + shorter duration_min).
 - Custom rules use strict JSON and legacy adapters; allocation.ts shares deterministic assignment. One confirmed bundle per text; tenant-locked fingerprints block recent duplicates.
+- Weather uses a tenant-keyed frontend Open-Meteo cache; date-specific closures are date|shift entries in rooms.closed_shifts. Shared rotation predicates and booking SQL honor them; weather relocation reuses reorganizeService and commits through an authorized, locking, snapshot-checked atomic RPC.

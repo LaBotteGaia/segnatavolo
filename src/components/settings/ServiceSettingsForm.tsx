@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ALL_SHIFTS, normalizeSettings, shiftName, totalCapacities, useRooms, useTables, type RestaurantSettings, type Shift } from "@/lib/data";
 import { configurationError } from "@/lib/assignment-rules";
+import { weatherSettingsOf } from '@/services/weatherService';
+import { WeatherSettingsFields } from './WeatherSettingsFields';
 
 const ALL_TIMES = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, "0")}:${String((i % 4) * 15).padStart(2, "0")}`);
 const WEEKDAYS: [string, string][] = [["1", "Lunedì"], ["2", "Martedì"], ["3", "Mercoledì"], ["4", "Giovedì"], ["5", "Venerdì"], ["6", "Sabato"], ["0", "Domenica"]];
@@ -17,6 +19,8 @@ const WEEKDAYS: [string, string][] = [["1", "Lunedì"], ["2", "Martedì"], ["3",
 /** Orari, turni, rotazione, riserva, privacy e chiusure del ristorante (solo Master: RLS blocca gli altri). */
 export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: string; settings: unknown; walkinBuffer?: number }) {
   const qc = useQueryClient();
+  const [weather,setWeather] = useState(()=>weatherSettingsOf(settings));
+  useEffect(()=>setWeather(weatherSettingsOf(settings)),[settings]);
   const [riassetto, setRiassetto] = useState(walkinBuffer);
   useEffect(() => { setRiassetto(walkinBuffer); }, [walkinBuffer]);
   const [st, setSt] = useState<RestaurantSettings>(() => normalizeSettings(settings));
@@ -36,8 +40,9 @@ export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: st
     e.preventDefault();
     for (const s of active) if (st.shifts[s].from >= st.shifts[s].to) { toast.error(`${shiftName(s)}: l'orario di fine deve essere dopo l'inizio`); return; }
     if (st.holidays.some((h) => !h.from || !h.to || h.from > h.to)) { toast.error("Controlla le date delle ferie"); return; }
+    if (weather.minTemperature >= weather.maxTemperature || (weather.latitude === null) !== (weather.longitude === null)) { toast.error('Controlla coordinate e soglie meteo'); return; }
     const preserved = settings && typeof settings === "object" ? settings : {};
-    const { data: saved, error } = await supabase.from("restaurants").update({ settings: { ...preserved, ...st }, tempo_riassetto_minuti: Math.min(60, Math.max(0, Math.round(riassetto))) }).eq("id", id).select("id");
+    const { data: saved, error } = await supabase.from("restaurants").update({ settings: { ...preserved, ...st, weather }, tempo_riassetto_minuti: Math.min(60, Math.max(0, Math.round(riassetto))) }).eq("id", id).select("id");
     if (error || !saved?.length) { toast.error(configurationError(error ?? { code: "42501" })); return; }
     toast.success("Orari e turni salvati");
     qc.invalidateQueries({ queryKey: ["membership"] });
@@ -156,6 +161,7 @@ export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: st
         <Button type="button" variant="outline" size="sm" onClick={() => setSt((o) => ({ ...o, holidays: [...o.holidays, { from: "", to: "" }] }))}><Plus /> Aggiungi periodo</Button>
       </section>
 
+      <WeatherSettingsFields value={weather} onChange={setWeather} />
       <Button type="submit" className="w-full">Salva orari e turni</Button>
     </form>
   );
