@@ -1,7 +1,7 @@
 import { reorganizeService, type ReorgParams } from './reorganize';
 
 /** Reuse the shared engine while explicitly dropping outdoor preferences and closed tables. */
-export function weatherReorganization(p: ReorgParams & { rooms: (ReorgParams['rooms'][number] & { is_outdoor?: boolean })[] }) {
+export function weatherReorganization(p: Omit<ReorgParams,'rooms'> & { rooms: (ReorgParams['rooms'][number] & { is_outdoor?: boolean })[] }) {
   const rooms = p.rooms.filter(r => !r.is_outdoor && r.environment !== 'esterno');
   const reservations = p.reservations.map(r => ({ ...r, outside:false }));
   const result = reorganizeService({ ...p, reservations, rooms, tables:p.tables.filter(t => rooms.some(r => r.id === t.room_id)) });

@@ -167,6 +167,9 @@ export function SpacesEditor({ embedded = false }: { embedded?: boolean } = {}) 
                 <span className="text-sm font-semibold">{locked ? "🔒 Sala protetta da modifiche" : "✏️ Sala sbloccata: modifiche attive"}</span>
               </div>
               <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
+              <label className="mb-3 flex items-center justify-between gap-2 text-sm">Zona all’aperto / Dehors (soggetta a meteo)
+                <Switch checked={room.is_outdoor} onCheckedChange={v=>updateRoom(room,{is_outdoor:v,environment:v?'esterno':'interno'})} aria-label="Zona all’aperto / Dehors (soggetta a meteo)" />
+              </label>
               <div className="mb-4 flex flex-wrap items-end gap-4 rounded-md border bg-card p-3">
                 <div>
                   <div className="mb-1 text-xs text-muted-foreground">Tipologia Sala</div>

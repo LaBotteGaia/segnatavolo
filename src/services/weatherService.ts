@@ -6,7 +6,7 @@ export function weatherSettingsOf(settings: unknown): WeatherSettings {
   const raw = (settings && typeof settings === 'object' ? (settings as { weather?: unknown }).weather : null);
   const o = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
   const number = (k: string, fallback: number | null) => typeof o[k] === 'number' && Number.isFinite(o[k]) ? o[k] as number : fallback;
-  return { latitude: number('latitude', null), longitude: number('longitude', null), city: typeof o.city === 'string' ? o.city : '', minTemperature: number('minTemperature', 15) ?? 15, maxTemperature: number('maxTemperature', 34) ?? 34, heated: o.heated === true, shaded: o.shaded === true };
+  return { latitude: number('latitude', null), longitude: number('longitude', null), city: typeof o['city'] === 'string' ? o['city'] : '', minTemperature: number('minTemperature', 15) ?? 15, maxTemperature: number('maxTemperature', 34) ?? 34, heated: o['heated'] === true, shaded: o['shaded'] === true };
 }
 export type WeatherHour = { time: string; temperature: number; probability: number; precipitation: number; code: number; wind: number; gust: number };
 export function serviceWeather(hours: WeatherHour[], date: string, shift: Shift, settings: WeatherSettings) {
@@ -25,7 +25,7 @@ export function serviceWeather(hours: WeatherHour[], date: string, shift: Shift,
 }
 export async function geocodeCity(city: string, signal?: AbortSignal) {
   if (!city.trim()) throw new Error('Imposta la città o le coordinate del ristorante in Orari & Turni.');
-  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${new URLSearchParams({ name: city.trim(), count: '1', language: 'it', countryCode: 'IT' })}`, { signal });
+  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${new URLSearchParams({ name: city.trim(), count: '1', language: 'it', countryCode: 'IT' })}`, { signal:signal ?? null });
   if (!response.ok) throw new Error('Ricerca della città non disponibile.');
   const body = await response.json() as { results?: { latitude: number; longitude: number; name: string }[] };
   const place = body.results?.[0];
@@ -35,12 +35,12 @@ export async function geocodeCity(city: string, signal?: AbortSignal) {
 export async function fetchWeather(settings: WeatherSettings, date: string, signal?: AbortSignal): Promise<WeatherHour[]> {
   const coords = settings.latitude !== null && settings.longitude !== null ? settings : await geocodeCity(settings.city, signal);
   const query = new URLSearchParams({ latitude: String(coords.latitude), longitude: String(coords.longitude), start_date: date, end_date: date, timezone: 'Europe/Rome', hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m', wind_speed_unit: 'kmh' });
-  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${query}`, { signal });
+  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${query}`, { signal:signal ?? null });
   if (!response.ok) throw new Error('Previsioni non disponibili per questa data (fino a 16 giorni).');
   const body = await response.json() as { hourly?: Record<string, (number | string | null)[]> };
   const h = body.hourly;
-  if (!h?.time) throw new Error('Previsioni non disponibili.');
-  return h.time.flatMap((t, i) => {
+  if (!h?.['time']) throw new Error('Previsioni non disponibili.');
+  return h['time'].flatMap((t, i) => {
     const fields = ['temperature_2m','precipitation_probability','precipitation','weather_code','wind_speed_10m','wind_gusts_10m'].map(k => h[k]?.[i]);
     if (typeof t !== 'string' || fields.some(v => typeof v !== 'number' || !Number.isFinite(v))) return [];
     const [temperature, probability, precipitation, code, wind, gust] = fields as number[];
