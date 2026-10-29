@@ -78,7 +78,7 @@ export function isRoomClosed(room: Partial<Pick<Room, "open_days" | "closed_peri
 
 /** Sala chiusa per stagione quel giorno oppure disattivata per il turno. */
 export function isRoomClosedFor(room: (Partial<Pick<Room, "open_days" | "closed_periods">> & { closed_shifts?: string[] | null }) | undefined, date: string, shift: string): boolean {
-  return isRoomClosed(room, date) || !!room?.closed_shifts?.includes(shift);
+  return isRoomClosed(room, date) || !!room?.closed_shifts?.includes(shift) || !!room?.closed_shifts?.includes(`${date}|${shift}`);
 }
 
 /* ---------- Doppio turno (due rotazioni complete sulla stessa sala) ---------- */

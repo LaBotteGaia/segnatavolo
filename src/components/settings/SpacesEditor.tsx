@@ -167,6 +167,9 @@ export function SpacesEditor({ embedded = false }: { embedded?: boolean } = {}) 
                 <span className="text-sm font-semibold">{locked ? "🔒 Sala protetta da modifiche" : "✏️ Sala sbloccata: modifiche attive"}</span>
               </div>
               <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
+              <label className="mb-3 flex items-center justify-between gap-2 text-sm">Zona all’aperto / Dehors (soggetta a meteo)
+                <Switch checked={room.is_outdoor} onCheckedChange={v=>updateRoom(room,{is_outdoor:v,environment:v?'esterno':'interno'})} aria-label="Zona all’aperto / Dehors (soggetta a meteo)" />
+              </label>
               <div className="mb-4 flex flex-wrap items-end gap-4 rounded-md border bg-card p-3">
                 <div>
                   <div className="mb-1 text-xs text-muted-foreground">Tipologia Sala</div>
@@ -195,6 +198,10 @@ export function SpacesEditor({ embedded = false }: { embedded?: boolean } = {}) 
               </div>
               </fieldset>
               <RoomSchedule room={room} onChange={(p) => updateRoom(room, p)} />
+              {room.closed_shifts.filter(s=>/^\d{4}-\d{2}-\d{2}\|/.test(s)).length>0 && <section className="mb-3 space-y-2 border-t pt-3">
+                <h3 className="text-sm font-semibold">Chiusure per maltempo</h3>
+                {room.closed_shifts.filter(s=>/^\d{4}-\d{2}-\d{2}\|/.test(s)).map(s=><div key={s} className="flex items-center justify-between gap-2 text-sm"><span>{s.split('|')[0]?.split('-').reverse().join('/')} · {shiftName(s.split('|')[1] ?? '')}</span><Button size="sm" variant="outline" onClick={()=>updateRoom(room,{closed_shifts:room.closed_shifts.filter(x=>x!==s)})}>Riapri</Button></div>)}
+              </section>}
               <fieldset disabled={locked} className={cn("contents", locked && "[&_button]:opacity-50")}>
 
 

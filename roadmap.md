@@ -55,3 +55,7 @@
 - [x] v0.8.16-alpha: Foglio di Sala cronologico con contatti, note e stampa A4; 7 test superati e verifica autenticata su 23 prenotazioni, senza modificare dati.
 - [x] v0.8.21-alpha: regole senza duplicati, schema rigoroso Gemini compatibile con regole esistenti e motore deterministico condiviso.
 - [x] 296 test superati; antiduplicato verificato nel database, regola di prova spenta riletta e cancellata dalla UI; anteprima Gemini reale scartata, desktop/mobile senza overflow, nessuna prenotazione modificata.
+- [x] v0.8.22-alpha: meteo per data/turno con cache 30 minuti, badge e dettaglio orario; fallback città ricavata dall’indirizzo pubblico.
+- [x] Coordinate e soglie meteo Master; chiusura dehors e riorganizzazione interna atomica con report, riapertura nella configurazione sale.
+- [x] 310 test superati; meteo reale Pistoia, avviso Cena e Annulla verificati nell’agenda autenticata; campi Master e telefono senza overflow. Chiusura per data/turno e divieto accesso anonimo verificati nel database; build OK.
+- [ ] Applicazione reale della chiusura e rilettura del report: non eseguita perché modifica sale/prenotazioni operative del locale; necessita un servizio di prova autorizzato.
