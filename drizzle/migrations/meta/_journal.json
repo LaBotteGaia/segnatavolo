@@ -281,6 +281,13 @@
       "when": 1793267501751,
       "tag": "0039_weather_remaining_entrypoints",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793267878771,
+      "tag": "0040_weather_preserve_join_rules",
+      "breakpoints": true
     }
   ]
 }
