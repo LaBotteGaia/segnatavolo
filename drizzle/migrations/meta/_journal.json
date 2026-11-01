@@ -344,6 +344,13 @@
       "when": 1793564395698,
       "tag": "0048_notification_reservation_deletion_compatibility",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793568171742,
+      "tag": "0049_online_schedule_and_change_approval",
+      "breakpoints": true
     }
   ]
 }
