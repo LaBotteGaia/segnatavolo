@@ -351,6 +351,13 @@
       "when": 1793568171742,
       "tag": "0049_online_schedule_and_change_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793568451909,
+      "tag": "0050_customer_change_capability_entrypoint",
+      "breakpoints": true
     }
   ]
 }

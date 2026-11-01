@@ -896,6 +896,17 @@ export type Database = {
             }
             Returns: Json
           }
+      manage_customer_booking_v2: {
+        Args: {
+          _action: string
+          _date?: string
+          _people?: number
+          _shift?: string
+          _time?: string
+          _token: string
+        }
+        Returns: Json
+      }
       manage_online_reservation: {
         Args: { _action?: string; _token: string }
         Returns: Json
