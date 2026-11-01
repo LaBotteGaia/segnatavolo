@@ -112,6 +112,8 @@ export type Database = {
           is_new: boolean
           management_token: string
           max_stay_until: string | null
+          modification_reason: string
+          modification_status: string
           morning_reminder_attempted_at: string | null
           morning_reminder_error: string | null
           morning_reminder_sent_at: string | null
@@ -161,6 +163,8 @@ export type Database = {
           is_new?: boolean
           management_token?: string
           max_stay_until?: string | null
+          modification_reason?: string
+          modification_status?: string
           morning_reminder_attempted_at?: string | null
           morning_reminder_error?: string | null
           morning_reminder_sent_at?: string | null
@@ -210,6 +214,8 @@ export type Database = {
           is_new?: boolean
           management_token?: string
           max_stay_until?: string | null
+          modification_reason?: string
+          modification_status?: string
           morning_reminder_attempted_at?: string | null
           morning_reminder_error?: string | null
           morning_reminder_sent_at?: string | null
@@ -537,10 +543,13 @@ export type Database = {
           morning_reminder_enabled: boolean
           name: string
           no_show_tolerance_minutes: number
+          notify_restaurant_on_confirmation: boolean
           online_config: Json
           online_enabled: boolean
+          online_turns_override: boolean
           public_address: string
           public_logo_url: string
+          schedule_exceptions: Json
           settings: Json
           tempo_riassetto_minuti: number
           timezone: string
@@ -572,10 +581,13 @@ export type Database = {
           morning_reminder_enabled?: boolean
           name: string
           no_show_tolerance_minutes?: number
+          notify_restaurant_on_confirmation?: boolean
           online_config?: Json
           online_enabled?: boolean
+          online_turns_override?: boolean
           public_address?: string
           public_logo_url?: string
+          schedule_exceptions?: Json
           settings?: Json
           tempo_riassetto_minuti?: number
           timezone?: string
@@ -607,10 +619,13 @@ export type Database = {
           morning_reminder_enabled?: boolean
           name?: string
           no_show_tolerance_minutes?: number
+          notify_restaurant_on_confirmation?: boolean
           online_config?: Json
           online_enabled?: boolean
+          online_turns_override?: boolean
           public_address?: string
           public_logo_url?: string
+          schedule_exceptions?: Json
           settings?: Json
           tempo_riassetto_minuti?: number
           timezone?: string
@@ -800,6 +815,18 @@ export type Database = {
         Args: { _name?: string; _people: number; _table: string }
         Returns: string
       }
+      decide_customer_change: {
+        Args: {
+          _accept: boolean
+          _expected: Json
+          _extras?: Json
+          _id: string
+          _reason?: string
+          _rid: string
+          _tables?: string[]
+        }
+        Returns: Json
+      }
       decide_online_booking: {
         Args: {
           _accept: boolean
@@ -848,15 +875,27 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      manage_customer_booking: {
-        Args: {
-          _action: string
-          _people?: number
-          _time?: string
-          _token: string
-        }
-        Returns: Json
-      }
+      manage_customer_booking:
+        | {
+            Args: {
+              _action: string
+              _people?: number
+              _time?: string
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _action: string
+              _date?: string
+              _people?: number
+              _shift?: string
+              _time?: string
+              _token: string
+            }
+            Returns: Json
+          }
       manage_online_reservation: {
         Args: { _action?: string; _token: string }
         Returns: Json
@@ -864,6 +903,16 @@ export type Database = {
       my_restaurant_id: { Args: never; Returns: string }
       online_booking_date_allowed: {
         Args: { _date: string; _rid: string }
+        Returns: boolean
+      }
+      online_booking_duration: {
+        Args: { _date: string; _rid: string; _shift: string; _time: string }
+        Returns: number
+      }
+      online_effective_config: { Args: { _rid: string }; Returns: Json }
+      online_effective_settings: { Args: { _rid: string }; Returns: Json }
+      online_service_open: {
+        Args: { _date: string; _rid: string; _shift: string }
         Returns: boolean
       }
       online_shift_remaining: {
@@ -896,6 +945,14 @@ export type Database = {
         Args: { _id: string; _without_tables?: boolean }
         Returns: boolean
       }
+      room_service_open: {
+        Args: {
+          _date: string
+          _room: Database["public"]["Tables"]["rooms"]["Row"]
+          _shift: string
+        }
+        Returns: boolean
+      }
       room_weather_closed: {
         Args: {
           _date: string
@@ -903,6 +960,10 @@ export type Database = {
           _shift: string
         }
         Returns: boolean
+      }
+      schedule_exception_state: {
+        Args: { _date: string; _rid: string; _shift: string }
+        Returns: number
       }
       seat_walkin_freed: {
         Args: { _name?: string; _people: number; _table: string }
