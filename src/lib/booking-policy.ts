@@ -13,6 +13,7 @@ export const bookingPolicySchema = z.object({
   first_shift_duration_minutes: z.number().int().min(15).max(480).default(90),
   no_show_tolerance_minutes: z.number().int().min(0).max(120).default(15),
   morning_reminder_enabled: z.boolean().default(true),
+  online_turns_override: z.boolean().default(false),
 });
 export type BookingPolicy = z.infer<typeof bookingPolicySchema>;
 export const DEFAULT_BOOKING_POLICY = bookingPolicySchema.parse({});
@@ -37,7 +38,7 @@ export function reconfirmationBadge(row: { date: string; time: string; channel: 
   return policy.morning_reminder_enabled ? { urgent: false, label: 'Da riconfermare' } : null;
 }
 
-export const managementInputSchema = z.object({ token: z.string().uuid(), action: z.enum(['view', 'confirm', 'cancel', 'request_change']), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), people: z.number().int().min(1).max(100).optional() }).superRefine((v, ctx) => {
+export const managementInputSchema = z.object({ token: z.string().uuid(), action: z.enum(['view', 'confirm', 'cancel', 'request_change']), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), shift: z.enum(['pranzo','sera']).optional(), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), people: z.number().int().min(1).max(100).optional() }).superRefine((v, ctx) => {
   if (v.action === 'request_change' && (v.time === undefined || v.people === undefined)) ctx.addIssue({ code: 'custom', message: 'Inserisci orario e coperti' });
 });
-export type ManagedBooking = { restaurant: string; date: string; time: string; shift: string; people: number; confirmation_status: string; change_request?: { time: string; people: number } | null };
+export type ManagedBooking = { restaurant: string; date: string; time: string; shift: string; people: number; confirmation_status: string; slug?: string | null; modification_status?: string; modification_reason?: string; change_request?: { date?: string; shift?: string; time: string; people: number } | null };
