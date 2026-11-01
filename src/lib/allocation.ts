@@ -2,6 +2,7 @@
 import { canJoin, NO_EXTRAS, type RTable, type TableExtras } from './data';
 import { interval, isRoomClosedFor, tableState, type RotationCfg } from './rotation';
 import { customScore, normName, ruleMatches, type ActiveRule } from './custom-rules';
+import { habitScore, type TableHabits } from './table-habits';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 export type AssignmentTable = Pick<RTable, 'id' | 'name' | 'seats' | 'x' | 'y' | 'room_id' | 'no_join' | 'allow_extras'> & { accoppiabile?: boolean; adatto_seduta_lunga?: boolean; coperti_comodi?: number | null; coperti_max?: number | null; posti_scomodi_solo_in_unione?: boolean | null; ordine_riempimento?: number | null };
 type RoomLite = { id: string; environment?: string | null; open_days?: number[] | null; closed_periods?: unknown; closed_shifts?: string[] | null; walls?: unknown };
@@ -14,6 +15,8 @@ export type AssignmentParams = {
   rules?: AssignmentRules; notes?: string | undefined; customRules?: ActiveRule[] | undefined;
   /** Gli accomodamenti al volo restano singoli; unioni ed extra richiedono il flusso prenotazione. */
   singleOnly?: boolean; allowSingleMax?: boolean;
+  /** Abitudini apprese negli ultimi 30 giorni: orientano solo tra soluzioni già sicure. */
+  habits?: TableHabits | undefined;
 };
 const comfort = (t: AssignmentTable) => t.coperti_comodi ?? t.seats;
 const maxSeats = (t: AssignmentTable) => Math.max(comfort(t), t.coperti_max ?? t.seats);
@@ -83,10 +86,12 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
     }
   }
   const reservationPenalty=(t: AssignmentTable)=>customScore([t],p.people,p.time,p.customRules);
-  const singles=protectSmallParty(free.filter(t=>comfort(t)>=p.people),p.people,rules).sort((a,b)=>reservationPenalty(a)-reservationPenalty(b)||pref(a)-pref(b)||comfort(a)-comfort(b)||stable(a,b));
+  const singlesBase=protectSmallParty(free.filter(t=>comfort(t)>=p.people),p.people,rules).sort((a,b)=>reservationPenalty(a)-reservationPenalty(b)||pref(a)-pref(b)||comfort(a)-comfort(b)||stable(a,b));
+  const habit=(ids: string[])=>habitScore(p.habits,p.shift,p.people,ids);
+  const singles=singlesBase.sort((a,b)=>habit([b.id])-habit([a.id]));
   const single=singles[0]; if(single) return fit([single],false,false);
   const combos=allCombos(free);
-  const ranked=(sacrifice:boolean,extend:boolean)=>combos.flatMap(combo=>{const s=fit(combo,sacrifice,extend);return s?[{s,combo}]:[];}).sort((a,b)=>a.s.extras.extra_sponde-b.s.extras.extra_sponde || a.combo.reduce((s,t)=>s+pref(t),0)-b.combo.reduce((s,t)=>s+pref(t),0) || a.s.waste-b.s.waste || a.combo.length-b.combo.length || (a.combo[0] && b.combo[0] ? stable(a.combo[0],b.combo[0]) : 0));
+  const ranked=(sacrifice:boolean,extend:boolean)=>combos.flatMap(combo=>{const s=fit(combo,sacrifice,extend);return s?[{s,combo}]:[];}).sort((a,b)=>a.s.extras.extra_sponde-b.s.extras.extra_sponde || habit(b.s.ids)-habit(a.s.ids) || a.combo.reduce((s,t)=>s+pref(t),0)-b.combo.reduce((s,t)=>s+pref(t),0) || a.s.waste-b.s.waste || a.combo.length-b.combo.length || (a.combo[0] && b.combo[0] ? stable(a.combo[0],b.combo[0]) : 0));
   return ranked(false,false)[0]?.s ?? ranked(true,false)[0]?.s ?? ranked(true,true)[0]?.s ?? null;
 }
 /** Compatibilità per tutti i chiamanti esistenti. */
