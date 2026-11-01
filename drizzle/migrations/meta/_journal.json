@@ -330,6 +330,13 @@
       "when": 1793563495188,
       "tag": "0046_restaurant_identity_customer_events",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793564000504,
+      "tag": "0047_restaurant_website_compatibility",
+      "breakpoints": true
     }
   ]
 }

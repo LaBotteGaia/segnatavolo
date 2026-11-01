@@ -546,6 +546,7 @@ export type Database = {
           timezone: string
           vat_number: string
           web_slug: string | null
+          website_url: string
         }
         Insert: {
           allow_same_day_online?: boolean
@@ -580,6 +581,7 @@ export type Database = {
           timezone?: string
           vat_number?: string
           web_slug?: string | null
+          website_url?: string
         }
         Update: {
           allow_same_day_online?: boolean
@@ -614,6 +616,7 @@ export type Database = {
           timezone?: string
           vat_number?: string
           web_slug?: string | null
+          website_url?: string
         }
         Relationships: []
       }
