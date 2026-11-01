@@ -75,3 +75,10 @@
 - [x] 338 test superati, build OK, versione v0.8.26-alpha.
 - [ ] Invio reale delle nuove email e riepilogo: manca l’email destinataria principale/dedicata; riepilogo lasciato spento. Richiede anche pubblicazione delle modifiche. SMTP disponibile solo testo, senza tabella HTML/badge grafici.
 - [ ] Verifica visiva del centro notifiche e azioni alert su servizio di prova: avvisi persistiti verificati, ma il pulsante non è stato raggiunto nella seconda navigazione automatizzata; nessuna azione applicata alle prenotazioni reali.
+
+## Nuova richiesta — Notifiche, modifiche e calendario online
+- [ ] Email al locale sulle conferme solo con interruttore esplicito, spento inizialmente.
+- [ ] Modifiche cliente di data/orario/coperti con slot condivisi, prenotazione originale valida e approvazione/rifiuto operatore.
+- [ ] Turni online ereditati da quelli generali salvo override esplicito.
+- [ ] Aperture/chiusure straordinarie per data/intervallo e servizio, rispettate da calendario e salvataggio pubblico.
+- [ ] Test delle nuove regole e verifica autenticata con dati temporanei, versione e changelog.
