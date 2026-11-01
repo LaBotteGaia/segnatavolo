@@ -67,9 +67,11 @@
 - [ ] Invio mattutino reale: richiede pubblicazione delle nuove funzioni e servizio SMTP funzionante; servizio predefinito non collegato, invio non provato. SMTP attuale consente solo testo: link alla pagina con pulsanti, non pulsanti dentro l’email.
 
 ## v0.8.26-alpha — Anagrafica, gestione cliente e notifiche
-- [ ] Centralizzare anagrafica e contatti con override online espliciti e compatibilità dei dati precedenti.
-- [ ] Link pubblico di gestione, richiesta modifica e disdetta con avvisi condivisi ed email al locale.
-- [ ] Alert a 60 minuti in Agenda/Sala Live e azioni manuali sicure.
-- [ ] Riepilogo quotidiano ore 09:00 locali, cronologico con note e canale online.
-- [ ] Impostazioni a due colonne senza duplicati, aiuti e tooltip.
-- [ ] Test, verifica autenticata e aggiornamento versione.
+- [x] Anagrafica e contatti centralizzati con override online, sito web e compatibilità precedente; schema verificato.
+- [x] Link gestione: richiesta modifica e disdetta salvate/rilette nel browser con prenotazione temporanea rimossa; notifica persistente ed email al locale predisposte.
+- [x] Alert a 60 minuti in Agenda/Sala Live con azioni RPC autorizzate; regole temporali coperte da test.
+- [x] Riepilogo cronologico con note e canale online, presa atomica per data locale e callback mattutino esistente (entro il minuto dopo le 09:00).
+- [x] Impostazioni a due colonne senza contatti duplicati; anagrafica e nuove sezioni verificate con account reale; telefono senza overflow.
+- [x] 338 test superati, build OK, versione v0.8.26-alpha.
+- [ ] Invio reale delle nuove email e riepilogo: manca l’email destinataria principale/dedicata; riepilogo lasciato spento. Richiede anche pubblicazione delle modifiche. SMTP disponibile solo testo, senza tabella HTML/badge grafici.
+- [ ] Verifica visiva del centro notifiche e azioni alert su servizio di prova: avvisi persistiti verificati, ma il pulsante non è stato raggiunto nella seconda navigazione automatizzata; nessuna azione applicata alle prenotazioni reali.
