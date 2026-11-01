@@ -7,6 +7,8 @@ export const Route = createFileRoute('/api/public/jobs/morning-reminder')({
     if (failure) return failure;
     const { sendNextMorningReminder } = await import('@/lib/booking-reminder.server');
     const result = await sendNextMorningReminder();
-    return Response.json(result);
+    const { sendNextDailySummary } = await import('@/lib/service-communications.server');
+    const summary = await sendNextDailySummary();
+    return Response.json({ ...result, summary });
   } } },
 });

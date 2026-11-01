@@ -2,8 +2,9 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "./membership";
+import { toast } from 'sonner';
 
-export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "online-requests", "approval-occupied", "customers", "customer-history", "search", "recycle-bin", "service-note", "members"];
+export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "online-requests", "approval-occupied", "customers", "customer-history", "search", "recycle-bin", "service-note", "members", "service-notifications", "booking-policy", "online-settings", "restaurant-identity"];
 export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
@@ -61,6 +62,12 @@ export function LiveSync() {
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, change)
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_tables" }, change)
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_members" }, change)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants', filter: `id=eq.${me.restaurant_id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_notifications', filter: `restaurant_id=eq.${me.restaurant_id}` }, payload => {
+        void qc.invalidateQueries({ queryKey: ['service-notifications', me.restaurant_id] });
+        if (payload.eventType === 'INSERT' && typeof payload.new['message'] === 'string') toast.warning(payload.new['message'], { duration: 12000 });
+        refresh();
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_assignment_rules" }, (payload: { eventType: string; new: Record<string, unknown> }) => { if (payload.eventType === "DELETE" || payload.new["restaurant_id"] === me.restaurant_id) void qc.invalidateQueries({ queryKey: ["custom-rules"] }); })
       .subscribe((status) => { if (status === "SUBSCRIBED") refresh(); });
     const visible = () => { if (document.visibilityState === "visible" && navigator.onLine) refresh(); };
