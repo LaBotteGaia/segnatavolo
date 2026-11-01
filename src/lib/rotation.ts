@@ -1,5 +1,6 @@
 /** Rotazione tavoli, aperture stagionali delle sale e riepilogo disponibilità. Logica pura (testata). */
 import type { Ranges, Room, Reservation, RTable, Shift } from "./data";
+import { exceptionState } from './schedule-exceptions';
 
 export const DEFAULT_DURATION = 90;
 export const DEFAULT_BUFFER = 15;
@@ -77,8 +78,9 @@ export function isRoomClosed(room: Partial<Pick<Room, "open_days" | "closed_peri
 }
 
 /** Sala chiusa per stagione quel giorno oppure disattivata per il turno. */
-export function isRoomClosedFor(room: (Partial<Pick<Room, "open_days" | "closed_periods">> & { closed_shifts?: string[] | null }) | undefined, date: string, shift: string): boolean {
-  return isRoomClosed(room, date) || !!room?.closed_shifts?.includes(shift) || !!room?.closed_shifts?.includes(`${date}|${shift}`);
+export function isRoomClosedFor(room: (Partial<Pick<Room, "open_days" | "closed_periods">> & { closed_shifts?: string[] | null; schedule_exceptions?: unknown }) | undefined, date: string, shift: string): boolean {
+  const ex=exceptionState(room?.schedule_exceptions,date,shift);
+  return ex==='closed'||isRoomClosed(ex==='open'?{...room,open_days:[0,1,2,3,4,5,6]}:room,date)||!!room?.closed_shifts?.includes(shift)||!!room?.closed_shifts?.includes(`${date}|${shift}`);
 }
 
 /* ---------- Doppio turno (due rotazioni complete sulla stessa sala) ---------- */

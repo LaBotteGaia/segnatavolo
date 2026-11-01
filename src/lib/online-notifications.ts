@@ -1,0 +1,1 @@
+export function notifyRestaurantForBooking(status: string, confirmationEnabled = false) { return status === 'pending' || (status === 'confirmed' && confirmationEnabled); }

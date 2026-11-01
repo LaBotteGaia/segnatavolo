@@ -15,6 +15,12 @@ export async function sendCustomerEventNotification(restaurantId: string, eventI
   return sendRestaurantMessage(restaurantId, recipient, event.kind === 'cancelled' ? 'Disdetta cliente — Tavolo liberato' : 'Richiesta modifica prenotazione', event.message);
 }
 const claimSchema = z.object({ restaurant_id: z.string().uuid(), name: z.string(), email: z.string().email(), date: z.string() });
+export async function sendRejectedChange(restaurantId:string,id:string){
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {data:r}=await supabaseAdmin.from('reservations').select('name,date,time,people,contact_email,modification_status,modification_reason,management_token').eq('restaurant_id',restaurantId).eq('id',id).eq('modification_status','rejected').single();
+  if(!r?.contact_email)return {sent:false,message:'Email cliente non disponibile.'};
+  return sendRestaurantMessage(restaurantId,r.contact_email,'Richiesta di modifica non accolta',`Gentile ${r.name}, non è possibile accogliere la variazione richiesta.\nMotivo: ${r.modification_reason}\nLa prenotazione originaria resta confermata: ${r.date.split('-').reverse().join('/')} alle ${r.time}, ${r.people} coperti.\n\nhttps://segnatavolo.lovable.app/prenotazione/gestisci?token=${r.management_token}`);
+}
 export async function sendNextDailySummary() {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   const { data, error } = await supabaseAdmin.rpc('claim_daily_service_summary');

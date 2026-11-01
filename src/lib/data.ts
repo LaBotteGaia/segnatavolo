@@ -7,6 +7,7 @@ import { habitWindowStart, learnHabits } from "./table-habits";
 import { supabase } from "@/integrations/supabase/client";
 import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
 import type { Tables } from "@/integrations/supabase/types";
+import { exceptionState, exceptionsOf, type ScheduleException } from './schedule-exceptions';
 
 export type Room = Tables<"rooms">;
 export type RTable = Tables<"restaurant_tables">;
@@ -90,7 +91,9 @@ export function useActiveCustomRules() {
 }
 
 export function useRooms() {
-  return useQuery(roomsQuery(useActiveRestaurantId()));
+  const rid=useActiveRestaurantId();
+  const config=useQuery({queryKey:['schedule-exceptions',rid],enabled:!!rid,queryFn:async()=>{const {data,error}=await supabase.from('restaurants').select('schedule_exceptions').eq('id',rid??'').single();if(error)throw error;return exceptionsOf(data.schedule_exceptions);}});
+  return useQuery({...roomsQuery(rid),select:rows=>rows.map(r=>({...r,schedule_exceptions:config.data??[]}))});
 }
 export function useTables() {
   return useQuery(tablesQuery(useActiveRestaurantId()));
@@ -299,6 +302,7 @@ export type RestaurantSettings = {
   /** giorno settimana (0 = domenica) → turni chiusi */
   weekly: Record<string, Shift[]>;
   holidays: Holiday[];
+  schedule_exceptions?: ScheduleException[];
   /** durata standard tavolo e margine riallestimento, in minuti */
   duration: number;
   buffer: number;
@@ -334,7 +338,7 @@ export function normalizeSettings(raw: unknown): RestaurantSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<RestaurantSettings>;
   const shifts = { ...DEFAULT_SETTINGS.shifts };
   for (const s of ALL_SHIFTS) if (r.shifts?.[s]) shifts[s] = { ...shifts[s], ...r.shifts[s] };
-  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4, reorganize: r.reorganize !== false, assignmentRules: normalizeAssignmentRules(r.assignmentRules) };
+  return { shifts, weekly: r.weekly ?? {}, holidays: Array.isArray(r.holidays) ? r.holidays : [], schedule_exceptions:exceptionsOf(r.schedule_exceptions), duration: typeof r.duration === "number" ? r.duration : 90, buffer: typeof r.buffer === "number" ? r.buffer : 15, privacy: typeof r.privacy === "boolean" ? r.privacy : true, printPhones: r.printPhones === true, reserve: typeof r.reserve === "number" && r.reserve >= 0 ? Math.floor(r.reserve) : 4, reorganize: r.reorganize !== false, assignmentRules: normalizeAssignmentRules(r.assignmentRules) };
 }
 
 export const rangesOf = (st: RestaurantSettings): Ranges =>
@@ -343,10 +347,10 @@ export const activeShifts = (st: RestaurantSettings) => ALL_SHIFTS.filter((s) =>
 
 /** Turni chiusi in una data (yyyy-MM-dd): riposo settimanale o ferie. */
 export function closedShifts(date: string, st: RestaurantSettings): Shift[] {
-  if (st.holidays.some((h) => h.from && h.to && date >= h.from && date <= h.to)) return [...ALL_SHIFTS];
   const [y, m, d] = date.split("-").map(Number);
-  const dow = new Date(y!, m! - 1, d!).getDay();
-  return st.weekly[String(dow)] ?? [];
+  const dow = new Date(y??0, (m??1) - 1, d??1).getDay();
+  const holiday=st.holidays.some(h=>h.from&&h.to&&date>=h.from&&date<=h.to);
+  return ALL_SHIFTS.filter(s=>{const ex=exceptionState(st.schedule_exceptions,date,s);return ex==='closed'||(ex!=='open'&&(holiday||(st.weekly[String(dow)]??[]).includes(s)));});
 }
 export const isShiftClosed = (date: string, shift: Shift, st: RestaurantSettings) => closedShifts(date, st).includes(shift);
 /** Giorno chiuso = tutti i turni attivi sono chiusi. */

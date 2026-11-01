@@ -1,5 +1,6 @@
 import { emailSettingsSchema, interpolateEmail, type EmailSettings } from './restaurant-email';
 import { bookingContacts } from './restaurant-identity';
+import { notifyRestaurantForBooking } from './online-notifications';
 
 async function encryptionKey() {
   const secret = process.env['RESTAURANT_EMAIL_ENCRYPTION_KEY'];
@@ -58,7 +59,7 @@ export async function sendBookingNotification(restaurantId: string, id: string) 
   if (status === 'rejected' && booking.rejection_reason && !cfg.templates.rejected.body.includes('{motivo_rifiuto}')) body += `\n\nMotivazione: ${booking.rejection_reason}`;
   const [customer, staff] = await Promise.all([
     booking.contact_email ? sendRestaurantMessage(restaurantId, booking.contact_email, subject, body) : Promise.resolve({ sent: false, message: 'Email cliente non disponibile.' }),
-    contacts.email && status !== 'rejected' ? sendRestaurantMessage(restaurantId, contacts.email, status === 'pending' ? 'Nuova richiesta online in attesa' : 'Prenotazione online confermata', `${booking.name}\n${vars.data} · ${booking.time} · ${booking.people} coperti\nTavolo: ${vars.tavolo_assegnato}\nNote: ${booking.notes ?? ''}\nRiferimento: ${id}`) : Promise.resolve(null),
+    contacts.email && notifyRestaurantForBooking(status,restaurant?.notify_restaurant_on_confirmation) ? sendRestaurantMessage(restaurantId, contacts.email, status === 'pending' ? 'Nuova richiesta online in attesa' : 'Prenotazione online confermata', `${booking.name}\n${vars.data} · ${booking.time} · ${booking.people} coperti\nTavolo: ${vars.tavolo_assegnato}\nNote: ${booking.notes ?? ''}\nRiferimento: ${id}`) : Promise.resolve(null),
   ]);
   return { ...customer, staffSent: staff?.sent ?? false };
 }

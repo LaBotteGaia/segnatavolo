@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "./membership";
 import { toast } from 'sonner';
 
-export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "online-requests", "approval-occupied", "customers", "customer-history", "search", "recycle-bin", "service-note", "members", "service-notifications", "booking-policy", "online-settings", "restaurant-identity"];
+export const LIVE_QUERY_KEYS = ["reservations", "reservations-month", "online-requests", "customer-change-requests", "approval-occupied", "customers", "customer-history", "search", "recycle-bin", "service-note", "members", "service-notifications", "booking-policy", "online-settings", "restaurant-identity", "membership", "reminder-settings", "schedule-exceptions"];
 export const OFFLINE_TTL = 60_000;
 const changes = new Map<string, number>();
 const listeners = new Set<() => void>();
