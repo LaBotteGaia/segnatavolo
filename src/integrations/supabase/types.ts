@@ -920,6 +920,10 @@ export type Database = {
         Args: { _date: string; _rid: string; _shift: string; _time: string }
         Returns: number
       }
+      online_day_remaining: {
+        Args: { _date: string; _rid: string; _shift: string }
+        Returns: number
+      }
       online_effective_config: { Args: { _rid: string }; Returns: Json }
       online_effective_settings: { Args: { _rid: string }; Returns: Json }
       online_service_open: {
