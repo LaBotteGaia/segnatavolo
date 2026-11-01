@@ -3,6 +3,7 @@ import { normalizeAssignmentRules, DEFAULT_ASSIGNMENT_RULES, type AssignmentRule
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { activeRules } from "./custom-rules";
+import { habitWindowStart, learnHabits } from "./table-habits";
 import { supabase } from "@/integrations/supabase/client";
 import { scopeRestaurant, useActiveRestaurantId } from "@/lib/tenant";
 import type { Tables } from "@/integrations/supabase/types";
@@ -434,4 +435,21 @@ export function canJoin(a: JoinT, b: JoinT, wallsByRoom: (roomId: string) => str
   if (a.no_join?.includes(b.id) || b.no_join?.includes(a.id)) return false;
   if (a.room_id === b.room_id && wallBetween(a, b, wallsByRoom(a.room_id))) return false;
   return true;
+}
+
+/** Storico ultimi 30 giorni per l'apprendimento delle abitudini di sala (chiave sotto "reservations" per l'invalidazione Realtime). */
+export function useTableHabits(today: string) {
+  const restaurantId = useActiveRestaurantId();
+  const { data } = useQuery({
+    queryKey: ["reservations", "habits", today, restaurantId],
+    enabled: !!restaurantId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await scopeRestaurant(supabase.from("reservations").select("date,shift,people,table_ids,no_show"), restaurantId)
+        .is("deleted_at", null).eq("status", "confirmed").gte("date", habitWindowStart(today)).lt("date", today);
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(() => learnHabits(data ?? [], today), [data, today]);
 }
