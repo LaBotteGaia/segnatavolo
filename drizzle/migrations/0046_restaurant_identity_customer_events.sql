@@ -1,0 +1,56 @@
+ALTER TABLE public.restaurants ADD COLUMN main_email text NOT NULL DEFAULT '', ADD COLUMN main_phone text NOT NULL DEFAULT '', ADD COLUMN main_whatsapp text NOT NULL DEFAULT '', ADD COLUMN vat_number text NOT NULL DEFAULT '', ADD COLUMN booking_email_override boolean NOT NULL DEFAULT false, ADD COLUMN booking_email text NOT NULL DEFAULT '', ADD COLUMN booking_phone_override boolean NOT NULL DEFAULT false, ADD COLUMN daily_summary_enabled boolean NOT NULL DEFAULT false, ADD COLUMN daily_summary_date date, ADD COLUMN daily_summary_sent_at timestamptz, ADD COLUMN daily_summary_error text;
+UPDATE public.restaurants r SET main_email=coalesce(nullif(settings->'profile'->>'email',''),''),main_phone=coalesce(nullif(settings->'profile'->>'phone',''),contact_phone,''),main_whatsapp=contact_whatsapp,vat_number=coalesce(settings->'profile'->>'vat',''),public_address=coalesce(nullif(settings->'profile'->>'address',''),public_address),public_logo_url=coalesce(nullif(settings->'profile'->>'logoUrl',''),public_logo_url),booking_phone_override=(contact_phone<>'' OR contact_whatsapp<>''),booking_email_override=coalesce((SELECT nullif(d.settings->>'staffEmail','') IS NOT NULL FROM public.restaurant_delivery_settings d WHERE d.restaurant_id=r.id),false),booking_email=coalesce((SELECT d.settings->>'staffEmail' FROM public.restaurant_delivery_settings d WHERE d.restaurant_id=r.id),'');
+CREATE OR REPLACE FUNCTION public.guard_restaurant_identity() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN
+ IF length(NEW.main_phone)>40 OR length(NEW.main_whatsapp)>40 OR length(NEW.vat_number)>40 OR length(NEW.main_email)>255 OR length(NEW.booking_email)>255 OR length(NEW.public_address)>500 OR length(NEW.public_logo_url)>1000 OR (NEW.main_email<>'' AND NEW.main_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') OR (NEW.booking_email_override AND NEW.booking_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') OR (NEW.booking_phone_override AND NEW.contact_phone='' AND NEW.contact_whatsapp='') THEN RAISE EXCEPTION 'Controlla anagrafica e recapiti dedicati'; END IF;
+ IF TG_OP='UPDATE' AND auth.uid() IS NOT NULL AND (NEW.daily_summary_date IS DISTINCT FROM OLD.daily_summary_date OR NEW.daily_summary_sent_at IS DISTINCT FROM OLD.daily_summary_sent_at OR NEW.daily_summary_error IS DISTINCT FROM OLD.daily_summary_error) THEN RAISE EXCEPTION 'Esiti di invio protetti'; END IF;
+ NEW.settings:=jsonb_set(NEW.settings,'{profile}',coalesce(NEW.settings->'profile','{}')||jsonb_build_object('email',NEW.main_email,'phone',NEW.main_phone,'address',NEW.public_address,'logoUrl',NEW.public_logo_url,'vat',NEW.vat_number)); RETURN NEW; END $$;
+CREATE TRIGGER restaurant_identity_guard BEFORE INSERT OR UPDATE ON public.restaurants FOR EACH ROW EXECUTE FUNCTION public.guard_restaurant_identity();
+ALTER TABLE public.reservations ADD COLUMN customer_change_request jsonb, ADD COLUMN cancellation_reason text NOT NULL DEFAULT '';
+CREATE TABLE public.service_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),restaurant_id uuid NOT NULL REFERENCES public.restaurants(id),reservation_id uuid REFERENCES public.reservations(id) ON DELETE SET NULL,kind text NOT NULL CHECK(kind IN ('cancelled','change_requested')),message text NOT NULL,details jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),read_at timestamptz);
+GRANT SELECT,UPDATE ON public.service_notifications TO authenticated; GRANT ALL ON public.service_notifications TO service_role;
+ALTER TABLE public.service_notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY notification_read ON public.service_notifications FOR SELECT TO authenticated USING(restaurant_id=public.my_restaurant_id() OR public.is_super_admin());
+CREATE POLICY notification_read_update ON public.service_notifications FOR UPDATE TO authenticated USING(restaurant_id=public.my_restaurant_id() OR public.is_super_admin()) WITH CHECK(restaurant_id=public.my_restaurant_id() OR public.is_super_admin());
+CREATE OR REPLACE FUNCTION public.guard_notification_update() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF auth.uid() IS NOT NULL AND (to_jsonb(NEW)-'read_at') IS DISTINCT FROM (to_jsonb(OLD)-'read_at') THEN RAISE EXCEPTION 'Solo presa visione consentita'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER notification_update_guard BEFORE UPDATE ON public.service_notifications FOR EACH ROW EXECUTE FUNCTION public.guard_notification_update();
+CREATE INDEX service_notifications_restaurant_date ON public.service_notifications(restaurant_id,created_at DESC);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.service_notifications;
+CREATE OR REPLACE FUNCTION public.manage_customer_booking(_token uuid,_action text,_time text DEFAULT NULL,_people integer DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE r public.reservations; v public.restaurants; eid uuid; msg text; BEGIN
+ IF _action NOT IN ('view','confirm','cancel','request_change') OR _token IS NULL THEN RAISE EXCEPTION 'Link non valido'; END IF;
+ SELECT * INTO r FROM public.reservations WHERE management_token=_token AND channel='online'; IF NOT FOUND THEN RAISE EXCEPTION 'Link non valido'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended(r.restaurant_id::text,0)); SELECT * INTO r FROM public.reservations WHERE management_token=_token FOR UPDATE; SELECT * INTO v FROM public.restaurants WHERE id=r.restaurant_id;
+ IF r.date<(now() AT TIME ZONE v.timezone)::date OR r.status<>'confirmed' OR r.arrived OR (r.deleted_at IS NOT NULL AND r.confirmation_status NOT LIKE 'cancellata%') THEN RAISE EXCEPTION 'Link non più disponibile'; END IF;
+ IF r.deleted_at IS NULL THEN
+ IF _action='confirm' THEN UPDATE public.reservations SET confirmation_status='riconfermata' WHERE id=r.id; r.confirmation_status:='riconfermata';
+ ELSIF _action='cancel' THEN UPDATE public.reservations SET confirmation_status='cancellata_cliente',cancellation_reason='Disdetta del cliente',deleted_at=now(),table_ids='{}' WHERE id=r.id; r.confirmation_status:='cancellata_cliente'; msg:='⚠️ Il cliente '||r.name||' ha cancellato la prenotazione per il '||to_char(r.date,'DD/MM/YYYY')||' alle '||r.time||'. Tavolo liberato.';
+ ELSIF _action='request_change' THEN
+ IF _time IS NULL OR _time !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' OR _people IS NULL OR _people NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'Richiesta non valida'; END IF;
+ IF r.customer_change_request IS DISTINCT FROM jsonb_build_object('time',_time,'people',_people) THEN
+ UPDATE public.reservations SET customer_change_request=jsonb_build_object('time',_time,'people',_people) WHERE id=r.id; r.customer_change_request:=jsonb_build_object('time',_time,'people',_people);
+ msg:='⚠️ Il cliente '||r.name||' ha richiesto la modifica della prenotazione per il '||to_char(r.date,'DD/MM/YYYY')||' alle '||r.time||': nuovo orario '||_time||', '||_people||' coperti. Prenotazione originale mantenuta.'; END IF;
+ END IF;
+ IF msg IS NOT NULL THEN INSERT INTO public.service_notifications(restaurant_id,reservation_id,kind,message,details) VALUES(r.restaurant_id,r.id,CASE WHEN _action='cancel' THEN 'cancelled' ELSE 'change_requested' END,msg,jsonb_build_object('old_time',r.time,'old_people',r.people,'requested',r.customer_change_request)) RETURNING id INTO eid; END IF;
+ END IF;
+ RETURN jsonb_build_object('restaurant',v.name,'date',r.date,'time',r.time,'shift',r.shift,'people',r.people,'confirmation_status',r.confirmation_status,'change_request',r.customer_change_request,'event_id',eid,'restaurant_id',r.restaurant_id);
+END $$;
+REVOKE ALL ON FUNCTION public.manage_customer_booking(uuid,text,text,integer) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.manage_customer_booking(uuid,text,text,integer) TO service_role;
+CREATE OR REPLACE FUNCTION public.handle_unconfirmed_booking(_rid uuid,_id uuid,_action text) RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$ DECLARE r public.reservations; v public.restaurants; BEGIN
+ IF NOT public.can_use_restaurant(_rid) OR _action NOT IN ('confirm','release') THEN RAISE EXCEPTION 'Operazione non consentita'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended(_rid::text,0)); SELECT * INTO r FROM public.reservations WHERE id=_id AND restaurant_id=_rid FOR UPDATE; SELECT * INTO v FROM public.restaurants WHERE id=_rid;
+ IF NOT FOUND OR r.id IS NULL OR r.deleted_at IS NOT NULL OR r.arrived OR r.channel<>'online' OR r.status<>'confirmed' OR r.confirmation_status<>'in_attesa_riconferma' OR r.date<>(now() AT TIME ZONE v.timezone)::date OR r.time !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' OR ((r.date::text||' '||r.time)::timestamp AT TIME ZONE v.timezone)>now()+interval '60 minutes' THEN RAISE EXCEPTION 'Prenotazione non più in attesa di riconferma'; END IF;
+ IF _action='confirm' THEN UPDATE public.reservations SET confirmation_status='riconfermata' WHERE id=r.id; ELSE UPDATE public.reservations SET confirmation_status='cancellata_no_show',cancellation_reason='Mancata riconferma',no_show=false,deleted_at=now(),table_ids='{}' WHERE id=r.id; END IF; RETURN true; END $$;
+REVOKE ALL ON FUNCTION public.handle_unconfirmed_booking(uuid,uuid,text) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.handle_unconfirmed_booking(uuid,uuid,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.claim_daily_service_summary() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE v public.restaurants; recipient text; BEGIN
+ SELECT * INTO v FROM public.restaurants WHERE daily_summary_enabled AND daily_summary_date IS DISTINCT FROM (now() AT TIME ZONE timezone)::date AND (now() AT TIME ZONE timezone)::time >= '09:00'::time AND (now() AT TIME ZONE timezone)::time < '10:00'::time AND (CASE WHEN booking_email_override THEN booking_email ELSE main_email END)<>'' ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED;
+ IF NOT FOUND THEN RETURN NULL; END IF;
+ recipient:=CASE WHEN v.booking_email_override THEN v.booking_email ELSE v.main_email END;
+ UPDATE public.restaurants SET daily_summary_date=(now() AT TIME ZONE v.timezone)::date,daily_summary_sent_at=NULL,daily_summary_error=NULL WHERE id=v.id;
+ RETURN jsonb_build_object('restaurant_id',v.id,'name',v.name,'email',recipient,'date',(now() AT TIME ZONE v.timezone)::date); END $$;
+REVOKE ALL ON FUNCTION public.claim_daily_service_summary() FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.claim_daily_service_summary() TO service_role;
+DO $$ DECLARE def text; BEGIN
+ SELECT pg_get_functiondef('public.get_online_booking_page(text)'::regprocedure) INTO def;
+ def:=replace(def,'''contact_phone'',r.contact_phone','''contact_phone'',CASE WHEN r.booking_phone_override THEN r.contact_phone ELSE r.main_phone END');
+ def:=replace(def,'''contact_whatsapp'',r.contact_whatsapp','''contact_whatsapp'',CASE WHEN r.booking_phone_override THEN r.contact_whatsapp ELSE r.main_whatsapp END'); EXECUTE def;
+ SELECT pg_get_functiondef('public.claim_morning_reminder()'::regprocedure) INTO def;
+ def:=replace(def,'''whatsapp'',venue.contact_whatsapp','''whatsapp'',CASE WHEN venue.booking_phone_override THEN venue.contact_whatsapp ELSE venue.main_whatsapp END'); EXECUTE def;
+END $$;

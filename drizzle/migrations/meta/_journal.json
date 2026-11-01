@@ -323,6 +323,13 @@
       "when": 1793562105130,
       "tag": "0045_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793563495188,
+      "tag": "0046_restaurant_identity_customer_events",
+      "breakpoints": true
     }
   ]
 }
