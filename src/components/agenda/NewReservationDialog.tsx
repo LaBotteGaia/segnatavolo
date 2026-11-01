@@ -99,7 +99,7 @@ export function NewReservationDialog({
   const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date, restaurantId), enabled: open && !!restaurantId });
   const others = dayRes.filter((r) => r.shift === shift);
   const pax = Number(people) || 0;
-  const habits = useTableHabits(serviceClock(clockNow).date);
+  const habits = useTableHabits(serviceClock(now).date);
   const suggestion = open && rooms && tables && time && pax > 0 && !closed
     ? suggestTables({
         people: pax, date, shift, time, tables, rooms, others, outside,

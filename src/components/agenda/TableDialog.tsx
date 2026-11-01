@@ -13,7 +13,9 @@ import { useMembership, useSettings } from "@/lib/membership";
 import { TableCards } from './TableCards';
 import { suggestTables } from '@/lib/allocation';
 import { compareTableNames } from '@/lib/data';
-import { useActiveCustomRules } from '@/lib/data';
+import { useActiveCustomRules, useTableHabits } from '@/lib/data';
+import { serviceClock } from '@/lib/no-show';
+import { useServiceClock } from '@/lib/extras';
 
 export { GRID_COLS, GRID_ROWS };
 /** Vista preferita del selettore tavoli, ricordata sul dispositivo. */
@@ -53,6 +55,7 @@ export function TableDialog({
     if (open) {
       setSelected(reservation.table_ids);
       setForce(false);
+      setForcedBusy([]);
       setEx(extras ? { extra_sponde: extras.extra_sponde, extra_barelle: extras.extra_barelle, barella_seats: extras.barella_seats || 2 } : NO_EXTRAS);
       const first = tables?.find((t) => reservation.table_ids.includes(t.id));
       try { setView(localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "map"); } catch { setView("map"); }
@@ -62,8 +65,11 @@ export function TableDialog({
 
   const settings = useSettings();
   const customRules = useActiveCustomRules();
+  const habits = useTableHabits(serviceClock(useServiceClock()).date);
   const isMaster = useMembership().data?.role === "master";
   const [force, setForce] = useState(false);
+  /** Tavoli occupati che l'operatore ha scelto consapevolmente di forzare. */
+  const [forcedBusy, setForcedBusy] = useState<string[]>([]);
   const cfg = { duration: settings.duration, buffer: settings.buffer };
   const stateOf = useMemo(() => {
     const sameShift = others.filter((o) => o.id !== reservation.id);
@@ -85,14 +91,15 @@ export function TableDialog({
   const extraLimit = selTables.filter(t=>t.allow_extras).length;
   const invalidExtras = extraSeats(ex)>0 && (reservation.people<=8 || ex.extra_sponde+ex.extra_barelle>extraLimit);
   const wallsFor = (rid: string) => wallsOf(rooms?.find((r) => r.id === rid));
-  const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,customRules,wallsFor,me:reservation }) : null;
+  const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,customRules,wallsFor,me:reservation,habits }) : null;
   const [view,setView] = useState<'cards'|'map'>('map');
   const pickView = (v: 'cards'|'map') => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage opzionale */ } };
-  const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy') || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
+  const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy' && !forcedBusy.includes(t.id)) || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
   const toggle = (id: string) => {
     if (selected.includes(id)) return setSelected((s) => s.filter((x) => x !== id));
     const t = tables?.find((x) => x.id === id);
-    if (!t || stateOf(id).kind==='busy') return;
+    if (!t) return;
+    if (stateOf(id).kind==='busy' && !forcedBusy.includes(id)) return setAskBusy(id);
     if (t && selTables.some((o) => !canJoin(o, t, wallsFor))) {
       toast.warning("⚠️ Impossibile unire questi tavoli: presenza di ostacolo o vincolo strutturale");
       return;
@@ -102,6 +109,9 @@ export function TableDialog({
     setSelected((s) => [...s, id]);
   };
   const [askScomodo, setAskScomodo] = useState<string | null>(null);
+  const [askBusy, setAskBusy] = useState<string | null>(null);
+  const busyTable = tables?.find((t) => t.id === askBusy);
+  const busyState = askBusy ? stateOf(askBusy) : null;
   const scomodoTable = tables?.find((t) => t.id === askScomodo);
   useEffect(() => { if (noExtras && (ex.extra_sponde || ex.extra_barelle)) setEx((e) => ({ ...e, extra_sponde: 0, extra_barelle: 0 })); }, [noExtras]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -120,6 +130,7 @@ export function TableDialog({
         <div className={cn("rounded-md border px-3 py-2 text-sm font-semibold", ok ? "border-free text-free" : "border-busy text-busy")}>
           Posti effettivi: {effective} / {reservation.people} coperti
         </div>
+        {suggestion && !suggestion.ids.every(id=>selected.includes(id)) && <Button type="button" variant="outline" className="h-auto justify-start whitespace-normal border-warning bg-warning/10 py-2 text-left" onClick={()=>{ setSelected(suggestion.ids); setEx(suggestion.extras); }}>💡 Usa suggerito: {tables?.filter(t=>suggestion.ids.includes(t.id)).map(t=>`T.${t.name}`).join(' + ')}</Button>}
 
         {(over || ex.extra_sponde > 0 || ex.extra_barelle > 0) && selected.length > 0 && (
           <div className={cn("space-y-2 rounded-md border-2 p-3", ok ? "border-free bg-free/10" : "border-warning bg-warning/15")}>
@@ -160,16 +171,25 @@ export function TableDialog({
           )}
           {view==='cards' ? <TableCards tables={[...roomTables].sort((a,b)=>(a.ordine_riempimento ?? 10)-(b.ordine_riempimento ?? 10)||compareTableNames(a.name,b.name))} room={room} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} onToggle={toggle}/> : <FloorPlan room={room} tables={roomTables} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} extended={extraSeats(ex)>0} onToggle={toggle}/>}
         </>}
-        <p role="status" aria-live="polite" className="min-h-10 rounded-md border bg-card px-3 py-2 text-sm font-semibold">{selected.length ? `Selezionato: ${selTables.map(t=>`Tavolo ${t.name}`).join(' + ')} · ${nominal} coperti comodi` : 'Nessun tavolo selezionato'}</p>
-
         {selected.length>1&&<div className="rounded-full border border-dashed border-primary bg-primary/5 px-4 py-2 text-center text-sm font-semibold text-primary">Tavoli {selTables.map(t=>t.name).join(' + ')} uniti</div>}
-        {invalidSelected&&<p role="alert" className="text-sm text-destructive">Assegnazione non disponibile: rimuovi i tavoli occupati o incompatibili.</p>}
-        {invalidExtras&&<p role="alert" className="text-sm text-destructive">Prolunghe solo oltre 8 persone, massimo una per tavolo abilitato.</p>}
-        <div className="flex justify-between gap-2">
-          <Button variant="outline" onClick={() => { setSelected([]); setEx(NO_EXTRAS); }}>Libera tavoli</Button>
-          <Button disabled={invalidSelected || invalidExtras} onClick={() => { if (invalidSelected || invalidExtras) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
+        {forcedBusy.some(id=>selected.includes(id))&&<p role="alert" className="rounded-md border border-warning bg-warning/15 px-3 py-2 text-sm font-semibold">⚠️ Assegnazione forzata su tavolo occupato: verifica la rotazione in sala.</p>}
+        <div className="sticky -bottom-3 z-20 -mx-3 space-y-2 border-t bg-paper px-3 pb-3 pt-2 shadow-[0_-6px_12px_-8px_hsl(0_0%_0%/0.3)] sm:-bottom-6 sm:-mx-6 sm:px-6 sm:pb-6">
+          {invalidSelected&&<p role="alert" className="text-sm text-destructive">Assegnazione non disponibile: rimuovi i tavoli incompatibili.</p>}
+          {invalidExtras&&<p role="alert" className="text-sm text-destructive">Prolunghe solo oltre 8 persone, massimo una per tavolo abilitato.</p>}
+          <p role="status" aria-live="polite" className="truncate text-sm font-semibold">{selected.length ? `✓ ${selTables.map(t=>`T.${t.name}`).join(' + ')} · ${effective}/${reservation.people} posti` : 'Nessun tavolo selezionato'}</p>
+          <div className="flex justify-between gap-2">
+            <Button variant="outline" onClick={() => { setSelected([]); setEx(NO_EXTRAS); }}>Libera tavoli</Button>
+            <Button className="flex-1 sm:flex-none" size="lg" disabled={invalidSelected || invalidExtras} onClick={() => { if (invalidSelected || invalidExtras) return; onConfirm(selected, selected.length ? ex : NO_EXTRAS); onOpenChange(false); }}>Conferma</Button>
+          </div>
         </div>
       </DialogContent>
+      <AlertDialog open={!!busyTable} onOpenChange={(o) => { if (!o) setAskBusy(null); }}>
+        {busyTable && <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>⚠️ Tavolo già occupato</AlertDialogTitle>
+            <AlertDialogDescription>Il Tavolo {busyTable.name} è già occupato{busyState?.kind==='busy' ? ` da ${busyState.name} fino alle ${busyState.until}` : ''}. Vuoi forzare comunque l'assegnazione in sovrapposizione?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Annulla</AlertDialogCancel><AlertDialogAction onClick={() => { setForcedBusy((f) => [...f, busyTable.id]); setSelected((s) => [...s, busyTable.id]); setAskBusy(null); }}>Forza assegnazione</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>}
+      </AlertDialog>
       <AlertDialog open={!!scomodoTable} onOpenChange={(o) => { if (!o) setAskScomodo(null); }}>
         {scomodoTable && <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>⚠️ Assegnazione con Posti Scomodi</AlertDialogTitle>
