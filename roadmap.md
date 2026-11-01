@@ -65,3 +65,11 @@
 - [x] Riconferma/disdetta sicure provate e rilette con prenotazione temporanea rimossa; promemoria singolo indipendente dalle email esistenti e pianificazioni predisposte.
 - [x] Badge agenda e ritardo comunicato, 322 test superati, pagina pubblica desktop/telefono senza overflow; correzione disponibilità meteo su tipo sala.
 - [ ] Invio mattutino reale: richiede pubblicazione delle nuove funzioni e servizio SMTP funzionante; servizio predefinito non collegato, invio non provato. SMTP attuale consente solo testo: link alla pagina con pulsanti, non pulsanti dentro l’email.
+
+## v0.8.26-alpha — Anagrafica, gestione cliente e notifiche
+- [ ] Centralizzare anagrafica e contatti con override online espliciti e compatibilità dei dati precedenti.
+- [ ] Link pubblico di gestione, richiesta modifica e disdetta con avvisi condivisi ed email al locale.
+- [ ] Alert a 60 minuti in Agenda/Sala Live e azioni manuali sicure.
+- [ ] Riepilogo quotidiano ore 09:00 locali, cronologico con note e canale online.
+- [ ] Impostazioni a due colonne senza duplicati, aiuti e tooltip.
+- [ ] Test, verifica autenticata e aggiornamento versione.
