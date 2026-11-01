@@ -22,11 +22,11 @@
 - Keep .env tracked in git (never in .gitignore): it holds only publishable keys and the published build reads VITE_* values from it; ignoring it ships a blank site.
 - Tenant isolation: operational queries and cache keys use the active restaurant ID from tenant.ts; absent IDs fail closed. Global reads only on the guarded /admin page, since Super Admin RLS bypass must never merge operational data.
 - Self-profile edits use a narrow authenticated database RPC deriving the caller from auth.uid(); operational_role is descriptive and never changes Master/Staff permissions. The profile reads actual account membership, not the synthetic assistance membership.
-- Settings: one Master-only /settings tab hub reusing shared editors; menu opens ServiceHub/Live via search flags, no duplicate pages.
+- Settings: Master-only split-view hub reuses editors. Restaurant columns own identity; profile JSON is a trigger-maintained compatibility mirror. Online contacts use explicit overrides.
 
 - Room scheduling is independent of the map lock; optimistic writes target the exact restaurant-scoped query key and refetch after persistence to prevent stale checkbox state.
 - Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables.
-- Public booking uses narrow sessionless RPCs and tenant-locked validation. Reconfirmation uses reservation capabilities and POST actions; morning SMTP reminders claim one recipient atomically, separate from booking-event templates. Delay cancellation honors venue timezone and communicated delays.
+- Public booking uses tenant-locked RPCs and POST capabilities. Customer changes are requests, not reallocations; cancellation/request events create tenant-scoped notifications. Daily summaries share the morning callback and claim one restaurant/local date/recipient. Delay cancellation honors venue timezone.
 - Online requests hold aggregate capacity while pending; operational queries and customer reliability read only confirmed rows. Decisions use a tenant-authorized locking RPC, so rejected requests never occupy tables and direct status edits are blocked.
 - Restaurant delivery credentials are encrypted server-side and kept in a service-only configuration store; SMTP accepts only approved public provider hosts with mandatory TLS, so tenants cannot probe arbitrary destinations.
 - Editable numeric controls keep string drafts until blur or submission; shared NumberInput preserves numeric persisted state without coercing empty keystrokes.
