@@ -1,0 +1,6 @@
+ALTER FUNCTION public.online_slot_remaining(uuid,date,text,text,uuid) STABLE;
+ALTER FUNCTION public.online_shift_remaining(uuid,date,text) STABLE;
+ALTER FUNCTION public.online_slot_turn(uuid,date,text,text) STABLE;
+ALTER FUNCTION public.get_online_booking_slots(text,date,text) STABLE;
+ALTER FUNCTION public.get_online_booking_page(text) STABLE;
+CREATE OR REPLACE FUNCTION public.online_effective_config(_rid uuid) RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT CASE WHEN r.online_turns_override THEN r.online_config ELSE jsonb_set(r.online_config,'{double_windows}',jsonb_build_object('pranzo',jsonb_build_object('first_to',coalesce(r.settings->'shifts'->'pranzo'->>'from','12:00'),'second_from',to_char(coalesce(r.settings->'shifts'->'pranzo'->>'from','12:00')::time+make_interval(mins=>ceil((greatest(0,coalesce((r.settings->>'duration')::int,90))+coalesce((r.settings->>'buffer')::int,15))/15.0)::int*15),'HH24:MI')),'sera',jsonb_build_object('first_to',coalesce(r.settings->'shifts'->'sera'->>'from','19:00'),'second_from',to_char(coalesce(r.settings->'shifts'->'sera'->>'from','19:00')::time+make_interval(mins=>ceil((greatest(0,coalesce((r.settings->>'duration')::int,90))+coalesce((r.settings->>'buffer')::int,15))/15.0)::int*15),'HH24:MI')))) END FROM public.restaurants r WHERE id=_rid $$;

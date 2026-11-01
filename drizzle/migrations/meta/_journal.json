@@ -358,6 +358,41 @@
       "when": 1793568451909,
       "tag": "0050_customer_change_capability_entrypoint",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1793568683382,
+      "tag": "0051_online_calendar_read_performance",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1793568754718,
+      "tag": "0052_online_calendar_bounded_availability",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793568767456,
+      "tag": "0053_online_day_interval_availability",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793568813665,
+      "tag": "0054_online_effective_policy_and_assignment_duration",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1793569101330,
+      "tag": "0055_online_override_capacity_consistency",
+      "breakpoints": true
     }
   ]
 }

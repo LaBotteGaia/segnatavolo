@@ -77,8 +77,9 @@
 - [ ] Verifica visiva del centro notifiche e azioni alert su servizio di prova: avvisi persistiti verificati, ma il pulsante non è stato raggiunto nella seconda navigazione automatizzata; nessuna azione applicata alle prenotazioni reali.
 
 ## Nuova richiesta — Notifiche, modifiche e calendario online
-- [ ] Email al locale sulle conferme solo con interruttore esplicito, spento inizialmente.
-- [ ] Modifiche cliente di data/orario/coperti con slot condivisi, prenotazione originale valida e approvazione/rifiuto operatore.
-- [ ] Turni online ereditati da quelli generali salvo override esplicito.
-- [ ] Aperture/chiusure straordinarie per data/intervallo e servizio, rispettate da calendario e salvataggio pubblico.
-- [ ] Test delle nuove regole e verifica autenticata con dati temporanei, versione e changelog.
+- [x] Email al locale sulle conferme opt-in: default false, attivazione e rilettura verificati su ristorante temporaneo.
+- [x] Modifiche cliente con slot condivisi: richiesta, rifiuto con motivazione, nuova richiesta e approvazione verificati nel browser; riepilogo aggiornato riletto dal cliente.
+- [x] Turni ereditati/override verificati: orario 13:00 personalizzato, ritorno alle 12:00 generali; capienza coerente.
+- [x] Eccezioni salvate/rilette: apertura lunedì e chiusura solo pranzo verificate; richiesta diretta al servizio chiuso bloccata.
+- [x] 348 test superati, build OK, smartphone senza overflow; versione e changelog v0.8.27-alpha.
+- [ ] Invio effettivo email: non eseguito; richiede destinatario di prova autorizzato e servizio email configurato. Nessuna email inviata durante i controlli.
