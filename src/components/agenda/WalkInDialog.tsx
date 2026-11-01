@@ -16,7 +16,7 @@ import { refreshService } from "@/lib/recycle-bin";
 import { supabase } from "@/integrations/supabase/client";
 import { FloorPlan } from './FloorPlan';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { freeWindow, isScomodo, limitedStay, nextBookingOn, toMin } from "@/lib/live-floor";
+import { freeWindow, isScomodo, walkinFit, limitedStay, nextBookingOn, toMin } from "@/lib/live-floor";
 import { calculateBestTableAssignment } from '@/lib/allocation';
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,7 @@ function WalkInForm({ onClose, onSaved }: { onClose: () => void; onSaved: (date:
   const nowMin = toMin(clock.time);
   const nowState = (id: string) => tableState(id, { id: "walkin", time: clock.time, duration_min: 15, buffer_min: 0 }, shiftRows, settings);
   const maxOf = (t: (typeof tables)[number]) => Math.max(t.coperti_max ?? t.seats, t.seats);
-  const free = closed || !ready ? [] : tables.filter((t) => maxOf(t) >= people && !isRoomClosedFor(rooms.find((r) => r.id === t.room_id), clock.date, clock.shift) && nowState(t.id).kind !== "busy" && (limitedStay(toMin(nextBookingOn([t.id], shiftRows, nowMin)?.time ?? ""), nowMin, walkCfg)?.allowed ?? true)).sort(compareTables(rooms));
+  const free = closed || !ready ? [] : tables.filter((t) => walkinFit(t, people) !== "too_small" && !isRoomClosedFor(rooms.find((r) => r.id === t.room_id), clock.date, clock.shift) && nowState(t.id).kind !== "busy" && (limitedStay(toMin(nextBookingOn([t.id], shiftRows, nowMin)?.time ?? ""), nowMin, walkCfg)?.allowed ?? true)).sort(compareTables(rooms));
   const suggestion = ready ? calculateBestTableAssignment({ people,date:clock.date,shift:clock.shift,time:clock.time,tables:free,rooms,others:[],cfg:walkCfg,customRules,rules:settings.assignmentRules,wallsFor:id=>wallsOf(rooms.find(r=>r.id===id)),singleOnly:true,allowSingleMax:true }) : null;
   const win = (id: string) => freeWindow(id, shiftRows, nowMin, walkinBuffer);
   const [askScomodo, setAskScomodo] = useState<string | null>(null);
