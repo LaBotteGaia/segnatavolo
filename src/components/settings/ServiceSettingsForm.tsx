@@ -17,7 +17,7 @@ const ALL_TIMES = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 
 const WEEKDAYS: [string, string][] = [["1", "Lunedì"], ["2", "Martedì"], ["3", "Mercoledì"], ["4", "Giovedì"], ["5", "Venerdì"], ["6", "Sabato"], ["0", "Domenica"]];
 
 /** Orari, turni, rotazione, riserva, privacy e chiusure del ristorante (solo Master: RLS blocca gli altri). */
-export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: string; settings: unknown; walkinBuffer?: number }) {
+export function ServiceSettingsForm({ id, settings, walkinBuffer = 5, showWeather = true }: { id: string; settings: unknown; walkinBuffer?: number; showWeather?: boolean }) {
   const qc = useQueryClient();
   const [weather,setWeather] = useState(()=>weatherSettingsOf(settings));
   useEffect(()=>setWeather(weatherSettingsOf(settings)),[settings]);
@@ -161,7 +161,7 @@ export function ServiceSettingsForm({ id, settings, walkinBuffer = 5 }: { id: st
         <Button type="button" variant="outline" size="sm" onClick={() => setSt((o) => ({ ...o, holidays: [...o.holidays, { from: "", to: "" }] }))}><Plus /> Aggiungi periodo</Button>
       </section>
 
-      <WeatherSettingsFields value={weather} onChange={setWeather} />
+      {showWeather && <WeatherSettingsFields value={weather} onChange={setWeather} />}
       <Button type="submit" className="w-full">Salva orari e turni</Button>
     </form>
   );
