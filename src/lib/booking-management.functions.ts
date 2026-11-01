@@ -6,7 +6,7 @@ export const manageBooking = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     // The unguessable capability authorizes only this reservation; GET never mutates it.
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: result, error } = await supabaseAdmin.rpc('manage_customer_booking', { _token: data.token, _action: data.action, _date: data.date, _shift: data.shift, _time: data.time, _people: data.people });
+    const { data: result, error } = await supabaseAdmin.rpc('manage_customer_booking_v2', { _token: data.token, _action: data.action, _date: data.date, _shift: data.shift, _time: data.time, _people: data.people });
     if (error) throw new Error('Link non valido, scaduto o prenotazione non più disponibile. Contatta il ristorante.');
     const value = result as ManagedBooking & { event_id?: string; restaurant_id?: string };
     let emailSent: boolean | undefined;
