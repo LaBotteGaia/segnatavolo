@@ -91,11 +91,13 @@ export type Database = {
           barella_seats: number
           buffer_min: number | null
           channel: string
+          confirmation_status: string
           contact_email: string | null
           created_at: string
           created_by: string | null
           created_by_name: string
           customer_id: string | null
+          customer_notes: string
           date: string
           decided_at: string | null
           deleted_at: string | null
@@ -105,7 +107,11 @@ export type Database = {
           ha_posti_scomodi: boolean
           id: string
           is_new: boolean
+          management_token: string
           max_stay_until: string | null
+          morning_reminder_attempted_at: string | null
+          morning_reminder_error: string | null
+          morning_reminder_sent_at: string | null
           name: string
           no_show: boolean
           notes: string
@@ -131,11 +137,13 @@ export type Database = {
           barella_seats?: number
           buffer_min?: number | null
           channel?: string
+          confirmation_status?: string
           contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
           customer_id?: string | null
+          customer_notes?: string
           date: string
           decided_at?: string | null
           deleted_at?: string | null
@@ -145,7 +153,11 @@ export type Database = {
           ha_posti_scomodi?: boolean
           id?: string
           is_new?: boolean
+          management_token?: string
           max_stay_until?: string | null
+          morning_reminder_attempted_at?: string | null
+          morning_reminder_error?: string | null
+          morning_reminder_sent_at?: string | null
           name?: string
           no_show?: boolean
           notes?: string
@@ -171,11 +183,13 @@ export type Database = {
           barella_seats?: number
           buffer_min?: number | null
           channel?: string
+          confirmation_status?: string
           contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
           customer_id?: string | null
+          customer_notes?: string
           date?: string
           decided_at?: string | null
           deleted_at?: string | null
@@ -185,7 +199,11 @@ export type Database = {
           ha_posti_scomodi?: boolean
           id?: string
           is_new?: boolean
+          management_token?: string
           max_stay_until?: string | null
+          morning_reminder_attempted_at?: string | null
+          morning_reminder_error?: string | null
+          morning_reminder_sent_at?: string | null
           name?: string
           no_show?: boolean
           notes?: string
@@ -487,39 +505,72 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          allow_same_day_online: boolean
+          booking_window_days: number
+          contact_phone: string
+          contact_whatsapp: string
           created_at: string
+          custom_intro_text: string
+          double_shift_days: string[]
+          enable_double_shift: boolean
+          first_shift_duration_minutes: number
           id: string
+          morning_reminder_enabled: boolean
           name: string
+          no_show_tolerance_minutes: number
           online_config: Json
           online_enabled: boolean
           public_address: string
           public_logo_url: string
           settings: Json
           tempo_riassetto_minuti: number
+          timezone: string
           web_slug: string | null
         }
         Insert: {
+          allow_same_day_online?: boolean
+          booking_window_days?: number
+          contact_phone?: string
+          contact_whatsapp?: string
           created_at?: string
+          custom_intro_text?: string
+          double_shift_days?: string[]
+          enable_double_shift?: boolean
+          first_shift_duration_minutes?: number
           id?: string
+          morning_reminder_enabled?: boolean
           name: string
+          no_show_tolerance_minutes?: number
           online_config?: Json
           online_enabled?: boolean
           public_address?: string
           public_logo_url?: string
           settings?: Json
           tempo_riassetto_minuti?: number
+          timezone?: string
           web_slug?: string | null
         }
         Update: {
+          allow_same_day_online?: boolean
+          booking_window_days?: number
+          contact_phone?: string
+          contact_whatsapp?: string
           created_at?: string
+          custom_intro_text?: string
+          double_shift_days?: string[]
+          enable_double_shift?: boolean
+          first_shift_duration_minutes?: number
           id?: string
+          morning_reminder_enabled?: boolean
           name?: string
+          no_show_tolerance_minutes?: number
           online_config?: Json
           online_enabled?: boolean
           public_address?: string
           public_logo_url?: string
           settings?: Json
           tempo_riassetto_minuti?: number
+          timezone?: string
           web_slug?: string | null
         }
         Relationships: []
@@ -631,6 +682,7 @@ export type Database = {
     Functions: {
       can_configure_delivery: { Args: { _rid: string }; Returns: boolean }
       can_use_restaurant: { Args: { _rid: string }; Returns: boolean }
+      claim_morning_reminder: { Args: never; Returns: Json }
       close_weather_service: {
         Args: {
           _date: string
@@ -697,7 +749,15 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      manage_online_reservation: {
+        Args: { _action?: string; _token: string }
+        Returns: Json
+      }
       my_restaurant_id: { Args: never; Returns: string }
+      online_booking_date_allowed: {
+        Args: { _date: string; _rid: string }
+        Returns: boolean
+      }
       online_shift_remaining: {
         Args: { _date: string; _rid: string; _shift: string }
         Returns: number
@@ -715,6 +775,10 @@ export type Database = {
       online_slot_turn: {
         Args: { _date: string; _rid: string; _shift: string; _time: string }
         Returns: number
+      }
+      restaurant_web_double_day: {
+        Args: { _date: string; _rid: string }
+        Returns: boolean
       }
       restore_restaurant_data: {
         Args: { _backup_data: Json; _target_restaurant_id: string }

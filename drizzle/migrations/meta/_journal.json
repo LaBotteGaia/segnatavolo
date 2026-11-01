@@ -288,6 +288,13 @@
       "when": 1793267878771,
       "tag": "0040_weather_preserve_join_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793560515738,
+      "tag": "0041_online_reconfirmation_policy",
+      "breakpoints": true
     }
   ]
 }
