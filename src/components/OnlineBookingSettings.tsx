@@ -18,7 +18,7 @@ export function OnlineBookingSettings({id,name}:{id:string;name:string}) {
  const {data,error}=useQuery({queryKey:['online-settings',id],queryFn:async()=>{const {data,error}=await supabase.from('restaurants').select('*').eq('id',id).single();if(error)throw error;return data;}});
  if(error)return <p role="alert">Impostazioni online non disponibili.</p>;
  if(!data)return <Loader2 className="size-5 animate-spin"/>;
- return <OnlineSettingsForm key={id} id={id} name={name} initial={data}/>;
+ return <OnlineSettingsForm key={id} id={id} name={name} initial={{...data,...bookingPolicySchema.parse(data)}}/>;
 }
 function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{online_enabled:boolean;web_slug:string|null;online_config:unknown;public_address:string;public_logo_url:string} & BookingPolicy}) {
  const qc=useQueryClient();const [enabled,setEnabled]=useState(initial.online_enabled);const [slug,setSlug]=useState(initial.web_slug||slugFromName(name));const [cfg,setCfg]=useState<OnlineConfig>(()=>onlineConfigSchema.parse(initial.online_config));const [address,setAddress]=useState(initial.public_address);const [logo,setLogo]=useState(initial.public_logo_url);const [saving,setSaving]=useState(false);
