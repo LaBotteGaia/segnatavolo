@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OPERATIONAL_ROLES, passwordError } from "@/lib/operator-profile";
 import { ownRestaurantId, scopeRestaurant } from "@/lib/tenant";
+import { OperatorNameDialog } from "@/components/OperatorName";
 import { roleLabel, type Member } from "@/lib/membership";
 
 export function OperatorProfileDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -24,13 +25,20 @@ export function OperatorProfileDialog({ open, onOpenChange }: { open: boolean; o
       return { member: data, email: auth.user.email ?? "" };
     },
   });
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  return <><Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
     <DialogHeader><DialogTitle>Il Mio Profilo</DialogTitle></DialogHeader>
     {profile.isPending ? <div role="status" className="flex items-center gap-2"><LoaderCircle className="size-4 animate-spin" /> Caricamento profilo…</div> : profile.isError ? <div role="alert">Profilo non disponibile. <Button variant="outline" onClick={() => profile.refetch()}>Riprova</Button></div> : <>
       {profile.data?.member ? <ProfileForm key={`${profile.data.member.id}-${profile.dataUpdatedAt}`} member={profile.data.member} email={profile.data.email} /> : <div><Label>Email</Label><Input readOnly value={profile.data?.email ?? ""} /><p className="mt-2 text-sm text-muted-foreground">Nessun profilo di sala associato a questo account.</p></div>}
       <PasswordForm />
+      <section className="space-y-2 rounded-md border border-destructive/40 p-3">
+        <h3 className="font-semibold text-destructive">Zona pericolosa</h3>
+        <p className="text-xs text-muted-foreground">Elimina definitivamente il tuo accesso. Le prenotazioni registrate restano con il tuo nome nello storico.</p>
+        <Button type="button" variant="ghost" className="w-full justify-start bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={() => setDeleteOpen(true)}>Elimina il mio account</Button>
+      </section>
     </>}
-  </DialogContent></Dialog>;
+  </DialogContent></Dialog>
+  <OperatorNameDialog open={deleteOpen} onOpenChange={setDeleteOpen} name="" deleteOnly /></>;
 }
 
 function ProfileForm({ member, email }: { member: Member; email: string }) {
