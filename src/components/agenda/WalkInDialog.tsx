@@ -16,7 +16,7 @@ import { refreshService } from "@/lib/recycle-bin";
 import { supabase } from "@/integrations/supabase/client";
 import { FloorPlan } from './FloorPlan';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { freeWindow, isScomodo, limitedStay, nextBookingOn, toMin } from "@/lib/live-floor";
+import { freeWindow, isScomodo, walkinFit, limitedStay, nextBookingOn, toMin } from "@/lib/live-floor";
 import { calculateBestTableAssignment } from '@/lib/allocation';
 import { cn } from "@/lib/utils";
 
