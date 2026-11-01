@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { BookingPolicyFields } from './BookingPolicyFields';
 import { bookingPolicySchema, type BookingPolicy } from '@/lib/booking-policy';
-import { RestaurantEmailSettings } from './RestaurantEmailSettings';
-import { AiVoiceSettings } from './AiVoiceSettings';
+import { contactOverrideSchema } from '@/lib/restaurant-identity';
+import type { Tables } from '@/integrations/supabase/types';
+import { FieldHelp } from './settings/FieldHelp';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,18 +22,22 @@ export function OnlineBookingSettings({id,name}:{id:string;name:string}) {
  if(!data)return <Loader2 className="size-5 animate-spin"/>;
  return <OnlineSettingsForm key={id} id={id} name={name} initial={{...data,...bookingPolicySchema.parse(data)}}/>;
 }
-function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{online_enabled:boolean;web_slug:string|null;online_config:unknown;public_address:string;public_logo_url:string} & BookingPolicy}) {
- const qc=useQueryClient();const [enabled,setEnabled]=useState(initial.online_enabled);const [slug,setSlug]=useState(initial.web_slug||slugFromName(name));const [cfg,setCfg]=useState<OnlineConfig>(()=>onlineConfigSchema.parse(initial.online_config));const [address,setAddress]=useState(initial.public_address);const [logo,setLogo]=useState(initial.public_logo_url);const [saving,setSaving]=useState(false);
+function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:Tables<'restaurants'> & BookingPolicy}) {
+ const qc=useQueryClient();const [enabled,setEnabled]=useState(initial.online_enabled);const [slug,setSlug]=useState(initial.web_slug||slugFromName(name));const [cfg,setCfg]=useState<OnlineConfig>(()=>onlineConfigSchema.parse(initial.online_config));const [overrides,setOverrides]=useState(()=>contactOverrideSchema.parse(initial));const [saving,setSaving]=useState(false);
  const [policy,setPolicy]=useState<BookingPolicy>(()=>bookingPolicySchema.parse(initial));
  const link=`https://segnatavolo.lovable.app/prenota/${slug}`;const embed=`<iframe src="${link}" width="100%" height="800px" frameborder="0"></iframe>`;
  const patch=(p:Partial<OnlineConfig>)=>setCfg(c=>({...c,...p}));
- const save=async()=>{const valid=slugSchema.safeParse(slug);if(!valid.success){toast.error(valid.error.issues[0]?.message);return;}const validatedPolicy=bookingPolicySchema.safeParse({...policy,booking_window_days:cfg.max_days});if(!onlineConfigSchema.safeParse(cfg).success||!validatedPolicy.success){toast.error('Controlla le regole online e il fuso orario');return;}setSaving(true);try{const {error}=await supabase.from('restaurants').update({online_enabled:enabled,web_slug:slug,online_config:cfg,public_address:address,public_logo_url:logo,...validatedPolicy.data}).eq('id',id);if(error){toast.error(error.code==='23505'?'Identificativo già utilizzato da un altro locale':'Impostazioni non salvate: controlla i dati e le finestre dei turni');return;}await qc.invalidateQueries({queryKey:['online-settings',id]});await qc.invalidateQueries({queryKey:['booking-policy',id]});toast.success('Prenotazioni online aggiornate');}finally{setSaving(false);}};
+ const save=async()=>{const valid=slugSchema.safeParse(slug);if(!valid.success){toast.error(valid.error.issues[0]?.message);return;}const validatedPolicy=bookingPolicySchema.safeParse({...policy,timezone:initial.timezone,contact_phone:overrides.contact_phone,contact_whatsapp:overrides.contact_whatsapp,booking_window_days:cfg.max_days});if(!onlineConfigSchema.safeParse(cfg).success||!validatedPolicy.success){toast.error('Controlla le regole online e il fuso orario');return;}const ov=contactOverrideSchema.safeParse(overrides);if(!ov.success){toast.error(ov.error.issues[0]?.message);return;}setSaving(true);try{const {error}=await supabase.from('restaurants').update({online_enabled:enabled,web_slug:slug,online_config:cfg,...validatedPolicy.data,...ov.data}).eq('id',id);if(error){toast.error(error.code==='23505'?'Identificativo già utilizzato da un altro locale':'Impostazioni non salvate: controlla i dati e le finestre dei turni');return;}await qc.invalidateQueries({queryKey:['online-settings',id]});await qc.invalidateQueries({queryKey:['booking-policy',id]});toast.success('Prenotazioni online aggiornate');}finally{setSaving(false);}};
  const copy=async(text:string)=>{try{await navigator.clipboard.writeText(text);toast.success('Copiato');}catch{toast.error('Copia non disponibile');}};
  return <section className="space-y-4 border-t pt-4"><h3 className="font-display text-lg">Prenotazioni Online &amp; Widget</h3>
  <label className="flex items-center justify-between gap-3 text-sm font-semibold">Abilita ricezione prenotazioni online<Switch checked={enabled} onCheckedChange={setEnabled}/></label>
  <label className="block text-sm">Identificativo Web (Slug)<Input value={slug} maxLength={80} onChange={e=>setSlug(e.target.value)}/></label>
- <label className="block text-sm">Indirizzo del locale<Input value={address} maxLength={300} onChange={e=>setAddress(e.target.value)}/></label>
- <label className="block text-sm">Logo (URL HTTPS)<Input type="url" value={logo} maxLength={1000} onChange={e=>setLogo(e.target.value)}/></label>
+ <fieldset className="space-y-3 border-y py-4"><legend className="font-semibold">Recapiti dedicati</legend>
+ <label className="flex items-center justify-between gap-3 text-sm">Usa email dedicata per gestione prenotazioni<Switch checked={overrides.booking_email_override} onCheckedChange={v=>setOverrides(o=>({...o,booking_email_override:v}))}/></label><FieldHelp>Se spento, notifiche e riepiloghi vanno all’email principale del ristorante.</FieldHelp>
+ {overrides.booking_email_override&&<label className="block text-sm">Email dedicata<Input required type="email" value={overrides.booking_email} onChange={e=>setOverrides(o=>({...o,booking_email:e.target.value}))}/><FieldHelp>Riceve nuove richieste, conferme, modifiche, disdette e riepilogo.</FieldHelp></label>}
+ <label className="flex items-center justify-between gap-3 text-sm">Usa recapito telefonico/WhatsApp dedicato per prenotazioni online<Switch checked={overrides.booking_phone_override} onCheckedChange={v=>setOverrides(o=>({...o,booking_phone_override:v}))}/></label><FieldHelp>Se spento, il cliente vede i recapiti principali.</FieldHelp>
+ {overrides.booking_phone_override&&<div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">Telefono dedicato<Input type="tel" value={overrides.contact_phone} onChange={e=>setOverrides(o=>({...o,contact_phone:e.target.value}))}/><FieldHelp>Numero per contattare il servizio prenotazioni.</FieldHelp></label><label className="text-sm">WhatsApp dedicato<Input type="tel" value={overrides.contact_whatsapp} onChange={e=>setOverrides(o=>({...o,contact_whatsapp:e.target.value}))}/><FieldHelp>Numero per riconferme e comunicazioni online.</FieldHelp></label></div>}
+ </fieldset>
  <label className="block text-sm">Apertura prenotazioni (giorni di anticipo massimo)<NumberInput min={1} max={365} defaultValue={30} value={cfg.max_days} onCommit={max_days=>patch({max_days})}/></label>
  <BookingPolicyFields value={policy} onChange={p=>setPolicy(current=>({...current,...p}))}/>
  <label className="block text-sm">Massimo coperti per prenotazione online<NumberInput min={1} max={100} defaultValue={6} value={cfg.max_party_size} onCommit={max_party_size=>patch({max_party_size})}/></label>
@@ -40,5 +46,5 @@ function OnlineSettingsForm({id,name,initial}:{id:string;name:string;initial:{on
  <fieldset className="space-y-3"><legend className="font-semibold">Orari web con doppio turno</legend>{(['pranzo','sera'] as const).map(s=><div key={s} className="grid grid-cols-2 gap-3"><label className="text-sm">{s==='pranzo'?'Pranzo':'Cena'} · Ultimo arrivo 1° Turno<Input type="time" step={900} value={cfg.double_windows[s].first_to} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],first_to:e.target.value}}})}/></label><label className="text-sm">Primo arrivo 2° Turno<Input type="time" step={900} value={cfg.double_windows[s].second_from} onChange={e=>patch({double_windows:{...cfg.double_windows,[s]:{...cfg.double_windows[s],second_from:e.target.value}}})}/></label></div>)}</fieldset>
  <label className="block text-sm">Messaggio di chiusura personalizzato<Textarea value={cfg.closed_message} maxLength={1000} onChange={e=>patch({closed_message:e.target.value})}/></label>
  <div className="space-y-2"><label className="block text-sm">Link pubblico<Input readOnly value={link}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(link)}><Copy/>Copia link</Button><label className="block text-sm">Codice Iframe<Textarea readOnly value={embed}/></label><Button type="button" size="sm" variant="outline" onClick={()=>copy(embed)}><Copy/>Copia codice</Button></div>
- <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button><RestaurantEmailSettings id={id}/><AiVoiceSettings id={id}/></section>;
+ <Button type="button" disabled={saving} className="w-full" onClick={save}>{saving&&<Loader2 className="animate-spin"/>}Salva canale online</Button></section>;
 }
