@@ -1,0 +1,19 @@
+import type { BookingPolicy } from '@/lib/booking-policy';
+
+export function OnlineBookingIntro({ name, policy: p }: { name: string; policy: BookingPolicy }) {
+  const phone = p.contact_phone ? <a className="underline" href={`tel:${p.contact_phone.replace(/[^+\d]/g, '')}`}>{p.contact_phone}</a> : 'ai recapiti del ristorante';
+  const whatsapp = p.contact_whatsapp ? <a className="underline" href={`https://wa.me/${p.contact_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">{p.contact_whatsapp}</a> : 'ai recapiti del ristorante';
+  return <section className="space-y-4 border-b py-6 text-sm leading-relaxed">
+    <p>Siamo felici che abbiate scelto di prenotare un tavolo a {name}.</p>
+    {p.custom_intro_text && <p className="whitespace-pre-wrap break-words">{p.custom_intro_text}</p>}
+    <p>Le prenotazioni possono essere effettuate online dal nostro modulo che visualizzerete sotto a questo testo. Proseguendo, potrete controllare le disponibilità per le prossime date e sarà possibile riservare uno dei nostri tavoli.</p>
+    <p>Il sistema è aperto alle prenotazioni per i prossimi {p.booking_window_days} giorni a partire da {p.allow_same_day_online ? 'oggi' : 'domani'}. {!p.allow_same_day_online && <>Non sarà possibile prenotare un tavolo per il giorno odierno tramite questo modulo ma soltanto verificando prima telefonicamente la disponibilità {phone}.</>} Vi chiediamo cortesemente di non inviare messaggi su Instagram o Facebook per richieste inerenti a prenotazioni.</p>
+    {p.enable_double_shift && <div className="space-y-2"><p>Abbiamo organizzato il servizio in modo che, con la vostra collaborazione, nei giorni di {p.double_shift_days.join(', ') || 'doppio turno'}, ogni tavolo sia disponibile per due turni, cadenzando gli arrivi nelle fasce orarie indicate nel modulo:</p><ul className="list-disc space-y-1 pl-5"><li>I tavoli del PRIMO TURNO sono a disposizione per {p.first_shift_duration_minutes} minuti a partire dall’orario di prenotazione.</li><li>I tavoli del SECONDO TURNO sono a disposizione fino all’orario di chiusura del ristorante.</li></ul></div>}
+    <p>Vi invitiamo a scegliere attentamente l’opzione che fa al caso vostro e a rispettare gli orari concordati, agevolando il lavoro del personale di sala.</p>
+    {p.morning_reminder_enabled ? <p>È necessario riconfermare la prenotazione dall’email di promemoria che riceverete la mattina stessa della vostra prenotazione oppure via WhatsApp {whatsapp}. Qualora la prenotazione non venisse riconfermata e non risultaste raggiungibili su WhatsApp o al telefono, ci riserviamo il diritto di cancellarla. Inserite indirizzo email e numero di telefono corretti, per non rischiare che il tavolo venga cancellato per mancata riconferma.</p> : <p>Per comunicazioni sulla prenotazione contattateci via WhatsApp {whatsapp} o telefono {phone}.</p>}
+    <p>Per cancellare una prenotazione si può utilizzare il pulsante presente nell’email di promemoria, oppure è possibile contattarci via WhatsApp o telefono.</p>
+    <p>In caso di ritardo non comunicato superiore a {p.no_show_tolerance_minutes} minuti, la prenotazione verrà cancellata.</p>
+    <p>Il processo è concluso solo quando tutti i dati sono stati inseriti. Se un altro utente conclude prima di voi per lo stesso orario, la richiesta potrebbe non andare a buon fine: un messaggio vi avviserà che non c’è più disponibilità. Nessun tavolo specifico è mostrato o garantito: le preferenze nelle note saranno gestite dal personale.</p>
+    <p>Qualora non vi fossero disponibilità, vi consigliamo di tenere monitorati i nostri social. È possibile registrarsi alla lista d’attesa chiamandoci {phone}. Sarete ricontattati solo se dovesse tornare disponibile un tavolo compatibile con la vostra richiesta.</p>
+  </section>;
+}
