@@ -81,7 +81,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "Sala";
 
   const reset = () => { setSelected(null); setMoving(null); setWalkin(null); setSeating(null); setConfirmFreed(null); setLimited(null); setSwap(null); setBusy(false); setFocus(null); };
-  const close = () => { reset(); onOpenChange(false); };
+  const close = () => { reset(); setScomodo(null); onOpenChange(false); };
 
   useEffect(() => {
     if (!open) return;
