@@ -146,6 +146,16 @@ export function isScomodo(t: Pick<RTable, "seats" | "coperti_comodi" | "coperti_
   return people > comodi && people <= max;
 }
 
+/**
+ * Regola unica di capienza per ogni accomodamento al volo (dialog, Sala Live, tavolo liberato):
+ * un tavolo più grande dei commensali è sempre ammesso; oltre i comodi serve conferma; oltre il massimo no.
+ */
+export function walkinFit(t: Pick<RTable, "seats" | "coperti_comodi" | "coperti_max">, people: number): "ok" | "scomodo" | "too_small" {
+  const comodi = t.coperti_comodi ?? t.seats, max = Math.max(t.coperti_max ?? t.seats, t.seats, comodi);
+  if (people > max) return "too_small";
+  return people > comodi ? "scomodo" : "ok";
+}
+
 /** Conto alla rovescia verso l'arrivo: tono "late" se in ritardo, "urgent" ≤15 min, "soon" ≤30 min, altrimenti "later". */
 export function arrivalCountdown(startMin: number, nowMin: number): { label: string; tone: "late" | "urgent" | "soon" | "later" } | null {
   if (!Number.isFinite(startMin)) return null;
