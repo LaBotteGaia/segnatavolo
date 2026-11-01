@@ -212,7 +212,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
     const st = stateOf(t.id);
     if (moving) {
       if (t.id === moving.tableId) return setMoving(null);
-      if (st.kind === "free") return void doMove(moving, t);
+      if (st.kind === "free") { const m = moving; return checkFit(t, m.res.people, () => void doMove(m, t)); }
       if (st.kind === "seated") return setSwap({ from: moving, to: { res: st.res, tableId: t.id } });
       return toast.warning(`Tavolo ${t.name} riservato a breve (${st.at})`);
     }
