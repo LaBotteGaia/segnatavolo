@@ -71,6 +71,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   const [busy, setBusy] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [focus, setFocus] = useState<string | null>(null);
+  const [scomodo, setScomodo] = useState<{ table: RTable; people: number; then: () => void } | null>(null);
 
   const stateOf = (id: string): LiveTableState => liveTableState(id, rows, clock.minutes, settings);
   const counters = liveCounters(gridTables, rows, clock.minutes, settings);
@@ -184,7 +185,6 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   };
 
   /** Stessa regola di capienza di "Accomoda al volo": tavoli più grandi ammessi, posti scomodi con conferma, oltre il massimo bloccato. */
-  const [scomodo, setScomodo] = useState<{ table: RTable; people: number; then: () => void } | null>(null);
   const checkFit = (t: RTable, people: number, then: () => void) => {
     const fit = walkinFit(t, people);
     if (fit === "too_small") return void toast.warning(`Tavolo ${t.name} troppo piccolo: massimo ${Math.max(t.coperti_max ?? t.seats, t.seats)} coperti`);
