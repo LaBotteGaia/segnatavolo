@@ -28,7 +28,8 @@ import { useCustomerHistory, useServiceClock } from "@/lib/extras";
 import { reliabilityStats } from "@/lib/no-show";
 import { suggestTables } from "@/lib/allocation";
 import { wallsOf } from "@/lib/data";
-import { useActiveCustomRules } from '@/lib/data';
+import { useActiveCustomRules, useTableHabits } from '@/lib/data';
+import { serviceClock } from '@/lib/no-show';
 
 export type NewReservationInput = {
   date: string; shift: Shift; time: string; name: string; people: number; phone: string;
@@ -98,13 +99,14 @@ export function NewReservationDialog({
   const { data: dayRes = [] } = useQuery({ ...reservationsQuery(date, restaurantId), enabled: open && !!restaurantId });
   const others = dayRes.filter((r) => r.shift === shift);
   const pax = Number(people) || 0;
+  const habits = useTableHabits(serviceClock(clockNow).date);
   const suggestion = open && rooms && tables && time && pax > 0 && !closed
     ? suggestTables({
         people: pax, date, shift, time, tables, rooms, others, outside,
         rules: settings.assignmentRules, notes, customRules,
         cfg: { duration: settings.duration, buffer: settings.buffer },
         wallsFor: (rid) => wallsOf(rooms.find((r) => r.id === rid)),
-        me: { id: "new", duration_min: dur, buffer_min: buf },
+        me: { id: "new", duration_min: dur, buffer_min: buf }, habits,
       })
     : null;
   const sugKey = suggestion ? suggestion.ids.join(",") + "|" + suggestion.extras.extra_sponde : "";
