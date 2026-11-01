@@ -45,7 +45,7 @@ export function FloorPlan({ room, tables, selected, suggested, people, stateOf, 
               const tight = people > comfort || (sel && extended);
               const recommended = suggested.includes(t.id) && !busy && !closed;
               return <div key={t.id} className="absolute" style={{ left: t.x*CELL+24, top: t.y*CELL+24, width: CELL-24, height: CELL-24 }}>
-                <Button variant="outline" type="button" aria-label={`Tavolo ${t.name}`} aria-pressed={sel} disabled={busy || (closed && !sel)}
+                <Button variant="outline" type="button" aria-label={`Tavolo ${t.name}`} aria-pressed={sel} disabled={closed && !sel}
                   title={busy ? `Occupato · ${state.name} · fino alle ${state.until}` : `${comfort} coperti comodi, massimo ${max}${!t.accoppiabile ? ' · Isola' : ''}${t.adatto_seduta_lunga ? ' · Seduta lunga' : ''}`}
                   onClick={() => onToggle(t.id)} className={cn('h-full w-full flex-col gap-1 whitespace-normal border-2 p-2 text-center leading-tight',
                     busy ? 'border-muted-foreground bg-muted text-muted-foreground disabled:opacity-40' : closed ? 'bg-muted text-muted-foreground' : tight ? 'border-warning bg-warning/15 text-foreground' : 'border-free/50 bg-free/15 text-foreground',

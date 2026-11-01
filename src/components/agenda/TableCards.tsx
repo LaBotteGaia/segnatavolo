@@ -13,7 +13,7 @@ export function TableCards({ tables, room, selected, suggested, people, stateOf,
       const state=stateOf(t.id), busy=state.kind==='busy', sel=selected.includes(t.id), recommended=suggested.includes(t.id);
       const comodi=t.coperti_comodi ?? t.seats, max=t.coperti_max ?? comodi;
       const tight=people>comodi && (people<=max || t.allow_extras);
-      return <Button key={t.id} type="button" variant="outline" aria-label={`Tavolo ${t.name}`} aria-pressed={sel} disabled={busy || closed}
+      return <Button key={t.id} type="button" variant="outline" aria-label={`Tavolo ${t.name}`} aria-pressed={sel} disabled={closed}
         onClick={()=>onToggle(t.id)} className={cn('relative h-auto min-h-44 w-full flex-col items-start justify-start gap-3 whitespace-normal rounded-2xl border-2 bg-card p-4 text-left transition duration-200 motion-safe:hover:-translate-y-0.5',
           busy?'border-busy bg-busy/10 opacity-70':closed?'border-border opacity-50':tight?'border-warning/70':'border-free/40', recommended&&!busy&&!closed&&'border-warning bg-warning/15 ring-2 ring-warning shadow-lg',sel&&'bg-primary/5 border-primary')}>
         <div className="flex w-full items-center justify-between gap-2"><span className="flex items-center gap-1.5 break-words text-xl font-bold">T. {t.name}{t.accoppiabile===false&&<LockKeyhole aria-label="Non abbinabile" className="size-4 text-muted-foreground"/>}</span>{sel&&<Check className="text-primary"/>}</div>
