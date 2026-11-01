@@ -13,7 +13,7 @@ export function ServiceHub({ date, shifts, selectedShift, onAvailability, onLive
   const [picked, setPicked] = useState<Shift>(selectedShift);
   const shift = shifts.includes(picked) ? picked : selectedShift;
   return <Dialog open={open} onOpenChange={(v) => { if (v) setPicked(selectedShift); setOpen(v); if (!v) onRequestedClose?.(); }}>
-    <DialogTrigger asChild><Button size="sm" variant="secondary" disabled={!shifts.length}><ClipboardList /> Sala &amp; Servizio</Button></DialogTrigger>
+    <DialogTrigger asChild><Button size="sm" variant="secondary" disabled={!shifts.length}><ClipboardList /> Strumenti di Servizio</Button></DialogTrigger>
     <DialogContent className="max-w-md bg-paper">
       <DialogHeader><DialogTitle>Strumenti di Servizio</DialogTitle></DialogHeader>
       <p className="text-xs text-muted-foreground">Scegli il turno: la Sala Live gestisce arrivi e tavoli in tempo reale; disponibilità, foglio di sala e piano offline usano il turno selezionato.</p>
