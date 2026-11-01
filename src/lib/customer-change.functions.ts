@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import type { OnlineSlot } from './online-booking';
 export const getManagedSlots = createServerFn({method:'POST'}).inputValidator((v:unknown)=>z.object({token:z.string().uuid(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),shift:z.enum(['pranzo','sera'])}).parse(v)).handler(async({data})=>{
   const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
-  const {data: booking,error}=await supabaseAdmin.rpc('manage_customer_booking_v2',{_token:data.token,_action:'view',_date:undefined,_shift:undefined});
+  const {data: booking,error}=await supabaseAdmin.rpc('manage_customer_booking_v2',{_token:data.token,_action:'view'});
   if(error)throw new Error('Link non disponibile');
   const value=booking as {slug?:string;restaurant_id?:string};
   if(!value.slug||!value.restaurant_id)return [] as OnlineSlot[];
