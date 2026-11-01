@@ -6,10 +6,10 @@ vi.mock('react-zoom-pan-pinch',()=>({TransformWrapper:({children}:{children:(too
 const room={id:'r',name:'Sala',grid_cols:6,grid_rows:5,walls:[]} as unknown as Room;
 const tables=[{id:'a',name:'4',room_id:'r',x:1,y:2,seats:4,coperti_comodi:4,coperti_max:6},{id:'b',name:'5',room_id:'r',x:2,y:2,seats:4,coperti_comodi:4,coperti_max:6}] as RTable[];
 afterEach(cleanup);
-it('un tavolo occupato non si può selezionare mentre il libero passa il suo ID',()=>{
+it('un tavolo occupato resta toccabile per la forzatura con conferma',()=>{
   const toggle=vi.fn();
   render(<FloorPlan room={room} tables={tables} selected={[]} suggested={[]} people={4} extended={false} closed={false} stateOf={id=>id==='b'?{kind:'busy',until:'20:30',name:'Rossi'}:{kind:'free'}} onToggle={toggle}/>);
-  fireEvent.click(screen.getByRole('button',{name:'Tavolo 5'}));expect(toggle).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Tavolo 5'}));expect(toggle).toHaveBeenCalledWith('b');
   fireEvent.click(screen.getByRole('button',{name:'Tavolo 4'}));expect(toggle).toHaveBeenCalledWith('a');
 });
 it('una sala chiusa non consente nuove selezioni',()=>{
