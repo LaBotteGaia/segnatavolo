@@ -103,6 +103,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --desk: oklch(0.16 0.02 40);
   --paper: oklch(0.23 0.02 60);
   --rule: oklch(0.38 0.03 230);
