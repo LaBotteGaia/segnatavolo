@@ -24,6 +24,7 @@ import { Route as AuthenticatedSituazioneRouteImport } from './routes/_authentic
 import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
 import { Route as PrenotaSlugRouteImport } from './routes/prenota.$slug'
 import { Route as PrenotazioneTokenRouteImport } from './routes/prenotazione.$token'
+import { Route as PrenotazioneGestisciRouteImport } from './routes/prenotazione.gestisci'
 import { Route as ApiPublicJobsMorningReminderRouteImport } from './routes/api/public/jobs/morning-reminder'
 import { Route as ApiPublicJobsOnlineDelayRouteImport } from './routes/api/public/jobs/online-delay'
 
@@ -101,6 +102,11 @@ const PrenotazioneTokenRoute = PrenotazioneTokenRouteImport.update({
   path: '/prenotazione/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrenotazioneGestisciRoute = PrenotazioneGestisciRouteImport.update({
+  id: '/prenotazione/gestisci',
+  path: '/prenotazione/gestisci',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsMorningReminderRoute =
   ApiPublicJobsMorningReminderRouteImport.update({
     id: '/api/public/jobs/morning-reminder',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
+  '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
+  '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/invito/$token': typeof InvitoTokenRoute
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
+  '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/invito/$token'
     | '/prenota/$slug'
     | '/prenotazione/$token'
+    | '/prenotazione/gestisci'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   fileRoutesByTo: FileRoutesByTo
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/invito/$token'
     | '/prenota/$slug'
     | '/prenotazione/$token'
+    | '/prenotazione/gestisci'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   id:
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/invito/$token'
     | '/prenota/$slug'
     | '/prenotazione/$token'
+    | '/prenotazione/gestisci'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   fileRoutesById: FileRoutesById
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   InvitoTokenRoute: typeof InvitoTokenRoute
   PrenotaSlugRoute: typeof PrenotaSlugRoute
   PrenotazioneTokenRoute: typeof PrenotazioneTokenRoute
+  PrenotazioneGestisciRoute: typeof PrenotazioneGestisciRoute
   ApiPublicJobsMorningReminderRoute: typeof ApiPublicJobsMorningReminderRoute
   ApiPublicJobsOnlineDelayRoute: typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -347,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrenotazioneTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prenotazione/gestisci': {
+      id: '/prenotazione/gestisci'
+      path: '/prenotazione/gestisci'
+      fullPath: '/prenotazione/gestisci'
+      preLoaderRoute: typeof PrenotazioneGestisciRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/morning-reminder': {
       id: '/api/public/jobs/morning-reminder'
       path: '/api/public/jobs/morning-reminder'
@@ -397,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvitoTokenRoute: InvitoTokenRoute,
   PrenotaSlugRoute: PrenotaSlugRoute,
   PrenotazioneTokenRoute: PrenotazioneTokenRoute,
+  PrenotazioneGestisciRoute: PrenotazioneGestisciRoute,
   ApiPublicJobsMorningReminderRoute: ApiPublicJobsMorningReminderRoute,
   ApiPublicJobsOnlineDelayRoute: ApiPublicJobsOnlineDelayRoute,
 }

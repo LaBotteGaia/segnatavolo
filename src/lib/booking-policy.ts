@@ -37,5 +37,7 @@ export function reconfirmationBadge(row: { date: string; time: string; channel: 
   return policy.morning_reminder_enabled ? { urgent: false, label: 'Da riconfermare' } : null;
 }
 
-export const managementInputSchema = z.object({ token: z.string().uuid(), action: z.enum(['view', 'confirm', 'cancel']) });
-export type ManagedBooking = { restaurant: string; date: string; time: string; shift: string; people: number; confirmation_status: string };
+export const managementInputSchema = z.object({ token: z.string().uuid(), action: z.enum(['view', 'confirm', 'cancel', 'request_change']), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), people: z.number().int().min(1).max(100).optional() }).superRefine((v, ctx) => {
+  if (v.action === 'request_change' && (v.time === undefined || v.people === undefined)) ctx.addIssue({ code: 'custom', message: 'Inserisci orario e coperti' });
+});
+export type ManagedBooking = { restaurant: string; date: string; time: string; shift: string; people: number; confirmation_status: string; change_request?: { time: string; people: number } | null };

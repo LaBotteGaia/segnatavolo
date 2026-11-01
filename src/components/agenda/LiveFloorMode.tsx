@@ -21,6 +21,7 @@ import { arrivalCountdown, arrivalsLists, hoursMinutes, limitedStay, liveCounter
 import { calculateBestTableAssignment } from '@/lib/allocation';
 import { tableState } from '@/lib/rotation';
 import { supabase } from "@/integrations/supabase/client";
+import { UnconfirmedAlerts } from './UnconfirmedAlerts';
 
 type Target = { res: LiveRes; tableId: string };
 type WalkinDraft = { people: number; name: string; targetId?: string };
@@ -258,6 +259,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-desk text-desk-foreground" data-no-swipe role="dialog" aria-label="Modalità Sala Live">
+      <div className="shrink-0"><UnconfirmedAlerts rows={rows} /></div>
       <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-desk-foreground/10 px-3 py-2">
         <h2 className="font-display text-lg leading-none">{shiftName(shift).toUpperCase()} — {dateLabel}</h2>
         <Button size="sm" variant="secondary" onClick={() => { setSelected(null); setMoving(null); setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante" }); }}>

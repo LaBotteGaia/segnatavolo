@@ -1,10 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useServerFn } from '@tanstack/react-start';
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { manageBooking } from '@/lib/booking-management.functions';
-import { Check, Loader2, Utensils } from 'lucide-react';
+import { ManageBookingPage } from '@/components/ManageBookingPage';
 
 const options = (token: string) => queryOptions({ queryKey: ['manage-booking', token], queryFn: () => manageBooking({ data: { token, action: 'view' } }), retry: false });
 export const Route = createFileRoute('/prenotazione/$token')({
@@ -17,25 +14,5 @@ export const Route = createFileRoute('/prenotazione/$token')({
 function ManagePage() {
   const { token } = Route.useParams();
   const { data: initial } = useSuspenseQuery(options(token));
-  const [booking, setBooking] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const [cancel, setCancel] = useState(false);
-  const [error, setError] = useState('');
-  const manage = useServerFn(manageBooking);
-  const submit = async (action: 'confirm' | 'cancel') => {
-    setBusy(true); setError('');
-    try { setBooking(await manage({ data: { token, action } })); setCancel(false); }
-    catch { setError('Operazione non completata. Riprova o contatta il ristorante.'); }
-    finally { setBusy(false); }
-  };
-  const cancelled = booking.confirmation_status.startsWith('cancellata');
-  return <main className="min-h-screen bg-background px-4 py-12 text-foreground"><div className="mx-auto max-w-md space-y-6 text-center">
-    <Utensils className="mx-auto size-10 text-primary"/><h1 className="font-display text-3xl">{booking.restaurant}</h1>
-    <p className="text-xl">{booking.date.split('-').reverse().join('/')} · {booking.shift === 'sera' ? 'Cena' : 'Pranzo'} {booking.time}</p><p>{booking.people} coperti</p>
-    {cancelled ? <h2 className="font-display text-2xl">Prenotazione cancellata</h2> : <>
-      {booking.confirmation_status === 'riconfermata' ? <p role="status" className="flex items-center justify-center gap-2 font-semibold text-free"><Check/>Presenza riconfermata, a presto!</p> : <Button disabled={busy} className="w-full" onClick={() => submit('confirm')}>{busy ? <Loader2 className="animate-spin"/> : <Check/>}Riconferma la presenza</Button>}
-      {cancel ? <div className="space-y-3 border-t pt-4"><p>Vuoi cancellare questa prenotazione? Il tavolo sarà liberato.</p><div className="flex justify-center gap-3"><Button variant="outline" disabled={busy} onClick={() => setCancel(false)}>Indietro</Button><Button variant="destructive" disabled={busy} onClick={() => submit('cancel')}>Sì, cancella prenotazione</Button></div></div> : <Button variant="outline" disabled={busy} onClick={() => setCancel(true)}>Cancella prenotazione</Button>}
-    </>}
-    {error && <p role="alert" className="text-destructive">{error}</p>}
-  </div></main>;
+  return <ManageBookingPage token={token} initial={initial} />;
 }

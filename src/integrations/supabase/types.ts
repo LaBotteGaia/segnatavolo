@@ -90,12 +90,14 @@ export type Database = {
           arrived: boolean
           barella_seats: number
           buffer_min: number | null
+          cancellation_reason: string
           channel: string
           confirmation_status: string
           contact_email: string | null
           created_at: string
           created_by: string | null
           created_by_name: string
+          customer_change_request: Json | null
           customer_id: string | null
           customer_notes: string
           date: string
@@ -137,12 +139,14 @@ export type Database = {
           arrived?: boolean
           barella_seats?: number
           buffer_min?: number | null
+          cancellation_reason?: string
           channel?: string
           confirmation_status?: string
           contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
+          customer_change_request?: Json | null
           customer_id?: string | null
           customer_notes?: string
           date: string
@@ -184,12 +188,14 @@ export type Database = {
           arrived?: boolean
           barella_seats?: number
           buffer_min?: number | null
+          cancellation_reason?: string
           channel?: string
           confirmation_status?: string
           contact_email?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
+          customer_change_request?: Json | null
           customer_id?: string | null
           customer_notes?: string
           date?: string
@@ -509,15 +515,25 @@ export type Database = {
       restaurants: {
         Row: {
           allow_same_day_online: boolean
+          booking_email: string
+          booking_email_override: boolean
+          booking_phone_override: boolean
           booking_window_days: number
           contact_phone: string
           contact_whatsapp: string
           created_at: string
           custom_intro_text: string
+          daily_summary_date: string | null
+          daily_summary_enabled: boolean
+          daily_summary_error: string | null
+          daily_summary_sent_at: string | null
           double_shift_days: string[]
           enable_double_shift: boolean
           first_shift_duration_minutes: number
           id: string
+          main_email: string
+          main_phone: string
+          main_whatsapp: string
           morning_reminder_enabled: boolean
           name: string
           no_show_tolerance_minutes: number
@@ -528,19 +544,31 @@ export type Database = {
           settings: Json
           tempo_riassetto_minuti: number
           timezone: string
+          vat_number: string
           web_slug: string | null
+          website_url: string
         }
         Insert: {
           allow_same_day_online?: boolean
+          booking_email?: string
+          booking_email_override?: boolean
+          booking_phone_override?: boolean
           booking_window_days?: number
           contact_phone?: string
           contact_whatsapp?: string
           created_at?: string
           custom_intro_text?: string
+          daily_summary_date?: string | null
+          daily_summary_enabled?: boolean
+          daily_summary_error?: string | null
+          daily_summary_sent_at?: string | null
           double_shift_days?: string[]
           enable_double_shift?: boolean
           first_shift_duration_minutes?: number
           id?: string
+          main_email?: string
+          main_phone?: string
+          main_whatsapp?: string
           morning_reminder_enabled?: boolean
           name: string
           no_show_tolerance_minutes?: number
@@ -551,19 +579,31 @@ export type Database = {
           settings?: Json
           tempo_riassetto_minuti?: number
           timezone?: string
+          vat_number?: string
           web_slug?: string | null
+          website_url?: string
         }
         Update: {
           allow_same_day_online?: boolean
+          booking_email?: string
+          booking_email_override?: boolean
+          booking_phone_override?: boolean
           booking_window_days?: number
           contact_phone?: string
           contact_whatsapp?: string
           created_at?: string
           custom_intro_text?: string
+          daily_summary_date?: string | null
+          daily_summary_enabled?: boolean
+          daily_summary_error?: string | null
+          daily_summary_sent_at?: string | null
           double_shift_days?: string[]
           enable_double_shift?: boolean
           first_shift_duration_minutes?: number
           id?: string
+          main_email?: string
+          main_phone?: string
+          main_whatsapp?: string
           morning_reminder_enabled?: boolean
           name?: string
           no_show_tolerance_minutes?: number
@@ -574,7 +614,9 @@ export type Database = {
           settings?: Json
           tempo_riassetto_minuti?: number
           timezone?: string
+          vat_number?: string
           web_slug?: string | null
+          website_url?: string
         }
         Relationships: []
       }
@@ -678,6 +720,54 @@ export type Database = {
           },
         ]
       }
+      service_notifications: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          message: string
+          read_at: string | null
+          reservation_id: string | null
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          message: string
+          read_at?: string | null
+          reservation_id?: string | null
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          message?: string
+          read_at?: string | null
+          reservation_id?: string | null
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_notifications_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_notifications_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -686,6 +776,7 @@ export type Database = {
       can_configure_delivery: { Args: { _rid: string }; Returns: boolean }
       can_use_restaurant: { Args: { _rid: string }; Returns: boolean }
       cancel_overdue_online_bookings: { Args: never; Returns: number }
+      claim_daily_service_summary: { Args: never; Returns: Json }
       claim_morning_reminder: { Args: never; Returns: Json }
       close_weather_service: {
         Args: {
@@ -751,8 +842,21 @@ export type Database = {
         Args: { _date: string; _shift: string; _slug: string }
         Returns: Json
       }
+      handle_unconfirmed_booking: {
+        Args: { _action: string; _id: string; _rid: string }
+        Returns: boolean
+      }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      manage_customer_booking: {
+        Args: {
+          _action: string
+          _people?: number
+          _time?: string
+          _token: string
+        }
+        Returns: Json
+      }
       manage_online_reservation: {
         Args: { _action?: string; _token: string }
         Returns: Json

@@ -38,6 +38,8 @@ import { APP_NAME } from "@/lib/extras";
 import { AvailabilityPanel } from "@/components/agenda/AvailabilityPanel";
 import { ReorganizeButton } from "@/components/agenda/ReorganizeButton";
 import { WeatherBadge } from '@/components/agenda/WeatherBadge';
+import { UnconfirmedAlerts } from '@/components/agenda/UnconfirmedAlerts';
+import { ServiceNotifications } from '@/components/agenda/ServiceNotifications';
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -412,6 +414,7 @@ function AgendaPage() {
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
           <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
+          <ServiceNotifications />
           <ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-desk-foreground/10 p-1 agenda-wide:hidden">
@@ -429,6 +432,7 @@ function AgendaPage() {
       </div>
 
       <main className="mt-4 w-full max-w-none px-3 sm:px-6 lg:px-8 agenda-wide:mt-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3">
+        <div className="shrink-0"><UnconfirmedAlerts rows={reservations} /></div>
         <div className="shrink-0"><OnlineRequests /></div>
         <div className="hidden gap-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-hidden">
           {shifts.map((s, i) => (
