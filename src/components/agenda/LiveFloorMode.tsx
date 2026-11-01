@@ -219,7 +219,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
 
   if (!landscape) {
     return (
-      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-desk p-6 text-center text-primary-foreground" data-no-swipe>
+      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-desk p-6 text-center text-desk-foreground" data-no-swipe>
         <span className="live-rotate text-7xl" aria-hidden>📱</span>
         <p className="max-w-sm font-display text-2xl leading-snug">Ruota il dispositivo in orizzontale per accedere alla Modalità di Lavoro Live</p>
         <Button variant="secondary" size="lg" onClick={close}><X /> Chiudi</Button>
@@ -228,7 +228,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   }
 
   const resCard = (r: LiveRes) => (
-    <div key={r.id} className={cn("flex items-start gap-2 rounded-md border border-primary-foreground/15 bg-primary-foreground/5 p-2", focus && r.table_ids.includes(focus) && "ring-2 ring-free")}
+    <div key={r.id} className={cn("flex items-start gap-2 rounded-md border border-desk-foreground/15 bg-desk-foreground/5 p-2", focus && r.table_ids.includes(focus) && "ring-2 ring-free")}
       onClick={() => r.table_ids[0] && setFocus(r.table_ids[0])} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" && r.table_ids[0]) setFocus(r.table_ids[0]); }}>
       <Checkbox className="mt-0.5 size-6 shrink-0" aria-label={`Arrivato: ${r.name}`} checked={r.arrived}
@@ -247,8 +247,8 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-desk text-primary-foreground" data-no-swipe role="dialog" aria-label="Modalità Sala Live">
-      <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-primary-foreground/10 px-3 py-2">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-desk text-desk-foreground" data-no-swipe role="dialog" aria-label="Modalità Sala Live">
+      <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-desk-foreground/10 px-3 py-2">
         <h2 className="font-display text-lg leading-none">{shiftName(shift).toUpperCase()} — {dateLabel}</h2>
         <Button size="sm" variant="secondary" onClick={() => { setSelected(null); setMoving(null); setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante" }); }}>
           <Zap /> Accomoda al Volo
@@ -267,14 +267,14 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       </header>
 
       {(moving || seating) && (
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-primary-foreground/10 bg-primary-foreground/10 px-3 py-1.5 text-sm font-semibold">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-desk-foreground/10 bg-desk-foreground/10 px-3 py-1.5 text-sm font-semibold">
           <span>{moving ? `Spostamento di ${moving.res.name}: tocca il tavolo di destinazione` : `Accomoda ${seating!.people} ${seating!.people === 1 ? "persona" : "persone"}: tocca il tavolo sulla griglia`}</span>
-          <Button size="sm" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => { setMoving(null); setSeating(null); }}>Annulla</Button>
+          <Button size="sm" variant="ghost" className="text-desk-foreground hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => { setMoving(null); setSeating(null); }}>Annulla</Button>
         </div>
       )}
 
       <div className="flex min-h-0 flex-1">
-        <aside className="flex w-[340px] shrink-0 flex-col overflow-y-auto border-r border-primary-foreground/10 p-3" aria-label="Gestione arrivi">
+        <aside className="flex w-[340px] shrink-0 flex-col overflow-y-auto border-r border-desk-foreground/10 p-3" aria-label="Gestione arrivi">
           <h3 className="font-display text-base">Ospiti Turno — {shiftName(shift)}</h3>
           <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-warning">In Arrivo ({lists.incoming.length})</p>
           <div className="space-y-2">
@@ -298,7 +298,7 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
                 return (
                   <button key={t.id} id={`live-t-${t.id}`} type="button" onClick={() => onTableTap(t)} aria-label={`Tavolo ${t.name}`}
                     className={cn("flex min-h-28 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-2 text-center leading-tight transition-colors",
-                      st.kind === "seated" ? "border-busy bg-busy text-busy-foreground" : st.kind === "incoming" ? "border-warning bg-warning/25 text-primary-foreground" : "border-free bg-free/15 text-primary-foreground",
+                      st.kind === "seated" ? "border-busy bg-busy text-busy-foreground" : st.kind === "incoming" ? "border-warning bg-warning/25 text-desk-foreground" : "border-free bg-free/15 text-desk-foreground",
                       flashing && "live-flash", focus === t.id && "ring-4 ring-free", recommendedId === t.id && "ring-4 ring-recommendation")}>
                     <span className="text-2xl font-bold">T.{t.name}</span>
                     <span className="text-[10px] uppercase tracking-wide opacity-80">{roomName(t.room_id)}</span>
