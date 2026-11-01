@@ -17,7 +17,7 @@ import { serviceClock } from "@/lib/no-show";
 import { isRoomClosedFor } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
 import { refreshService } from "@/lib/recycle-bin";
-import { arrivalCountdown, arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
+import { arrivalCountdown, arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, walkinFit, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
 import { calculateBestTableAssignment } from '@/lib/allocation';
 import { tableState } from '@/lib/rotation';
 import { supabase } from "@/integrations/supabase/client";
@@ -182,6 +182,15 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
     } finally { setBusy(false); }
   };
 
+  /** Stessa regola di capienza di "Accomoda al volo": tavoli più grandi ammessi, posti scomodi con conferma, oltre il massimo bloccato. */
+  const [scomodo, setScomodo] = useState<{ table: RTable; people: number; then: () => void } | null>(null);
+  const checkFit = (t: RTable, people: number, then: () => void) => {
+    const fit = walkinFit(t, people);
+    if (fit === "too_small") return void toast.warning(`Tavolo ${t.name} troppo piccolo: massimo ${Math.max(t.coperti_max ?? t.seats, t.seats)} coperti`);
+    if (fit === "scomodo") return setScomodo({ table: t, people, then });
+    then();
+  };
+
   /** Conferma della modale walk-in: con tavolo già scelto accomoda subito (o chiede la liberazione), altrimenti si tocca la griglia. */
   const confirmWalkin = () => {
     if (!walkin) return;
@@ -191,8 +200,8 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       setWalkin(null);
       if (!t) return;
       const st = stateOf(t.id);
-      if (st.kind === "seated") { setSeating(w); return setConfirmFreed({ table: t, occName: st.res.name, until: st.until }); }
-      return tryWalkin(t, w);
+      if (st.kind === "seated") { const occ = st.res.name, until = st.until; return checkFit(t, w.people, () => { setSeating(w); setConfirmFreed({ table: t, occName: occ, until }); }); }
+      return checkFit(t, w.people, () => tryWalkin(t, w));
     }
     setSeating(w);
     setWalkin(null);
@@ -208,8 +217,9 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
       return toast.warning(`Tavolo ${t.name} riservato a breve (${st.at})`);
     }
     if (seating) {
-      if (st.kind === "seated") return setConfirmFreed({ table: t, occName: st.res.name, until: st.until });
-      return tryWalkin(t, seating);
+      const w = seating;
+      if (st.kind === "seated") { const occ = st.res.name, until = st.until; return checkFit(t, w.people, () => setConfirmFreed({ table: t, occName: occ, until })); }
+      return checkFit(t, w.people, () => tryWalkin(t, w));
     }
     if (st.kind === "free" || st.kind === "incoming") return setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante", targetId: t.id });
     if (st.kind === "seated") setSelected({ res: st.res, tableId: t.id });
@@ -383,6 +393,17 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
             <p className="text-sm">Tempo massimo di permanenza disponibile: <b>{hoursMinutes(limited.minutes)}</b> (fino alle {limited.until}).<br />Considerando {walkinBuffer} minuti di riassetto, la permanenza massima è fino alle {limited.until}.<br />Vuoi procedere con la permanenza vincolata?</p>
             <Button className="h-14 w-full text-base" disabled={busy} onClick={doWalkinLimited}>✅ Conferma con uscita entro le {limited.until}</Button>
             <Button variant="outline" className="h-12 w-full" onClick={() => setLimited(null)}>Annulla / Scegli altro tavolo</Button>
+          </div>
+        </div>
+      )}
+
+      {scomodo && (
+        <div className="absolute inset-0 z-10 grid place-items-center bg-black/50 p-4" onClick={() => setScomodo(null)}>
+          <div className="w-full max-w-md space-y-3 rounded-lg bg-card p-4 text-card-foreground shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-xl">⚠️ Assegnazione con Posti Scomodi</h3>
+            <p className="text-sm">Il Tavolo {scomodo.table.name} offre {scomodo.table.coperti_comodi ?? scomodo.table.seats} posti comodi (max {Math.max(scomodo.table.coperti_max ?? scomodo.table.seats, scomodo.table.seats)}). Per {scomodo.people} persone la seduta sarà stretta. Vuoi procedere?</p>
+            <Button className="h-14 w-full text-base" onClick={() => { const go = scomodo.then; setScomodo(null); go(); }}>Procedi con posti scomodi</Button>
+            <Button variant="outline" className="h-12 w-full" onClick={() => setScomodo(null)}>Annulla</Button>
           </div>
         </div>
       )}
