@@ -40,3 +40,4 @@
 - Custom rules use strict JSON and legacy adapters; allocation.ts shares deterministic assignment. One confirmed bundle per text; tenant-locked fingerprints block recent duplicates.
 - Weather uses a tenant-keyed frontend Open-Meteo cache; date-specific closures are date|shift entries in rooms.closed_shifts. Shared rotation predicates and booking SQL honor them; weather relocation reuses reorganizeService and commits through an authorized, locking, snapshot-checked atomic RPC.
 - Suggestions learn from a 30-day window (table-habits.ts); habits only reorder safe candidates after Master rules.
+- Walk-in capacity uses one rule (walkinFit in live-floor.ts, mirrored by seat_walkin_* / create_service_walkin SQL): larger tables allowed, over comfortable seats needs confirmation, over max blocked — so Live and dialog never diverge.
