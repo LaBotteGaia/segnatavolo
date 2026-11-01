@@ -4,7 +4,7 @@ const email = z.string().trim().email().max(255).or(z.literal(''));
 export const identitySchema = z.object({
   name: z.string().trim().min(1).max(150), public_address: z.string().max(500),
   public_logo_url: z.string().url().startsWith('https://').max(1000).or(z.literal('')),
-  main_email: email, main_phone: z.string().max(40), main_whatsapp: z.string().max(40), vat_number: z.string().max(40),
+  website_url: z.string().max(500), main_email: email, main_phone: z.string().max(40), main_whatsapp: z.string().max(40), vat_number: z.string().max(40),
   timezone: z.string().refine(v => { try { new Intl.DateTimeFormat('it', { timeZone: v }); return true; } catch { return false; } }),
 });
 export const contactOverrideSchema = z.object({ booking_email_override: z.boolean(), booking_email: email, booking_phone_override: z.boolean(), contact_phone: z.string().max(40), contact_whatsapp: z.string().max(40) }).superRefine((v, ctx) => {

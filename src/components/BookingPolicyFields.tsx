@@ -1,3 +1,4 @@
+import { FieldHelp } from './settings/FieldHelp';
 import { Input } from '@/components/ui/input';
 import { NumberInput } from '@/components/ui/number-input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,15 +9,15 @@ import { WEEKDAYS, type BookingPolicy } from '@/lib/booking-policy';
 export function BookingPolicyFields({ value, onChange }: { value: BookingPolicy; onChange: (patch: Partial<BookingPolicy>) => void }) {
   return <fieldset className="space-y-4 border-t pt-4">
     <legend className="font-display text-lg">Informazioni e riconferma online</legend>
-    <label className="block text-sm">Introduzione sulla sala e capienza<Textarea value={value.custom_intro_text} maxLength={5000} onChange={e => onChange({ custom_intro_text: e.target.value })}/></label>
+    <label className="block text-sm">Introduzione sulla sala e capienza<Textarea value={value.custom_intro_text} maxLength={5000} onChange={e => onChange({ custom_intro_text: e.target.value })}/><FieldHelp>Testo introduttivo visibile nella pagina pubblica.</FieldHelp></label>
     <div className="grid gap-3 sm:grid-cols-2">
-      <label className="text-sm">Tolleranza ritardo non comunicato (minuti)<NumberInput min={0} max={120} defaultValue={15} value={value.no_show_tolerance_minutes} onCommit={no_show_tolerance_minutes => onChange({ no_show_tolerance_minutes })}/></label>
+      <label className="text-sm">Tolleranza ritardo non comunicato (minuti)<NumberInput min={0} max={120} defaultValue={15} value={value.no_show_tolerance_minutes} onCommit={no_show_tolerance_minutes => onChange({ no_show_tolerance_minutes })}/><FieldHelp>Dopo questa tolleranza le prenotazioni online in ritardo senza avviso vengono cancellate.</FieldHelp></label>
     </div>
-    <label className="flex items-center justify-between gap-3 text-sm">Consenti prenotazioni del giorno stesso<Switch checked={value.allow_same_day_online} onCheckedChange={allow_same_day_online => onChange({ allow_same_day_online })}/></label>
-    <label className="flex items-center justify-between gap-3 text-sm">Doppio turno online del ristorante<Switch checked={value.enable_double_shift} onCheckedChange={enable_double_shift => onChange({ enable_double_shift })}/></label>
+    <label className="flex items-center justify-between gap-3 text-sm">Consenti prenotazioni del giorno stesso<Switch checked={value.allow_same_day_online} onCheckedChange={allow_same_day_online => onChange({ allow_same_day_online })}/></label><FieldHelp>Da spento, il primo giorno selezionabile è domani.</FieldHelp>
+    <label className="flex items-center justify-between gap-3 text-sm">Doppio turno online del ristorante<Switch checked={value.enable_double_shift} onCheckedChange={enable_double_shift => onChange({ enable_double_shift })}/></label><FieldHelp>Separa gli arrivi nei due gruppi di orari configurati per i giorni selezionati.</FieldHelp>
     {value.enable_double_shift && <>
       <div className="flex flex-wrap gap-3">{WEEKDAYS.map(day => <label key={day} className="flex items-center gap-2 text-sm"><Checkbox checked={value.double_shift_days.includes(day)} onCheckedChange={checked => onChange({ double_shift_days: checked ? [...value.double_shift_days, day] : value.double_shift_days.filter(d => d !== day) })}/>{day}</label>)}</div>
-      <label className="block text-sm">Durata primo turno (minuti)<NumberInput min={15} max={480} defaultValue={90} value={value.first_shift_duration_minutes} onCommit={first_shift_duration_minutes => onChange({ first_shift_duration_minutes })}/></label>
+      <label className="block text-sm">Durata primo turno (minuti)<NumberInput min={15} max={480} defaultValue={90} value={value.first_shift_duration_minutes} onCommit={first_shift_duration_minutes => onChange({ first_shift_duration_minutes })}/><FieldHelp>Durata della prima seduta, prima del tempo di riassetto.</FieldHelp></label>
     </>}
   </fieldset>;
 }
