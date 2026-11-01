@@ -379,6 +379,13 @@
       "when": 1793568767456,
       "tag": "0053_online_day_interval_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793568813665,
+      "tag": "0054_online_effective_policy_and_assignment_duration",
+      "breakpoints": true
     }
   ]
 }
