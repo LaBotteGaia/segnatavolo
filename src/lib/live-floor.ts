@@ -145,3 +145,12 @@ export function isScomodo(t: Pick<RTable, "seats" | "coperti_comodi" | "coperti_
   const comodi = t.coperti_comodi ?? t.seats, max = Math.max(t.coperti_max ?? comodi, comodi);
   return people > comodi && people <= max;
 }
+
+/** Conto alla rovescia verso l'arrivo: tono "late" se in ritardo, "urgent" ≤15 min, "soon" ≤30 min, altrimenti "later". */
+export function arrivalCountdown(startMin: number, nowMin: number): { label: string; tone: "late" | "urgent" | "soon" | "later" } | null {
+  if (!Number.isFinite(startMin)) return null;
+  const d = startMin - nowMin;
+  if (d < 0) return { label: `In ritardo di ${hoursMinutes(-d)}`, tone: "late" };
+  if (d === 0) return { label: "Arrivo ora", tone: "urgent" };
+  return { label: `Arrivo tra ${hoursMinutes(d)}`, tone: d <= 15 ? "urgent" : d <= 30 ? "soon" : "later" };
+}

@@ -119,10 +119,10 @@ export function TableDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[95dvh] w-[calc(100%-1rem)] max-w-[calc(100vw-1rem)] grid-cols-[minmax(0,1fr)] overflow-x-hidden sm:max-w-4xl overflow-y-auto bg-paper p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">
+          <DialogTitle className="font-display text-xl sm:text-2xl">
             Assegna tavoli
           </DialogTitle>
-          <p className="font-hand text-lg text-muted-foreground">
+          <p className="font-hand text-base text-muted-foreground sm:text-lg">
             {reservation.name || "Prenotazione"} · {reservation.people} persone · {shiftName(reservation.shift)}
           </p>
         </DialogHeader>
