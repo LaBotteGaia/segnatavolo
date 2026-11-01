@@ -362,20 +362,20 @@ function AgendaPage() {
 
   return (
     <div className="min-h-screen w-full pb-10 agenda-wide:flex agenda-wide:h-screen agenda-wide:max-h-screen agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:pb-0">
-      <div className="sticky top-0 z-30 shrink-0 border-b border-primary-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-primary-foreground backdrop-blur">
+      <div className="sticky top-0 z-30 shrink-0 border-b border-desk-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-desk-foreground backdrop-blur">
         <div className="grid w-full max-w-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
           <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
           <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
-            <AppMenu triggerClassName="hover:bg-primary-foreground/10 hover:text-primary-foreground" />
+            <AppMenu triggerClassName="hover:bg-desk-foreground/10 hover:text-desk-foreground" />
           </div>
           <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1">
-            <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
+            <Button size="icon" variant="ghost" className="hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
               <ChevronLeft />
             </Button>
             <Popover open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); calendarTap.current = null; if (!open) toast.dismiss(availabilityToast.current); }}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" aria-label="Apri calendario" className="h-auto min-w-0 gap-2 whitespace-normal px-1 py-2 font-display text-xl capitalize leading-tight hover:bg-primary-foreground/10 hover:text-primary-foreground agenda-wide:text-lg">
+                <Button variant="ghost" aria-label="Apri calendario" className="h-auto min-w-0 gap-2 whitespace-normal px-1 py-2 font-display text-xl capitalize leading-tight hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:text-lg">
                   <CalendarIcon className="hidden size-4 shrink-0 agenda-wide:block" />
                   <span className="min-w-0">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</span>
                 </Button>
@@ -402,7 +402,7 @@ function AgendaPage() {
                 </div>
               </PopoverContent>
             </Popover>
-            <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
+            <Button size="icon" variant="ghost" className="hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
               <ChevronRight />
             </Button>
           </div>
@@ -414,13 +414,13 @@ function AgendaPage() {
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
           <ServiceHub requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
-        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-primary-foreground/10 p-1 agenda-wide:hidden">
+        <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-desk-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (
             <Button
               variant="ghost"
               key={s}
               onClick={() => { setFlipDir(shifts.indexOf(s) > shifts.indexOf(mobileShift) ? 1 : shifts.indexOf(s) < shifts.indexOf(mobileShift) ? -1 : 0); setMobileShift(s); }}
-              className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-primary-foreground")}
+              className={cn("rounded py-1.5 font-semibold", mobileShift === s ? "bg-paper text-primary" : "text-desk-foreground")}
             >
               {shiftEmoji(s)} {shiftName(s)}
             </Button>
@@ -437,7 +437,7 @@ function AgendaPage() {
               {renderPage(s, shifts.length === 1 ? "left" : i === 0 ? "left" : i === shifts.length - 1 ? "right" : "mid")}
             </div>
           ))}
-          {shifts.length === 0 && <p className="text-primary-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
+          {shifts.length === 0 && <p className="text-desk-foreground">Nessun turno attivo: attivali in Gestione Ristorante.</p>}
         </div>
         <div className="overflow-hidden agenda-wide:hidden" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
           <div key={`${date}-${mobileShift}`} className={flipDir === 1 ? "animate-page-next" : flipDir === -1 ? "animate-page-prev" : undefined}>
@@ -447,7 +447,7 @@ function AgendaPage() {
       </main>
       <WhatsNew />
       <TutorialAutoOpen />
-      <footer className="mt-6 flex shrink-0 items-center agenda-wide:mt-0 agenda-wide:pb-1 justify-center gap-2 text-xs text-primary-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
+      <footer className="mt-6 flex shrink-0 items-center agenda-wide:mt-0 agenda-wide:pb-1 justify-center gap-2 text-xs text-desk-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} initialDraft={voiceDraft} />
       <WalkInDialog open={walkinOpen} onOpenChange={setWalkinOpen} onSaved={(d, s) => { setMobileShift(s); setDate(d); }} />
       <LiveFloorMode open={liveOpen} onOpenChange={setLiveOpen} />

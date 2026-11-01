@@ -10,7 +10,7 @@ import { useMembership } from "@/lib/membership";
 
 export function RestaurantGate({ children }: { children: ReactNode }) {
   const { data: m, isLoading } = useMembership();
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center font-hand text-xl text-primary-foreground">Caricamento…</div>;
+  if (isLoading) return <div className="flex min-h-screen items-center justify-center font-hand text-xl text-desk-foreground">Caricamento…</div>;
   if (!m) return <CreateRestaurant />;
   if (m.status !== "active")
     return (

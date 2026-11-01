@@ -60,7 +60,7 @@ function AdminPage() {
     },
   });
 
-  if (checking) return <div className="flex min-h-screen items-center justify-center font-hand text-xl text-primary-foreground">Caricamento…</div>;
+  if (checking) return <div className="flex min-h-screen items-center justify-center font-hand text-xl text-desk-foreground">Caricamento…</div>;
   if (!isSuperAdmin) return <Navigate to="/agenda" replace />;
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-restaurants"] });

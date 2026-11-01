@@ -73,7 +73,7 @@ export function SearchBox({ onPick, className }: { onPick: (r: Reservation) => v
       <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 opacity-60" />
       <input value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
         placeholder="Cerca per nome o telefono..." aria-label="Cerca prenotazioni"
-        className="h-9 w-full rounded-md border border-primary-foreground/20 bg-primary-foreground/10 pl-8 pr-7 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/60" />
+        className="h-9 w-full rounded-md border border-desk-foreground/20 bg-desk-foreground/10 pl-8 pr-7 text-sm text-desk-foreground outline-none placeholder:text-desk-foreground/60" />
       {q && <button type="button" aria-label="Cancella ricerca" onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 opacity-70"><X className="size-4" /></button>}
       {open && filter && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-lg sm:w-96">
