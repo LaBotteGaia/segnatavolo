@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format,parseISO } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
+import { PublicScheduleCalendar } from '@/components/PublicScheduleCalendar';
 import { getOnlinePage } from '@/lib/online-booking.functions';
 import { getManagedSlots } from '@/lib/customer-change.functions';
-import { slotGroups,dayAvailable } from '@/lib/online-booking';
+import { slotGroups } from '@/lib/online-booking';
 import { closureMessage } from '@/lib/schedule-exceptions';
 import { useServerFn } from '@tanstack/react-start';
 import { Button } from '@/components/ui/button';
@@ -35,7 +33,7 @@ export function ManageBookingPage({ token, initial }: { token: string; initial: 
       {booking.modification_status==='rejected'&&<p role="status" className="border-y py-3 text-sm">Modifica non accolta: {booking.modification_reason}. La prenotazione originaria resta confermata.</p>}
       {booking.modification_status==='accepted'&&<p role="status" className="text-free">Modifica approvata: qui sopra trovi il riepilogo aggiornato.</p>}
       {edit ? <form className="space-y-3 border-t pt-4 text-left" onSubmit={e => { e.preventDefault(); if(available)void submit('request_change'); }}>
-        <h2 className="font-semibold">Nuova data</h2>{page.isPending?<Loader2 className="animate-spin"/>:page.data?<Calendar mode="single" locale={it} className="mx-auto" selected={parseISO(date)} startMonth={parseISO(page.data.today)} endMonth={parseISO(page.data.days.at(-1)?.date??page.data.today)} disabled={d=>{const entry=page.data?.days.find(x=>x.date===format(d,'yyyy-MM-dd'));return !entry||!dayAvailable(entry,1);}} onSelect={d=>{if(d){setDate(format(d,'yyyy-MM-dd'));setTime('');}}}/>:<p role="alert">Modifiche online non disponibili. Contatta il ristorante.</p>}
+        <h2 className="font-semibold">Nuova data</h2>{page.isPending?<Loader2 className="animate-spin"/>:page.data?<PublicScheduleCalendar page={page.data} date={date} onSelect={d=>{setDate(d);setTime('');}}/>:<p role="alert">Modifiche online non disponibili. Contatta il ristorante.</p>}
         <div className="grid grid-cols-2 gap-2">{(['pranzo','sera'] as const).map(s=><Button key={s} type="button" variant={s===shift?'default':'outline'} aria-pressed={s===shift} onClick={()=>{setShift(s);setTime('');}}>{s==='pranzo'?'Pranzo':'Cena'}</Button>)}</div>
         {page.data&&closureMessage(page.data.schedule_exceptions,date,shift)&&<p role="status" className="text-sm text-muted-foreground">{closureMessage(page.data.schedule_exceptions,date,shift)}</p>}
         <h2 className="font-semibold">Nuovo orario</h2>{slots.isPending?<Loader2 className="animate-spin"/>:slots.isError?<p role="alert">Orari non disponibili.</p>:<div className="space-y-3">{slotGroups(slots.data??[]).map(g=><fieldset key={g.label}>{g.label&&<legend className="mb-2 text-sm font-semibold">{g.label}</legend>}<div className="grid grid-cols-3 gap-2">{g.slots.map(s=><Button key={s.time} type="button" disabled={!s.remaining||s.remaining<people} variant={time===s.time?'default':'outline'} onClick={()=>setTime(s.time)}>{s.time}</Button>)}</div></fieldset>)}{!slots.data?.some(s=>s.remaining)&&<p role="status">Nessun orario disponibile per questo servizio.</p>}</div>}
