@@ -1,4 +1,6 @@
 import { formatInTimeZone } from "@/lib/audit";
+import { useBookingPolicy } from '@/hooks/use-booking-policy';
+import { reconfirmationBadge } from '@/lib/booking-policy';
 import { DateWarning } from "./DateWarning";
 import { reservationDateWarning } from "@/lib/date-warning";
 import { useLiveRow } from "@/lib/live-sync";
@@ -42,6 +44,8 @@ export function ReservationRow({
   const { data: tables } = useTables();
   const settings = useSettings();
   const now = useServiceClock();
+  const bookingPolicy = useBookingPolicy();
+  const reconfirmation = reconfirmationBadge(r, now, bookingPolicy);
   const liveChange = useLiveRow(r.id);
   const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const [pendingTime, setPendingTime] = useState<Partial<Reservation> | null>(null);
@@ -114,6 +118,7 @@ export function ReservationRow({
           </span>
           {label && <span className="truncate xl:whitespace-normal text-[11px] xl:text-xs font-semibold leading-tight text-primary">{label}</span>}
           {noShow && <span className="text-xs font-semibold text-destructive">No-Show</span>}
+          {reconfirmation && <span className={cn('w-fit rounded px-1.5 py-0.5 text-[11px] font-semibold', reconfirmation.urgent ? 'bg-destructive text-destructive-foreground' : r.confirmation_status === 'riconfermata' ? 'bg-free/15 text-free' : 'bg-warning/20 text-foreground')}>{reconfirmation.label}</span>}
           {(() => { const c = serviceClock(now); const b = r.date === c.date && !noShow ? maxStayBadge(r.max_stay_until, c.minutes) : null; return b && <span className={cn("w-fit rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>; })()}
         </span>
         <span className={cn("justify-self-center rounded-full bg-primary/10 px-2 py-0.5 text-sm font-bold text-primary", dim)}>{r.people}p</span>
@@ -131,6 +136,11 @@ export function ReservationRow({
             </div>
           )}
           <div className="font-display text-xl">{r.name || "—"}</div>
+          {r.channel === 'online' && <div className="space-y-2 border-b pb-3">
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={r.confirmation_status === 'riconfermata'} onCheckedChange={value => onUpdate({ confirmation_status: value === true ? 'riconfermata' : 'in_attesa_riconferma' })}/>Riconferma ricevuta (telefono / WhatsApp)</label>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={r.delay_notified} onCheckedChange={value => onUpdate({ delay_notified: value === true })}/>Ritardo comunicato</label>
+            {r.morning_reminder_error && <p className="text-xs text-destructive">Promemoria non inviato: {r.morning_reminder_error}</p>}
+          </div>}
           <LoyaltyBox customerId={r.customer_id} phone={r.phone} />
 
           <DateWarning warning={warning} acknowledged={!!warning && acknowledged === warning.key} onAcknowledge={(v) => { setAcknowledged(v ? warning?.key ?? null : null); if (v && pendingTime) { onUpdate(pendingTime); setPendingTime(null); } }} />

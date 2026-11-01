@@ -1,0 +1,1 @@
+DO $$ DECLARE def text; fn text; BEGIN FOREACH fn IN ARRAY ARRAY['public.online_shift_remaining(uuid,date,text)','public.online_slot_remaining(uuid,date,text,text,uuid)'] LOOP SELECT pg_get_functiondef(fn::regprocedure) INTO def; def:=replace(def,'r record;','r public.rooms;'); EXECUTE def; END LOOP; END $$;

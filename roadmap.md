@@ -59,3 +59,9 @@
 - [x] Coordinate e soglie meteo Master; chiusura dehors e riorganizzazione interna atomica con report, riapertura nella configurazione sale.
 - [x] 310 test superati; meteo reale Pistoia, avviso Cena e Annulla verificati nell’agenda autenticata; campi Master e telefono senza overflow. Chiusura per data/turno e divieto accesso anonimo verificati nel database; build OK.
 - [ ] Applicazione reale della chiusura e rilettura del report: non eseguita perché modifica sale/prenotazioni operative del locale; necessita un servizio di prova autorizzato.
+
+## v0.8.24-alpha — Prenotazioni online e riconferma
+- [x] Impostazioni Master, testo pubblico e vincoli atomici di data/doppi turni; impostazioni salvate/rilette e attivazione online originale ripristinata.
+- [x] Riconferma/disdetta sicure provate e rilette con prenotazione temporanea rimossa; promemoria singolo indipendente dalle email esistenti e pianificazioni predisposte.
+- [x] Badge agenda e ritardo comunicato, 322 test superati, pagina pubblica desktop/telefono senza overflow; correzione disponibilità meteo su tipo sala.
+- [ ] Invio mattutino reale: richiede pubblicazione delle nuove funzioni e servizio SMTP funzionante; servizio predefinito non collegato, invio non provato. SMTP attuale consente solo testo: link alla pagina con pulsanti, non pulsanti dentro l’email.
