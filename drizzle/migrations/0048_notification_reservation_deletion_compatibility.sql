@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.guard_notification_update() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN
+ IF pg_trigger_depth()>1 AND NEW.reservation_id IS NULL AND (to_jsonb(NEW)-'reservation_id') IS NOT DISTINCT FROM (to_jsonb(OLD)-'reservation_id') THEN RETURN NEW; END IF;
+ IF auth.uid() IS NOT NULL AND (to_jsonb(NEW)-'read_at') IS DISTINCT FROM (to_jsonb(OLD)-'read_at') THEN RAISE EXCEPTION 'Solo presa visione consentita'; END IF; RETURN NEW; END $$;
