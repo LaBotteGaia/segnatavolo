@@ -17,7 +17,7 @@ import { serviceClock } from "@/lib/no-show";
 import { isRoomClosedFor } from "@/lib/rotation";
 import { walkinClock, walkinValues, WALKIN_DEFAULT_PEOPLE } from "@/lib/service-actions";
 import { refreshService } from "@/lib/recycle-bin";
-import { arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
+import { arrivalCountdown, arrivalsLists, hoursMinutes, limitedStay, liveCounters, liveTableState, maxStayBadge, movedTableIds, nextBookingOn, seatedSinceLabel, swappedTableIds, type LiveRes, type LiveTableState } from "@/lib/live-floor";
 import { calculateBestTableAssignment } from '@/lib/allocation';
 import { tableState } from '@/lib/rotation';
 import { supabase } from "@/integrations/supabase/client";
@@ -313,9 +313,13 @@ export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenCha
                       <>
                         <span className="max-w-full break-words text-xs font-semibold">{st.res.name}</span>
                         <span className="text-[10px]">Arriva {st.at}</span>
+                        <Countdown time={st.at} now={clock.minutes} />
                       </>
                     ) : (
-                      <span className="text-[10px] font-semibold text-free">Libero</span>
+                      <>
+                        <span className="text-[10px] font-semibold text-free">Libero</span>
+                        {(() => { const nx = nextBookingOn([t.id], rows, clock.minutes); return nx ? <><span className="max-w-full break-words text-[10px]">Prossimo: {nx.name} {nx.time}</span><Countdown time={nx.time} now={clock.minutes} /></> : null; })()}
+                      </>
                     )}
                   </button>
                 );
@@ -404,4 +408,12 @@ export function MaxStay({ until, now }: { until?: string | null | undefined; now
   const b = maxStayBadge(until, now);
   if (!b) return null;
   return <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold", b.urgent ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-warning text-foreground")}>{b.label}</span>;
+}
+
+/** Badge del tempo rimanente all'arrivo: ambra sotto 30 min, rosso lampeggiante sotto 15 o in ritardo. */
+function Countdown({ time, now }: { time: string; now: number }) {
+  const c = arrivalCountdown(toMinLocal(time), now);
+  if (!c) return null;
+  return <span className={cn("mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums",
+    c.tone === "later" ? "bg-card text-foreground" : c.tone === "soon" ? "bg-warning text-foreground" : "bg-destructive text-destructive-foreground motion-safe:animate-pulse")}>⏱️ {c.label}</span>;
 }
