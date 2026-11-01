@@ -295,6 +295,13 @@
       "when": 1793560515738,
       "tag": "0041_online_reconfirmation_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793560605417,
+      "tag": "0042_online_delay_and_reminder_safety",
+      "breakpoints": true
     }
   ]
 }

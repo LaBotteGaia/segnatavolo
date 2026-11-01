@@ -100,6 +100,7 @@ export type Database = {
           customer_notes: string
           date: string
           decided_at: string | null
+          delay_notified: boolean
           deleted_at: string | null
           duration_min: number | null
           extra_barelle: number
@@ -146,6 +147,7 @@ export type Database = {
           customer_notes?: string
           date: string
           decided_at?: string | null
+          delay_notified?: boolean
           deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
@@ -192,6 +194,7 @@ export type Database = {
           customer_notes?: string
           date?: string
           decided_at?: string | null
+          delay_notified?: boolean
           deleted_at?: string | null
           duration_min?: number | null
           extra_barelle?: number
@@ -682,6 +685,7 @@ export type Database = {
     Functions: {
       can_configure_delivery: { Args: { _rid: string }; Returns: boolean }
       can_use_restaurant: { Args: { _rid: string }; Returns: boolean }
+      cancel_overdue_online_bookings: { Args: never; Returns: number }
       claim_morning_reminder: { Args: never; Returns: Json }
       close_weather_service: {
         Args: {
