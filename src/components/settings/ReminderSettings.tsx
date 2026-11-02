@@ -7,6 +7,7 @@ import { FieldHelp } from './FieldHelp';
 import { toast } from 'sonner';
 import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
 import type { ReminderDefault } from '@/lib/reminder-channels';
+import { WhatsAppSettings } from './WhatsAppSettings';
 export function ReminderSettings({ id }: { id: string }) {
   const query = useQuery({ queryKey: ['reminder-settings', id], queryFn: async () => { const { data, error } = await supabase.from('restaurants').select('reminder_default_channel,notify_restaurant_on_confirmation,morning_reminder_enabled,daily_summary_enabled,daily_summary_sent_at,daily_summary_error').eq('id', id).single(); if (error) throw error; return data; } });
   if (query.isError) return <p role="alert">Promemoria non disponibili.</p>;
@@ -19,7 +20,7 @@ function ReminderForm({ id, initial }: { id: string; initial: { reminder_default
   const [channel,setChannel]=useState<ReminderDefault>(initial.reminder_default_channel==='email'||initial.reminder_default_channel==='whatsapp'?initial.reminder_default_channel:'ask');
   return <section className="mb-6 space-y-4"><h3 className="font-display text-xl">Promemoria e riepilogo</h3>
     <label className="block text-sm">Canale predefinito promemoria<Select value={channel} onValueChange={value=>{if(value==='ask'||value==='email'||value==='whatsapp')setChannel(value);}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="whatsapp">WhatsApp Business</SelectItem><SelectItem value="email">Email</SelectItem><SelectItem value="ask">Chiedi ogni volta</SelectItem></SelectContent></Select><FieldHelp>Per i promemoria singoli. La scelta della prenotazione prevale; con un solo recapito viene usato quello disponibile. I promemoria mattutini restano email.</FieldHelp></label>
-    <div className="space-y-2 border-y py-3"><h4 className="font-semibold">WhatsApp Business API</h4><label className="flex items-center justify-between gap-3 text-sm">Invio automatico<Switch checked={false} disabled/></label><p className="text-sm text-muted-foreground">Non collegato. I messaggi si aprono precompilati in WhatsApp: conferma lì l’invio. L’invio automatico richiede un account Business collegato e un modello approvato da Meta.</p></div>
+    <WhatsAppSettings id={id} />
     <div><label className="flex items-center justify-between gap-3 text-sm">Invia email al locale per ogni prenotazione confermata<Switch checked={confirmations} onCheckedChange={setConfirmations}/></label><FieldHelp>Inizialmente spento. Non modifica le email ai clienti né gli avvisi di nuove richieste, modifiche o disdette.</FieldHelp></div>
     <div><label className="flex items-center justify-between gap-3 text-sm">Promemoria di riconferma ai clienti dalle 09:00<Switch checked={morning} onCheckedChange={setMorning} /></label><FieldHelp>Un messaggio per ciascuna prenotazione online accettata, con link sicuro di riconferma.</FieldHelp></div>
     <div><label className="flex items-center justify-between gap-3 text-sm">Riepilogo al ristorante alle 09:00<Switch checked={summary} onCheckedChange={setSummary} /></label><FieldHelp>Invia all’email principale o dedicata il riepilogo del giorno, con coperti, tavoli e note. Orario nel fuso del locale.</FieldHelp></div>

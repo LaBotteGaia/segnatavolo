@@ -31,6 +31,20 @@ export const sendReservationReminder = createServerFn({ method: 'POST' })
     const vars = { nome_cliente: booking.name, telefono_cliente: booking.phone ?? '', email_cliente: customerEmail, data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), nome_ristorante: restaurant.name, telefono_ristorante: restaurant.main_phone ?? '', note_cliente: booking.notes ?? '' };
     let text = interpolateEmail(template.body,vars);
     if (booking.channel === 'online' && booking.management_token) text += `\n\nMODIFICA O ANNULLA PRENOTAZIONE\nhttps://segnatavolo.app/prenotazione/gestisci?token=${booking.management_token}`;
+    // Linea WhatsApp Business del ristorante: usabile da ogni membro attivo, credenziali solo lato server.
+    const { loadWhatsAppConfig, sendWhatsApp } = await import('./whatsapp.server');
+    const wa = data.channel === 'whatsapp' ? await loadWhatsAppConfig(data.restaurantId) : null;
+    if (wa?.enabled) {
+      const { data: log, error: logError } = await supabaseAdmin.from('reservation_reminder_logs').insert({ restaurant_id:data.restaurantId, reservation_id:booking.id, channel:'whatsapp', operator_id:context.userId, outcome:'sending', detail:null }).select('id').single();
+      if (logError || !log) throw new Error('Promemoria non registrato: invio non avviato');
+      const body = wa.templateName
+        ? { type:'template', template:{ name:wa.templateName, language:{ code:wa.templateLanguage }, components:[{ type:'body', parameters:[vars.nome_cliente,vars.data,vars.ora,vars.pax].map(t=>({ type:'text', text:t })) }] } }
+        : { type:'text', text:{ body:text } };
+      const r = await sendWhatsApp(wa, booking.phone ?? '', body);
+      const detail = r.ok ? `Accettato da Meta${r.id ? ` (${r.id})` : ''}; consegna non ancora confermata.` : r.message;
+      await supabaseAdmin.from('reservation_reminder_logs').update({ outcome:r.ok ? 'accepted' : 'failed', detail }).eq('restaurant_id',data.restaurantId).eq('id',log.id);
+      return { sent:r.ok, url:null, message:r.ok ? 'Promemoria inviato dal numero WhatsApp del ristorante.' : `WhatsApp non inviato: ${r.message}` };
+    }
     const url = data.channel === 'whatsapp' ? reminderWhatsAppUrl(booking.phone ?? '',text) : null;
     const { data: log, error: logError } = await supabaseAdmin.from('reservation_reminder_logs').insert({ restaurant_id:data.restaurantId, reservation_id:booking.id, channel:data.channel, operator_id:context.userId, outcome:data.channel === 'whatsapp' ? 'opened' : 'sending', detail:data.channel === 'whatsapp' ? 'Messaggio preparato per apertura WhatsApp; invio e consegna non verificabili.' : null }).select('id').single();
     if (logError || !log) throw new Error('Promemoria non registrato: invio non avviato');

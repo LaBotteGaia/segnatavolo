@@ -569,6 +569,50 @@ export type Database = {
           },
         ]
       }
+      restaurant_whatsapp_settings: {
+        Row: {
+          display_phone: string | null
+          enabled: boolean
+          encrypted_token: string | null
+          phone_number_id: string | null
+          restaurant_id: string
+          template_language: string
+          template_name: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          display_phone?: string | null
+          enabled?: boolean
+          encrypted_token?: string | null
+          phone_number_id?: string | null
+          restaurant_id: string
+          template_language?: string
+          template_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          display_phone?: string | null
+          enabled?: boolean
+          encrypted_token?: string | null
+          phone_number_id?: string | null
+          restaurant_id?: string
+          template_language?: string
+          template_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_whatsapp_settings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           allow_same_day_online: boolean
