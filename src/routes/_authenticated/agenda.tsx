@@ -416,7 +416,7 @@ function AgendaPage() {
             </Button>
           </div>
         </div>
-        <div aria-label="Azioni rapide" className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2 py-1 max-agenda-wide:[&>*]:min-w-0 max-agenda-wide:[&>*]:flex-auto max-agenda-wide:[&_button]:w-full max-agenda-wide:[&_button]:px-2">
+        <div aria-label="Azioni rapide" className="mt-2 grid w-full max-w-none grid-cols-3 items-center gap-2 py-1 [&>*]:min-w-0 max-agenda-wide:[&_button]:w-full max-agenda-wide:[&_button]:px-2 agenda-wide:flex agenda-wide:flex-wrap">
           <Button className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> <span className="agenda-wide:hidden">Nuova</span><span className="hidden agenda-wide:inline">Nuova Prenotazione</span></Button>
           <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> <span className="agenda-wide:hidden">Al volo</span><span className="hidden agenda-wide:inline">Accomoda al volo</span></Button>
           <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
