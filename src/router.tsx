@@ -32,6 +32,10 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
     defaultOnCatch: (err: unknown) => { if (typeof window !== "undefined" && isStaleChunkError((err as Error)?.message)) reloadOnceForStaleChunk(); },
+    defaultPendingMs: 300,
+    defaultPendingComponent: () => (
+      <div className="flex min-h-screen items-center justify-center font-hand text-xl text-desk-foreground">Sfoglio l’agenda…</div>
+    ),
   });
 
   return router;
