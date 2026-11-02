@@ -407,6 +407,13 @@
       "when": 1793624785878,
       "tag": "0057_manual_reminder_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793626849646,
+      "tag": "0058_restaurant_whatsapp_settings",
+      "breakpoints": true
     }
   ]
 }
