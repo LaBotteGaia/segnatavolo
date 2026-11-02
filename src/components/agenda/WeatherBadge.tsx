@@ -10,7 +10,7 @@ import { useActiveRestaurantId } from '@/lib/tenant';
 import { reservationsQuery, roomsQuery, tablesQuery, shiftName, wallsOf, useRooms, useTables, useActiveCustomRules, type Reservation, type Shift } from '@/lib/data';
 import { isRoomClosedFor } from '@/lib/rotation';
 import { weatherReorganization } from '@/lib/weather-reorganization';
-import { fetchWeather, serviceWeather, weatherSettingsOf } from '@/services/weatherService';
+import { fetchWeather, serviceWeather, weatherSettingsOf, type WeatherResult } from '@/services/weatherService';
 
 export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Reservation[]}) {
   const rid = useActiveRestaurantId();
@@ -31,8 +31,9 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
   const [open,setOpen] = useState(false);
   const [detailOpen,setDetailOpen] = useState(false);
   const [report,setReport] = useState<{moved:number;unplaced:Reservation[]} | null>(null);
-  const forecast = useQuery({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid && !location.isPending,staleTime:30*60*1000,gcTime:60*60*1000,refetchInterval:30*60*1000,retry:1,queryFn:({signal})=>fetchWeather(weather,date,signal)});
-  const summary = forecast.data ? serviceWeather(forecast.data,date,shift,weather) : null;
+  const forecast = useQuery<WeatherResult>({queryKey:['weather',rid,date,weather.latitude,weather.longitude,weather.city],enabled:!!rid && !location.isPending,staleTime:30*60*1000,gcTime:60*60*1000,refetchInterval:q=>q.state.data?.stale||q.state.status==='error'?3*60*1000:30*60*1000,retry:1,retryDelay:5000,queryFn:({signal})=>fetchWeather(weather,date,signal)});
+  const summary = forecast.data ? serviceWeather(forecast.data.hours,date,shift,weather) : null;
+  const savedTime = forecast.data ? new Date(forecast.data.savedAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}) : '';
   const outdoor = new Set(rooms.filter(r=>r.is_outdoor).map(r=>r.id));
   const outsideTables = new Set(tables.filter(t=>outdoor.has(t.room_id)).map(t=>t.id));
   const affected = rows.filter(r=>!r.no_show && r.table_ids.some(id=>outsideTables.has(id)));
@@ -50,13 +51,14 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
   },onSuccess:async result=>{setReport(result); await Promise.all(['rooms','reservations','reservations-month','online-requests','customer-history'].map(key=>qc.invalidateQueries({queryKey:[key]})));toast.success('Dehors chiusi per questo turno');},onError:e=>toast.error(e.message)});
   return <div className="flex min-w-0 flex-col items-start gap-1 text-xs agenda-wide:flex-row agenda-wide:flex-wrap agenda-wide:items-center" data-no-swipe>
     <Popover open={detailOpen} onOpenChange={setDetailOpen}><PopoverTrigger asChild><Button size="sm" variant="outline" className={summary?.critical?'border-warning text-warning':'text-foreground'} onMouseEnter={()=>setDetailOpen(true)} aria-label={`Meteo ${shiftName(shift)}`}>
-      {summary?`${summary.icon} ${Math.round(summary.temperature)}°C`:forecast.isFetching?'Meteo…':'Meteo —'}
+      {summary?`${summary.icon} ${Math.round(summary.temperature)}°C${forecast.data?.stale?' ⟳':''}`:forecast.isFetching?'Meteo…':'Meteo —'}
     </Button></PopoverTrigger><PopoverContent className="w-72 max-w-[90vw] text-sm" onMouseLeave={()=>setDetailOpen(false)}>
       <p className="font-semibold">{shiftName(shift)} · {date.split('-').reverse().join('/')}</p>
-      {forecast.isError?<p className="mt-2 text-muted-foreground">{forecast.error.message}</p>:!summary?<p className="mt-2">Previsioni non disponibili</p>:<>
+      {forecast.data?.stale && <p className="mt-2 rounded border border-warning bg-warning/10 p-2 text-xs text-warning">{forecast.data.warning} Mostro l’ultimo dato salvato alle {savedTime}.</p>}
+      {forecast.isError && !forecast.data?<p className="mt-2 text-muted-foreground">{forecast.error.message}</p>:!summary?<p className="mt-2">Previsioni non disponibili</p>:<>
         <p className={summary.critical?'my-2 font-semibold text-warning':'my-2 text-free'}>{summary.critical?summary.reasons.join(' · '):'Favorevole'}</p>
         <ul className="space-y-1">{summary.hours.map(h=><li key={h.time}>{h.time.slice(11,16)} · {Math.round(h.temperature)}°C · Pioggia {h.probability}% · {h.wind} km/h</li>)}</ul>
-      </>}<p className="mt-2 text-xs text-muted-foreground">Open-Meteo · Europe/Rome</p>
+      </>}<p className="mt-2 text-xs text-muted-foreground">Open-Meteo · Europe/Rome{savedTime?` · aggiornato alle ${savedTime}`:''}</p>
     </PopoverContent></Popover>
     {summary?.critical && exposed && <Button variant="outline" size="sm" title={summary.reasons.join(' · ')} className="h-auto min-w-0 whitespace-normal border-warning bg-warning/10 px-2 py-1 text-left text-warning motion-safe:animate-pulse" onClick={()=>{setReport(null);setOpen(true);}}><span className="agenda-wide:hidden">⚠️ Allerta</span><span className="hidden agenda-wide:inline">⚠️ Allerta Meteo: {summary.reasons.join(' · ')} — Chiudi Dehors e Riorganizza Tavoli</span></Button>}
     <Dialog open={open} onOpenChange={o=>!apply.isPending && setOpen(o)}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>⚠️ Riorganizzazione per Maltempo</DialogTitle></DialogHeader>

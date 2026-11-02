@@ -32,19 +32,59 @@ export async function geocodeCity(city: string, signal?: AbortSignal) {
   if (!place) throw new Error('Città non trovata: inserisci le coordinate GPS.');
   return place;
 }
-export async function fetchWeather(settings: WeatherSettings, date: string, signal?: AbortSignal): Promise<WeatherHour[]> {
+export class WeatherUnavailableError extends Error {}
+const wait = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, reject) => {
+  const t = setTimeout(resolve, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('Aborted', 'AbortError')); }, { once: true });
+});
+async function fetchForecastRaw(url: string, signal?: AbortSignal): Promise<Response> {
+  const delays = [0, 1500, 4000];
+  let last: Response | null = null;
+  for (const d of delays) {
+    if (d) await wait(d, signal);
+    try {
+      last = await fetch(url, { signal: signal ?? null });
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      last = null;
+      continue;
+    }
+    if (last.ok || (last.status >= 400 && last.status < 500)) return last;
+  }
+  if (!last) throw new WeatherUnavailableError('Server meteo Open-Meteo non raggiungibile: controlla la connessione.');
+  if (last.status === 503 || last.status === 429) throw new WeatherUnavailableError('Server meteo Open-Meteo temporaneamente sovraccarico: riprovo automaticamente.');
+  throw new WeatherUnavailableError(`Server meteo Open-Meteo non disponibile (errore ${last.status}).`);
+}
+type CachedWeather = { savedAt: number; hours: WeatherHour[] };
+const cacheKey = (lat: number, lon: number, date: string) => `segnatavolo:weather:${lat.toFixed(3)},${lon.toFixed(3)}:${date}`;
+export function readCachedWeather(key: string): CachedWeather | null {
+  try { const raw = localStorage.getItem(key); if (!raw) return null; const v = JSON.parse(raw) as CachedWeather; return Array.isArray(v.hours) && typeof v.savedAt === 'number' ? v : null; } catch { return null; }
+}
+export type WeatherResult = { hours: WeatherHour[]; savedAt: number; stale: boolean; warning?: string };
+export async function fetchWeather(settings: WeatherSettings, date: string, signal?: AbortSignal): Promise<WeatherResult> {
   const coords = settings.latitude !== null && settings.longitude !== null ? settings : await geocodeCity(settings.city, signal);
+  const key = cacheKey(Number(coords.latitude), Number(coords.longitude), date);
   const query = new URLSearchParams({ latitude: String(coords.latitude), longitude: String(coords.longitude), start_date: date, end_date: date, timezone: 'Europe/Rome', hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m', wind_speed_unit: 'kmh' });
-  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${query}`, { signal:signal ?? null });
+  let response: Response;
+  try {
+    response = await fetchForecastRaw(`https://api.open-meteo.com/v1/forecast?${query}`, signal);
+  } catch (e) {
+    const cached = readCachedWeather(key);
+    if (cached && !signal?.aborted) return { hours: cached.hours, savedAt: cached.savedAt, stale: true, warning: e instanceof Error ? e.message : 'Server meteo non disponibile' };
+    throw e;
+  }
   if (!response.ok) throw new Error('Previsioni non disponibili per questa data (fino a 16 giorni).');
   const body = await response.json() as { hourly?: Record<string, (number | string | null)[]> };
   const h = body.hourly;
   if (!h?.['time']) throw new Error('Previsioni non disponibili.');
-  return h['time'].flatMap((t, i) => {
+  const hours = h['time'].flatMap((t, i) => {
     const fields = ['temperature_2m','precipitation_probability','precipitation','weather_code','wind_speed_10m','wind_gusts_10m'].map(k => h[k]?.[i]);
     if (typeof t !== 'string' || fields.some(v => typeof v !== 'number' || !Number.isFinite(v))) return [];
     const [temperature, probability, precipitation, code, wind, gust] = fields as number[];
     if (temperature === undefined || probability === undefined || precipitation === undefined || code === undefined || wind === undefined || gust === undefined) return [];
     return [{ time:t,temperature,probability,precipitation,code,wind,gust }];
   });
+  const savedAt = Date.now();
+  try { localStorage.setItem(key, JSON.stringify({ savedAt, hours })); } catch { /* quota */ }
+  return { hours, savedAt, stale: false };
 }
