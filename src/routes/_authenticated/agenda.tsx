@@ -317,6 +317,11 @@ function AgendaPage() {
           closed && "opacity-70",
         )}
       >
+        <div className="mb-2 grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:hidden">
+          <Button size="icon" variant="ghost" className="text-primary" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente"><ChevronLeft /></Button>
+          <h2 className="min-w-0 truncate text-center font-display text-xl capitalize text-primary">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</h2>
+          <Button size="icon" variant="ghost" className="text-primary" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo"><ChevronRight /></Button>
+        </div>
         <header className="mb-3 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
           <h2 className="hidden min-w-0 font-display text-2xl text-primary agenda-wide:block">{shiftName(shift).toUpperCase()} — {format(dateObj, "d MMMM", { locale: it })}</h2>
           {closed && <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}

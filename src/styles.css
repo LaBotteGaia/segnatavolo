@@ -8,6 +8,11 @@
     @slot;
   }
 }
+@custom-variant max-agenda-wide {
+  @media not ((min-width: 768px) and (orientation: landscape)) and (max-width: 1023.98px) {
+    @slot;
+  }
+}
 
 @theme inline {
   --font-display: "Fraunces", Georgia, serif;
