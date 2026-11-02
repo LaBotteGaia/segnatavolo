@@ -312,7 +312,7 @@ function AgendaPage() {
     return (
       <section
         className={cn(
-          "paper-page min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
+          "paper-page [--page-margin:0.7rem] sm:[--page-margin:2.6rem] min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
           side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           closed && "opacity-70",
         )}
