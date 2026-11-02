@@ -312,21 +312,23 @@ function AgendaPage() {
     return (
       <section
         className={cn(
-          "paper-page min-w-0 min-h-[70vh] flex-1 py-5 pl-12 pr-3 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
+          "paper-page [--page-margin:0.7rem] sm:[--page-margin:2.6rem] min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
           side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           closed && "opacity-70",
         )}
       >
         <header className="mb-3 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
-          <h2 className="min-w-0 font-display text-3xl text-primary agenda-wide:text-2xl">{shiftName(shift).toUpperCase()}<span className="hidden agenda-wide:inline"> — {format(dateObj, "d MMMM", { locale: it })}</span></h2>
+          <h2 className="hidden min-w-0 font-display text-2xl text-primary agenda-wide:block">{shiftName(shift).toUpperCase()} — {format(dateObj, "d MMMM", { locale: it })}</h2>
           {closed && <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs font-bold uppercase text-muted-foreground">Chiuso</span>}
-          <div className="col-span-2 grid grid-cols-4 gap-2 text-right text-xs leading-tight">
+          <div className="col-span-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 agenda-wide:grid-cols-1">
+          <div className="agenda-wide:order-2"><WeatherBadge date={date} shift={shift} rows={all} /></div>
+          <div className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1 text-right text-[10px] leading-tight agenda-wide:grid-cols-4 agenda-wide:text-xs">
             <Counter label="Coperti" value={c.total} strong />
             <Counter label="Interni" value={c.inside} />
             <Counter label="Fuori" value={c.outside} />
             <Counter label="Da arrivare" value={c.pending} accent />
           </div>
-          <WeatherBadge date={date} shift={shift} rows={all} />
+          </div>
         </header>
         <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold"><Switch checked={onlyPending} onCheckedChange={setOnlyPending} /> Mostra solo da arrivare</label>
@@ -371,25 +373,26 @@ function AgendaPage() {
           <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
             <AppMenu triggerClassName="hover:bg-desk-foreground/10 hover:text-desk-foreground" />
           </div>
-          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1">
+          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1 agenda-wide:grid-cols-[auto_minmax(0,1fr)_auto]">
+            <div className="min-w-0 font-display text-lg capitalize leading-tight agenda-wide:hidden">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</div>
             <Button size="icon" variant="ghost" className="hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
               <ChevronLeft />
             </Button>
             <Popover open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); calendarTap.current = null; if (!open) toast.dismiss(availabilityToast.current); }}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" aria-label="Apri calendario" className="h-auto min-w-0 gap-2 whitespace-normal px-1 py-2 font-display text-xl capitalize leading-tight hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:text-lg">
-                  <CalendarIcon className="hidden size-4 shrink-0 agenda-wide:block" />
-                  <span className="min-w-0">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</span>
+                <Button variant="ghost" aria-label="Apri calendario" title="Apri calendario" className="size-9 min-w-0 shrink-0 gap-2 px-2 font-display capitalize leading-tight hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:h-auto agenda-wide:w-auto agenda-wide:py-2 agenda-wide:text-lg">
+                  <CalendarIcon className="size-4 shrink-0" />
+                  <span className="hidden min-w-0 agenda-wide:inline">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <div className="border-b p-3 pb-2">
                   <div className="grid gap-1 rounded-md bg-muted p-1" style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }}>
                     {shifts.map((s) => (
-                      <button key={s} type="button" onClick={() => setCalShift(s)}
+                      <Button variant="ghost" key={s} type="button" onClick={() => setCalShift(s)}
                         className={cn("rounded px-3 py-2 text-sm font-semibold", calShift === s ? "bg-paper text-primary shadow-sm" : "text-muted-foreground")}>
                         {shiftEmoji(s)} {shiftName(s)}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <div className="mt-2 text-center font-display text-lg text-primary">{shiftPlural(calShift)} di {format(month, "MMMM yyyy", { locale: it }).replace(/^\w/, (c) => c.toUpperCase())}</div>
@@ -409,10 +412,10 @@ function AgendaPage() {
             </Button>
           </div>
         </div>
-        <div className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2">
-          <Button className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
-          <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
-          <Button variant="secondary" className="min-w-0 flex-1 whitespace-normal px-2 agenda-wide:flex-none" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
+        <div aria-label="Azioni rapide" className="mt-2 flex w-full max-w-none flex-nowrap items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 agenda-wide:flex-wrap agenda-wide:overflow-visible">
+          <Button className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
+          <Button variant="secondary" className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
+          <Button variant="secondary" className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
           <ServiceNotifications />
           <ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
@@ -431,7 +434,7 @@ function AgendaPage() {
         </div>
       </div>
 
-      <main className="mt-4 w-full max-w-none px-3 sm:px-6 lg:px-8 agenda-wide:mt-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3">
+      <main className="mt-2 w-full max-w-none px-3 sm:px-6 lg:px-8 agenda-wide:mt-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3">
         <div className="shrink-0"><UnconfirmedAlerts rows={reservations} /></div>
         <div className="shrink-0"><OnlineRequests /></div>
         <div className="hidden gap-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-hidden">

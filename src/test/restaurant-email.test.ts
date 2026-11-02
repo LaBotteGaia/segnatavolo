@@ -3,6 +3,9 @@ import { emailSettingsSchema, interpolateEmail } from '@/lib/restaurant-email';
 
 const smtp = { custom: true, host: 'smtp.gmail.com', username: 'locale@example.com', port: 465, security: 'tls' };
 describe('posta ristorante', () => {
+  it('sostituisce telefono cliente e alias con doppie parentesi',()=>expect(interpolateEmail('{{customer_phone}} / {telefono_cliente}',{telefono_cliente:'+393331234567'})).toBe('+393331234567 / +393331234567'));
+  it('sostituisce email cliente e alias con doppie parentesi',()=>expect(interpolateEmail('{{customer_email}} / {{email_cliente}}',{email_cliente:'cliente@example.com'})).toBe('cliente@example.com / cliente@example.com'));
+  it('contatti mancanti non lasciano parentesi residue',()=>expect(interpolateEmail('{{customer_email}} {telefono_cliente}',{})).toBe(' '));
   it('interpola i dati cliente e tavoli senza interpretare altri segnaposto',()=>expect(interpolateEmail('{nome_cliente}: {pax} · {tavolo_assegnato} {sconosciuto}',{nome_cliente:'Mario',pax:'9',tavolo_assegnato:'5 + 6'})).toBe('Mario: 9 · 5 + 6 {sconosciuto}'));
   it('salva template distinti e indirizzo maître valido',()=>{const cfg=emailSettingsSchema.parse({staffEmail:'maitre@example.com'});expect(cfg.staffEmail).toBe('maitre@example.com');expect(cfg.templates.pending.body).not.toBe(cfg.templates.confirmed.body);expect(emailSettingsSchema.safeParse({staffEmail:'non-email'}).success).toBe(false);});
   it('respinge ritorni a capo negli oggetti',()=>expect(emailSettingsSchema.safeParse({templates:{pending:{subject:'Prova\nBcc: altra@example.com',body:'Test'}}}).success).toBe(false));

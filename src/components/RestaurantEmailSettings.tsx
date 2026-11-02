@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { emailSettingsSchema, SMTP_HOSTS, EMAIL_PLACEHOLDERS, type EmailSettings } from '@/lib/restaurant-email';
+import { emailSettingsSchema, interpolateEmail, SMTP_HOSTS, EMAIL_PLACEHOLDERS, type EmailSettings } from '@/lib/restaurant-email';
 import { getRestaurantEmail, saveRestaurantEmail, testRestaurantEmail } from '@/lib/restaurant-email.functions';
 
 export function RestaurantEmailSettings({ id }: { id: string }) {
@@ -42,11 +42,12 @@ function EmailForm({ id, initial, passwordSaved }: { id: string; initial: EmailS
     finally { setBusy(false); }
   };
   return <section className="space-y-4 border-t pt-4"><h3 className="font-display text-lg">Configurazione Email</h3>
-    <Tabs defaultValue="pending"><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="pending">Richiesta in attesa</TabsTrigger><TabsTrigger value="confirmed">Conferma</TabsTrigger><TabsTrigger value="rejected">Rifiuto</TabsTrigger></TabsList>
-      {(['pending','confirmed','rejected'] as const).map(status => <TabsContent key={status} value={status} className="space-y-3">
+    <Tabs defaultValue="pending"><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="pending">Richiesta in attesa</TabsTrigger><TabsTrigger value="confirmed">Conferma</TabsTrigger><TabsTrigger value="rejected">Rifiuto</TabsTrigger><TabsTrigger value="reminder">Promemoria</TabsTrigger></TabsList>
+      {(['pending','confirmed','rejected','reminder'] as const).map(status => <TabsContent key={status} value={status} className="space-y-3">
         <label className="block text-sm">Oggetto<Input value={cfg.templates[status].subject} maxLength={300} onChange={e => patch({ templates: { ...cfg.templates, [status]: { ...cfg.templates[status], subject: e.target.value } } })} /><FieldHelp>Titolo della comunicazione per questo stato della prenotazione.</FieldHelp></label>
         <label className="block text-sm">Corpo del messaggio<Textarea className="min-h-48" value={cfg.templates[status].body} maxLength={10000} onChange={e => patch({ templates: { ...cfg.templates, [status]: { ...cfg.templates[status], body: e.target.value } } })} /><FieldHelp>I segnaposto sono sostituiti con i dati reali; alla conferma si aggiunge il link di gestione.</FieldHelp></label>
         <div className="flex flex-wrap gap-1">{EMAIL_PLACEHOLDERS.map(key => <Button key={key} type="button" size="sm" variant="ghost" onClick={() => patch({ templates: { ...cfg.templates, [status]: { ...cfg.templates[status], body: cfg.templates[status].body + `{${key}}` } } })}>{`{${key}}`}</Button>)}</div>
+        <details className="border-t pt-2 text-sm"><summary className="cursor-pointer font-semibold">Anteprima · dati di esempio</summary><p className="mt-2 font-semibold">{interpolateEmail(cfg.templates[status].subject, { nome_ristorante: 'Ristorante di esempio' })}</p><p className="mt-2 whitespace-pre-wrap break-words">{interpolateEmail(cfg.templates[status].body, { nome_cliente: 'Cliente di esempio', telefono_cliente: '+390000000000', email_cliente: 'cliente@example.com', nome_ristorante: 'Ristorante di esempio', telefono_ristorante: '+390000000001', data: '02/11/2026', ora: '20:00', pax: '2', tavolo_assegnato: '3', note_cliente: '', motivo_rifiuto: 'Servizio completo' })}</p></details>
       </TabsContent>)}
     </Tabs>
     <label className="flex items-center justify-between gap-3 text-sm font-semibold">Usa server di posta personalizzato (SMTP)<Switch checked={cfg.custom} onCheckedChange={custom => patch({ custom })} /></label><FieldHelp>Usa il server del locale; da spento resta selezionato il servizio predefinito.</FieldHelp>

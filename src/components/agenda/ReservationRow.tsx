@@ -24,6 +24,7 @@ import { isNoShow, serviceClock } from "@/lib/no-show";
 import { maxStayBadge } from "@/lib/live-floor";
 import { useServiceClock } from "@/lib/extras";
 import { MaskedPhone } from "@/components/MaskedPhone";
+import { ReservationReminder } from './ReservationReminder';
 
 export const ROW_GRID = "grid items-center gap-x-1 grid-cols-[2rem_3rem_minmax(0,1fr)_2.3rem_4.5rem_1rem] lg:gap-x-3 xl:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_3rem_5.5rem_1.25rem]";
 
@@ -167,9 +168,9 @@ export function ReservationRow({
             {(() => { const inp = () => <Input value={phone} type="tel" className="bg-paper" onChange={(e) => setPhone(e.target.value)}
               onBlur={() => { const normalized = phone.replace(/[\s\-.\/()]/g, ""); setPhone(normalized); if (normalized !== (r.phone ?? "")) { onUpdate({ phone: normalized }); onCustomerPhone(normalized); } }} />;
               return r.phone ? <div className="flex min-h-10 items-center rounded-md border bg-paper px-3"><MaskedPhone phone={r.phone}>{inp}</MaskedPhone></div> : inp(); })()}
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-2 grid gap-2">
               <Button asChild variant="outline" disabled={!phone}><a href={`tel:${phone}`}><Phone /> Chiama</a></Button>
-              <Button asChild variant="outline" disabled={!phone}><a href={whatsappLink(phone, r)} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp</a></Button>
+              <ReservationReminder booking={r} onUpdate={onUpdate}/>
             </div>
           </div>
 

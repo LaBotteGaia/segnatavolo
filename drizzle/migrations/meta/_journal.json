@@ -400,6 +400,13 @@
       "when": 1793604767123,
       "tag": "0056_fix_online_decision_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1793624785878,
+      "tag": "0057_manual_reminder_channels",
+      "breakpoints": true
     }
   ]
 }

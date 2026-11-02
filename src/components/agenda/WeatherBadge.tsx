@@ -48,7 +48,7 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
     if(error) throw new Error(error.message);
     return {moved:result.moves.length,unplaced:current.filter(r=>result.unplaced.some(u=>u.id===r.id))};
   },onSuccess:async result=>{setReport(result); await Promise.all(['rooms','reservations','reservations-month','online-requests','customer-history'].map(key=>qc.invalidateQueries({queryKey:[key]})));toast.success('Dehors chiusi per questo turno');},onError:e=>toast.error(e.message)});
-  return <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 text-xs" data-no-swipe>
+  return <div className="flex min-w-0 flex-col items-start gap-1 text-xs agenda-wide:flex-row agenda-wide:flex-wrap agenda-wide:items-center" data-no-swipe>
     <Popover open={detailOpen} onOpenChange={setDetailOpen}><PopoverTrigger asChild><Button size="sm" variant="outline" className={summary?.critical?'border-warning text-warning':'text-foreground'} onMouseEnter={()=>setDetailOpen(true)} aria-label={`Meteo ${shiftName(shift)}`}>
       {summary?`${summary.icon} ${Math.round(summary.temperature)}°C`:forecast.isFetching?'Meteo…':'Meteo —'}
     </Button></PopoverTrigger><PopoverContent className="w-72 max-w-[90vw] text-sm" onMouseLeave={()=>setDetailOpen(false)}>
@@ -58,7 +58,7 @@ export function WeatherBadge({date,shift,rows}:{date:string;shift:Shift;rows:Res
         <ul className="space-y-1">{summary.hours.map(h=><li key={h.time}>{h.time.slice(11,16)} · {Math.round(h.temperature)}°C · Pioggia {h.probability}% · {h.wind} km/h</li>)}</ul>
       </>}<p className="mt-2 text-xs text-muted-foreground">Open-Meteo · Europe/Rome</p>
     </PopoverContent></Popover>
-    {summary?.critical && exposed && <Button variant="outline" size="sm" className="h-auto min-w-0 whitespace-normal border-warning bg-warning/10 py-2 text-left text-warning motion-safe:animate-pulse" onClick={()=>{setReport(null);setOpen(true);}}>⚠️ Allerta Meteo: {summary.reasons.join(' · ')} — Chiudi Dehors e Riorganizza Tavoli</Button>}
+    {summary?.critical && exposed && <Button variant="outline" size="sm" title={summary.reasons.join(' · ')} className="h-auto min-w-0 whitespace-normal border-warning bg-warning/10 px-2 py-1 text-left text-warning motion-safe:animate-pulse" onClick={()=>{setReport(null);setOpen(true);}}><span className="agenda-wide:hidden">⚠️ Allerta</span><span className="hidden agenda-wide:inline">⚠️ Allerta Meteo: {summary.reasons.join(' · ')} — Chiudi Dehors e Riorganizza Tavoli</span></Button>}
     <Dialog open={open} onOpenChange={o=>!apply.isPending && setOpen(o)}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>⚠️ Riorganizzazione per Maltempo</DialogTitle></DialogHeader>
       <p className="text-sm">{date.split('-').reverse().join('/')} — {shiftName(shift)} · {summary?.reasons.join(' · ')} ({summary && Math.round(summary.temperature)}°C)</p>
       {report?<div className="space-y-3 text-sm"><p className="font-semibold text-free">Dehors chiusi · {report.moved} comitive riposizionate all’interno</p>{report.unplaced.length>0 && <div className="border-l-4 border-destructive pl-3 text-destructive"><p className="font-semibold">Senza posto interno: contatto urgente ({report.unplaced.length})</p><ul>{report.unplaced.map(r=><li key={r.id}>{r.name} · {r.people} coperti · {r.time} {r.phone?<a className="underline" href={`tel:${r.phone}`}>{r.phone}</a>:'Telefono non disponibile'}</li>)}</ul></div>}<Button onClick={()=>setOpen(false)}>Chiudi report</Button></div>:<>
