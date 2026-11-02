@@ -28,7 +28,7 @@
 - Room flags sync by DB trigger; seats mirrors coperti_comodi. Allocation/reorganization share assignment-rules and canJoin; DB forbids island unions; Gemini drafts stay unsaved until Master confirms; tavolo_bloccato pins bookings. Reorganization never overlaps intervals: unplaced bookings stay pinned on current tables.
 - Public booking uses tenant-locked RPCs and POST capabilities. Customer changes preserve confirmed occupancy until snapshot-checked atomic approval reuses assignment validation. Schedule exceptions are restaurant-owned JSON mirrored to settings, applied by shared SQL and room predicates. Daily summaries claim one venue/date/recipient; delay rules honor venue timezone.
 - Online requests hold aggregate capacity while pending; operational queries and customer reliability read only confirmed rows. Decisions use a tenant-authorized locking RPC, so rejected requests never occupy tables and direct status edits are blocked.
-- Delivery secrets are server-encrypted and service-only; SMTP requires approved public hosts and TLS. Manual reminders check tenant membership before privileged sends; logs never claim WhatsApp preparation proves delivery.
+- Delivery secrets (SMTP, per-restaurant WhatsApp Cloud API token) are server-encrypted and service-only; Master configures, any active member sends via membership-checked server functions. SMTP needs approved public hosts and TLS; logs never treat accepted or prepared as delivered.
 - Editable numeric controls keep string drafts until blur or submission; shared NumberInput preserves numeric persisted state without coercing empty keystrokes.
 - Online double-turn windows are restaurant configuration, enforced by the same database predicate in slot listing and atomic submission; duration and cleaning buffer protect the second turn, while public results expose only aggregate slots and turn labels.
 - Booking email templates and staff destination live in the protected restaurant delivery settings; trusted reservation events derive recipients and tenant-scoped placeholder data server-side, never from a generic browser send endpoint.
@@ -40,4 +40,3 @@
 
 - Live floor (live-floor.ts): states from arrived flags and rotation intervals; seat_walkin_freed/limited RPCs; walkinFit is the single walk-in capacity rule (bigger ok, over comfort confirm, over max blocked), mirrored in SQL.
 - Exports escape HTML; service-sheet.ts orders print.
-- WhatsApp Business: per-restaurant Meta Cloud API credentials encrypted (AAD whatsapp:<id>) in service-only restaurant_whatsapp_settings; Master-only config, any active member sends through server functions, so lines never cross tenants and the token never reaches browsers.
