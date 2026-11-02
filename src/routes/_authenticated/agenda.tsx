@@ -367,15 +367,14 @@ function AgendaPage() {
   return (
     <div className="min-h-screen w-full pb-10 agenda-wide:flex agenda-wide:h-screen agenda-wide:max-h-screen agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:pb-0">
       <div className="sticky top-0 z-30 shrink-0 border-b border-desk-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-desk-foreground backdrop-blur">
-        <div className="grid w-full max-w-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
+        <div className="grid w-full max-w-none grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
-          <SearchBox onPick={goTo} className="col-start-2 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
-          <div className="col-start-3 row-start-1 shrink-0 agenda-wide:col-start-4">
+          <SearchBox onPick={goTo} className="col-start-3 row-start-1 agenda-wide:col-start-3 agenda-wide:justify-self-stretch" />
+          <div className="col-start-4 row-start-1 shrink-0 agenda-wide:col-start-4">
             <AppMenu triggerClassName="hover:bg-desk-foreground/10 hover:text-desk-foreground" />
           </div>
-          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-1 agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1 agenda-wide:grid-cols-[auto_minmax(0,1fr)_auto]">
-            <div className="min-w-0 font-display text-lg capitalize leading-tight agenda-wide:hidden">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</div>
-            <Button size="icon" variant="ghost" className="hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
+          <div className="contents agenda-wide:col-span-1 agenda-wide:col-start-2 agenda-wide:row-start-1 agenda-wide:grid agenda-wide:min-w-0 agenda-wide:grid-cols-[auto_minmax(0,1fr)_auto] agenda-wide:items-center agenda-wide:gap-1">
+            <Button size="icon" variant="ghost" className="hidden hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:inline-flex" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente">
               <ChevronLeft />
             </Button>
             <Popover open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); calendarTap.current = null; if (!open) toast.dismiss(availabilityToast.current); }}>
