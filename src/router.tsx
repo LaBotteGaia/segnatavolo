@@ -31,7 +31,7 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
-    defaultOnCatch: (err: Error) => { if (typeof window !== "undefined" && isStaleChunkError(err?.message)) reloadOnceForStaleChunk(); },
+    defaultOnCatch: (err: unknown) => { if (typeof window !== "undefined" && isStaleChunkError((err as Error)?.message)) reloadOnceForStaleChunk(); },
   });
 
   return router;
