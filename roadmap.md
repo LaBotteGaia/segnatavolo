@@ -88,6 +88,6 @@
 - [x] Barra azioni senza sovrapposizioni, testata data unica, meteo/coperti affiancati e note comprimibili.
 - [x] Segnaposto telefono/email e template promemoria condiviso, anteprima con dati di esempio.
 - [x] Preferenza canale locale/prenotazione, invio email autorizzato e WhatsApp precompilato con registro esiti.
-- [ ] WhatsApp automatico e ricevute: bloccati dal collegamento rifiutato; nessuna credenziale disponibile.
+- [ ] WhatsApp automatico e ricevute per ristorante: in attesa della scelta sul collegamento. Il percorso disponibile richiede connessioni WhatsApp separate gestite in Lovable; nessun App User Connector WhatsApp è disponibile e l’integrazione diretta con token Meta proposta precedentemente non è consentita dal percorso supportato. Nessuna credenziale del locale disponibile.
 - [x] Verifica autenticata telefono/desktop, calendario, note e dettaglio con prenotazioni reali; 359 test superati.
 - [ ] Invio email reale: richiede destinatario di prova autorizzato; nessuna email inviata durante la verifica.
