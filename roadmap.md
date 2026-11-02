@@ -83,3 +83,10 @@
 - [x] Eccezioni salvate/rilette: apertura lunedì e chiusura solo pranzo verificate; richiesta diretta al servizio chiuso bloccata.
 - [x] 348 test superati, build OK, smartphone senza overflow; versione e changelog v0.8.27-alpha.
 - [ ] Invio effettivo email: non eseguito; richiede destinatario di prova autorizzato e servizio email configurato. Nessuna email inviata durante i controlli.
+
+## v0.8.29-alpha — Agenda portrait e promemoria
+- [ ] Barra azioni senza sovrapposizioni, testata data unica, meteo/coperti affiancati e note comprimibili.
+- [ ] Segnaposto telefono/email e template promemoria condiviso.
+- [ ] Preferenza canale locale/prenotazione, invio email autorizzato e WhatsApp precompilato con registro esiti.
+- [ ] WhatsApp automatico e ricevute: bloccati dal collegamento rifiutato; nessuna credenziale disponibile.
+- [ ] Verifica autenticata telefono/desktop e test delle regole.
