@@ -14,13 +14,13 @@ export const sendReservationReminder = createServerFn({ method: 'POST' })
     if (memberError || adminError || (!membership && !assistance)) throw new Error('Non autorizzato per questo ristorante');
     const { data: booking, error } = await context.supabase.from('reservations').select('*').eq('restaurant_id', data.restaurantId).eq('id', data.reservationId).eq('status','confirmed').is('deleted_at',null).single();
     if (error || !booking) throw new Error('Prenotazione non disponibile');
-    const { data: restaurant, error: restaurantError } = await context.supabase.from('restaurants').select('name,public_phone').eq('id',data.restaurantId).single();
+    const { data: restaurant, error: restaurantError } = await context.supabase.from('restaurants').select('name,main_phone').eq('id',data.restaurantId).single();
     if (restaurantError) throw new Error('Ristorante non disponibile');
     let customerEmail = booking.contact_email ?? '';
     if (!customerEmail && booking.customer_id) {
-      const { data: customer, error: customerError } = await context.supabase.from('customers').select('email').eq('id',booking.customer_id).eq('restaurant_id',data.restaurantId).maybeSingle();
+      const { data: customer, error: customerError } = await context.supabase.from('customers').select('emails').eq('id',booking.customer_id).eq('restaurant_id',data.restaurantId).maybeSingle();
       if (customerError) throw new Error('Contatti non disponibili');
-      customerEmail = customer?.email ?? '';
+      customerEmail = customer?.emails[0] ?? '';
     }
     if (data.channel === 'email' && !z.string().email().safeParse(customerEmail).success) throw new Error('Email cliente non disponibile');
     if (data.channel === 'whatsapp' && !booking.phone) throw new Error('Telefono cliente non disponibile');
@@ -28,7 +28,7 @@ export const sendReservationReminder = createServerFn({ method: 'POST' })
     const { data: delivery, error: deliveryError } = await supabaseAdmin.from('restaurant_delivery_settings').select('settings').eq('restaurant_id',data.restaurantId).maybeSingle();
     if (deliveryError) throw new Error('Template non disponibile');
     const template = emailSettingsSchema.parse(delivery?.settings ?? {}).templates.reminder;
-    const vars = { nome_cliente: booking.name, telefono_cliente: booking.phone ?? '', email_cliente: customerEmail, data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), nome_ristorante: restaurant.name, telefono_ristorante: restaurant.public_phone ?? '', note_cliente: booking.notes ?? '' };
+    const vars = { nome_cliente: booking.name, telefono_cliente: booking.phone ?? '', email_cliente: customerEmail, data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), nome_ristorante: restaurant.name, telefono_ristorante: restaurant.main_phone ?? '', note_cliente: booking.notes ?? '' };
     let text = interpolateEmail(template.body,vars);
     if (booking.channel === 'online' && booking.management_token) text += `\n\nMODIFICA O ANNULLA PRENOTAZIONE\nhttps://segnatavolo.app/prenotazione/gestisci?token=${booking.management_token}`;
     const url = data.channel === 'whatsapp' ? reminderWhatsAppUrl(booking.phone ?? '',text) : null;

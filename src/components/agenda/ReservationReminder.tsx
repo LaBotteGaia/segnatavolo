@@ -19,7 +19,7 @@ export function ReservationReminder({ booking, onUpdate }: { booking: Reservatio
   const send = useServerFn(sendReservationReminder);
   const qc = useQueryClient();
   const contact = useQuery({ queryKey:['reminder-contact',rid,booking.customer_id], enabled:!!rid && !!booking.customer_id, queryFn:async()=> {
-    const { data,error } = await supabase.from('customers').select('email').eq('restaurant_id',rid ?? '').eq('id',booking.customer_id ?? '').maybeSingle();
+    const { data,error } = await supabase.from('customers').select('emails').eq('restaurant_id',rid ?? '').eq('id',booking.customer_id ?? '').maybeSingle();
     if(error) throw error; return data;
   }});
   const defaults = useQuery({ queryKey:['reminder-default',rid],enabled:!!rid,queryFn:async()=> {
@@ -31,7 +31,7 @@ export function ReservationReminder({ booking, onUpdate }: { booking: Reservatio
     if(error) throw error;return data;
   }});
   const phone = booking.phone;
-  const email = booking.contact_email || contact.data?.email || null;
+  const email = booking.contact_email || contact.data?.emails[0] || null;
   const preference: ReminderPreference = booking.reminder_channel === 'email' || booking.reminder_channel === 'whatsapp' ? booking.reminder_channel : 'automatic';
   const defaultChannel: ReminderDefault = defaults.data?.reminder_default_channel === 'email' || defaults.data?.reminder_default_channel === 'whatsapp' ? defaults.data.reminder_default_channel : 'ask';
   const dispatch = async (channel:ReminderChannel) => {
@@ -53,7 +53,7 @@ export function ReservationReminder({ booking, onUpdate }: { booking: Reservatio
   };
   return <div className="space-y-2">
     <label className="block text-xs font-semibold">Canale promemoria<Select value={preference} onValueChange={value=>{if(value==='automatic'||value==='email'||value==='whatsapp') onUpdate({reminder_channel:value});}}><SelectTrigger aria-label="Canale promemoria della prenotazione"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="automatic">Automatico</SelectItem><SelectItem value="whatsapp">Solo WhatsApp</SelectItem><SelectItem value="email">Solo Email</SelectItem></SelectContent></Select></label>
-    <div className="grid grid-cols-2 gap-2"><Button variant="outline" disabled={busy || !phone} onClick={()=>void dispatch('whatsapp')}><MessageCircle/>WhatsApp</Button><Button disabled={busy || defaults.isPending || (!!booking.customer_id && !booking.contact_email && contact.isPending)} onClick={()=>{const choice=reminderChoice(phone,email,preference,defaultChannel);if(choice==='ask')setChoose(true);else if(choice==='unavailable')toast.error('Manca un recapito del cliente');else void dispatch(choice);}}><Send/>{busy?'Preparazione…':'Invia Promemoria'}</Button></div>
+    <div className="grid grid-cols-2 gap-2"><Button variant="outline" disabled={busy || !phone} onClick={()=>void dispatch('whatsapp')}><MessageCircle/>WhatsApp</Button><Button className="h-auto min-h-9 whitespace-normal px-2 py-2" disabled={busy || defaults.isPending || (!!booking.customer_id && !booking.contact_email && contact.isPending)} onClick={()=>{if(defaults.isError || contact.isError){toast.error('Contatti o preferenze non disponibili');return;}const choice=reminderChoice(phone,email,preference,defaultChannel);if(choice==='ask')setChoose(true);else if(choice==='unavailable')toast.error('Manca un recapito del cliente');else void dispatch(choice);}}><Send/>{busy?'Preparazione…':'Invia Promemoria'}</Button></div>
     {logs.data?.map((log,index)=><p key={`${log.created_at}-${index}`} className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString('it-IT')} · {log.channel==='email'?'Email':'WhatsApp'} · {log.outcome==='opened'?'Messaggio preparato, invio manuale':log.outcome==='accepted'?'Accettato dal server email':log.outcome==='failed'?`Non inviato: ${log.detail ?? ''}`:'Esito da verificare'}</p>)}
     <Dialog open={choose} onOpenChange={value=>!busy&&setChoose(value)}><DialogContent><DialogHeader><DialogTitle>Invia promemoria a {booking.name}</DialogTitle></DialogHeader><div className="grid gap-2"><Button variant="outline" disabled={busy||!phone} className="h-auto whitespace-normal py-3" onClick={()=>void dispatch('whatsapp')}><MessageCircle/><span className="break-all">WhatsApp · {phone}</span></Button><Button disabled={busy||!email} className="h-auto whitespace-normal py-3" onClick={()=>void dispatch('email')}><Mail/><span className="break-all">Email · {email}</span></Button></div></DialogContent></Dialog>
   </div>;

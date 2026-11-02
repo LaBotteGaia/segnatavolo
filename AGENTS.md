@@ -39,4 +39,4 @@
 - Suggestions learn from a 30-day window (table-habits.ts); habits only reorder safe candidates after Master rules.
 
 - Live floor (live-floor.ts): states from arrived flags and rotation intervals; seat_walkin_freed/limited RPCs; walkinFit is the single walk-in capacity rule (bigger ok, over comfort confirm, over max blocked), mirrored in SQL.
-- Exports use escaped HTML; service-sheet.ts owns print order.
+- Exports escape HTML; service-sheet.ts orders print.
