@@ -319,7 +319,7 @@ function AgendaPage() {
       >
         <div className="mb-2 grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 agenda-wide:hidden">
           <Button size="icon" variant="ghost" className="text-primary" onClick={() => setDate(format(addDays(dateObj, -1), "yyyy-MM-dd"))} aria-label="Giorno precedente"><ChevronLeft /></Button>
-          <h2 className="min-w-0 truncate text-center font-display text-xl capitalize text-primary">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</h2>
+          <h2 className="min-w-0 text-center font-display text-lg leading-tight capitalize text-primary min-[400px]:text-xl">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</h2>
           <Button size="icon" variant="ghost" className="text-primary" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo"><ChevronRight /></Button>
         </div>
         <header className="mb-3 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-b-2 border-primary/60 pb-2">
