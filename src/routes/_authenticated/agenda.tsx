@@ -315,8 +315,8 @@ function AgendaPage() {
           "paper-page [--page-margin:0.7rem] sm:[--page-margin:2.6rem] min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
           side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           shift === "sera"
-            ? "max-agenda-wide:-ml-3 max-agenda-wide:rounded-r-md max-agenda-wide:spine-right sm:max-agenda-wide:-ml-6"
-            : "max-agenda-wide:-mr-3 max-agenda-wide:rounded-l-md max-agenda-wide:spine-left sm:max-agenda-wide:-mr-6",
+            ? "max-agenda-wide:-ml-3 max-agenda-wide:rounded-r-md max-agenda-wide:spine-right max-agenda-wide:pl-8 max-agenda-wide:pr-4 sm:max-agenda-wide:-ml-6 sm:max-agenda-wide:pl-12"
+            : "max-agenda-wide:-mr-3 max-agenda-wide:rounded-l-md max-agenda-wide:spine-left max-agenda-wide:pl-5 max-agenda-wide:pr-8 sm:max-agenda-wide:-mr-6 sm:max-agenda-wide:pr-12",
           closed && "opacity-70",
         )}
       >
