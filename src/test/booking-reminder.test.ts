@@ -8,7 +8,7 @@ import { sendNextMorningReminder } from '@/lib/booking-reminder.server';
 const booking = { id: '123e4567-e89b-42d3-a456-426614174000', restaurant_id: '123e4567-e89b-42d3-a456-426614174001', restaurant: 'Locale', email: 'cliente@example.com', date: '2026-11-02', time: '12:00', shift: 'pranzo', people: 2, token: '123e4567-e89b-42d3-a456-426614174002', whatsapp: '' };
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.from.mockReturnValue({ update: mocks.update });
+  mocks.from.mockImplementation((table:string)=>({ update: mocks.update, select:()=>({eq:()=>({eq:()=>({single:async()=>({data:{name:'Cliente',phone:'+393331234567',notes:''},error:null})}),maybeSingle:async()=>({data:{settings:{templates:{reminder:{subject:'Per {nome_cliente}',body:'{{customer_phone}} {{customer_email}}'}}}},error:null})})}) }));
   mocks.update.mockReturnValue({ eq: mocks.eq });
   mocks.eq.mockReturnValue({ eq: mocks.eq, error: null });
 });
@@ -18,6 +18,7 @@ describe('promemoria indipendente', () => {
     expect(await sendNextMorningReminder()).toEqual({ processed: true, sent: true });
     expect(mocks.send).toHaveBeenCalledTimes(1);
     expect(mocks.send.mock.calls[0]?.slice(0, 2)).toEqual([booking.restaurant_id, booking.email]);
+    expect(mocks.send.mock.calls[0]?.[3]).toContain('+393331234567 cliente@example.com');
     expect(mocks.update.mock.calls[0]?.[0].morning_reminder_sent_at).toEqual(expect.any(String));
   });
   it('non invia di nuovo quando la presa atomica non trova una prenotazione', async () => {
