@@ -40,3 +40,4 @@
 
 - Live floor (live-floor.ts): states from arrived flags and rotation intervals; seat_walkin_freed/limited RPCs; walkinFit is the single walk-in capacity rule (bigger ok, over comfort confirm, over max blocked), mirrored in SQL.
 - Exports escape HTML; service-sheet.ts orders print.
+- WhatsApp Business: per-restaurant Meta Cloud API credentials encrypted (AAD whatsapp:<id>) in service-only restaurant_whatsapp_settings; Master-only config, any active member sends through server functions, so lines never cross tenants and the token never reaches browsers.
