@@ -40,7 +40,7 @@ export async function sendRestaurantMessage(restaurantId: string, to: string, su
 }
 export async function sendBookingNotification(restaurantId: string, id: string) {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { data: booking, error } = await supabaseAdmin.from('reservations').select('name,date,time,shift,people,contact_email,status,rejection_reason,notes,table_ids,management_token').eq('restaurant_id', restaurantId).eq('id', id).eq('channel', 'online').is('deleted_at', null).single();
+  const { data: booking, error } = await supabaseAdmin.from('reservations').select('name,date,time,shift,people,phone,contact_email,status,rejection_reason,notes,table_ids,management_token').eq('restaurant_id', restaurantId).eq('id', id).eq('channel', 'online').is('deleted_at', null).single();
   if (error || !booking) return { sent: false, message: 'Prenotazione non disponibile.' };
   const [{ data: restaurant }, { data: delivery }, { data: tables }] = await Promise.all([
     supabaseAdmin.from('restaurants').select('*').eq('id', restaurantId).single(),
@@ -52,7 +52,7 @@ export async function sendBookingNotification(restaurantId: string, id: string) 
   const cfg = parsed.data;
   const contacts = restaurant ? bookingContacts(restaurant) : { phone: '', email: '', whatsapp: '' };
   const status = booking.status === 'pending' ? 'pending' : booking.status === 'confirmed' ? 'confirmed' : 'rejected';
-  const vars = { nome_cliente: booking.name.replace(/[\r\n]/g,' '), data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), tavolo_assegnato: booking.table_ids.map(tid => tables?.find(t => t.id === tid)?.name ?? '').filter(Boolean).join(' + '), note_cliente: booking.notes ?? '', nome_ristorante: restaurant?.name ?? 'Ristorante', telefono_ristorante: contacts.phone, motivo_rifiuto: booking.rejection_reason ?? '' };
+  const vars = { telefono_cliente: booking.phone ?? '', email_cliente: booking.contact_email ?? '', nome_cliente: booking.name.replace(/[\r\n]/g,' '), data: booking.date.split('-').reverse().join('/'), ora: booking.time, pax: String(booking.people), tavolo_assegnato: booking.table_ids.map(tid => tables?.find(t => t.id === tid)?.name ?? '').filter(Boolean).join(' + '), note_cliente: booking.notes ?? '', nome_ristorante: restaurant?.name ?? 'Ristorante', telefono_ristorante: contacts.phone, motivo_rifiuto: booking.rejection_reason ?? '' };
   const subject = interpolateEmail(cfg.templates[status].subject, vars).replace(/[\r\n]/g,' ');
   let body = interpolateEmail(cfg.templates[status].body, vars);
   if (status === 'confirmed') body += `\n\nMODIFICA O ANNULLA PRENOTAZIONE\nhttps://segnatavolo.lovable.app/prenotazione/gestisci?token=${booking.management_token}`;

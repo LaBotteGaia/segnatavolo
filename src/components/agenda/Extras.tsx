@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
-import { Search, X } from "lucide-react";
+import { Search, X, Pencil, ChevronDown } from "lucide-react";
+import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,8 @@ export function ServiceNotes({ date, shift }: { date: string; shift: Shift }) {
   const { data = "" } = useServiceNote(date, shift);
   const [text, setText] = useState(data);
   const [focus, setFocus] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { setExpanded(false); }, [date, shift]);
   useEffect(() => { if (!focus) setText(data); }, [data, focus]);
   const save = async () => {
     setFocus(false);
@@ -110,10 +113,10 @@ export function ServiceNotes({ date, shift }: { date: string; shift: Shift }) {
   };
   return (
     <div className="mb-3 rounded-md border border-warning/50 bg-warning/10 p-2">
-      <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">📝 Note di Servizio {shiftName(shift)}</div>
-      <textarea value={text} rows={text ? 2 : 1} onFocus={() => setFocus(true)} onChange={(e) => setText(e.target.value)} onBlur={save}
+      <Button variant="ghost" className="h-auto w-full justify-between gap-2 p-0 text-left" aria-expanded={expanded} onClick={() => setExpanded(v => !v)}><span className="min-w-0 truncate text-xs">📝 Note di servizio{!expanded && text ? ` · ${text}` : ''}</span>{expanded ? <ChevronDown className="size-4 shrink-0" /> : <Pencil className="size-4 shrink-0" />}</Button>
+      <textarea aria-label={`Note di servizio ${shiftName(shift)}`} value={text} rows={text ? 2 : 1} onFocus={() => setFocus(true)} onChange={(e) => setText(e.target.value)} onBlur={save}
         placeholder="Es. finita la tagliata, compleanno tavolo 3…"
-        className="w-full resize-y bg-transparent font-hand text-base text-ink outline-none" />
+        className={cn("mt-1 w-full resize-y bg-transparent font-hand text-base text-ink outline-none", !expanded && "hidden agenda-wide:block")} />
     </div>
   );
 }
