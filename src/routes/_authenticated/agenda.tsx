@@ -379,7 +379,7 @@ function AgendaPage() {
             </Button>
             <Popover open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); calendarTap.current = null; if (!open) toast.dismiss(availabilityToast.current); }}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" aria-label="Apri calendario" title="Apri calendario" className="size-9 min-w-0 shrink-0 gap-2 px-2 font-display capitalize leading-tight hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:h-auto agenda-wide:w-auto agenda-wide:py-2 agenda-wide:text-lg">
+                <Button variant="secondary" aria-label="Apri calendario" title="Apri calendario" className="col-start-2 row-start-1 size-9 min-w-0 shrink-0 gap-2 px-2 font-display capitalize leading-tight agenda-wide:col-start-auto agenda-wide:row-start-auto agenda-wide:h-auto agenda-wide:w-auto agenda-wide:bg-transparent agenda-wide:py-2 agenda-wide:text-lg agenda-wide:text-desk-foreground agenda-wide:hover:bg-desk-foreground/10">
                   <CalendarIcon className="size-4 shrink-0" />
                   <span className="hidden min-w-0 agenda-wide:inline">{format(dateObj, "EEEE d MMMM yyyy", { locale: it })}</span>
                 </Button>
@@ -406,15 +406,15 @@ function AgendaPage() {
                 </div>
               </PopoverContent>
             </Popover>
-            <Button size="icon" variant="ghost" className="hover:bg-desk-foreground/10 hover:text-desk-foreground" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
+            <Button size="icon" variant="ghost" className="hidden hover:bg-desk-foreground/10 hover:text-desk-foreground agenda-wide:inline-flex" onClick={() => setDate(format(addDays(dateObj, 1), "yyyy-MM-dd"))} aria-label="Giorno successivo">
               <ChevronRight />
             </Button>
           </div>
         </div>
-        <div aria-label="Azioni rapide" className="mt-2 flex w-full max-w-none flex-nowrap items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 agenda-wide:flex-wrap agenda-wide:overflow-visible">
-          <Button className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> Nuova Prenotazione</Button>
-          <Button variant="secondary" className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> Accomoda al volo</Button>
-          <Button variant="secondary" className="shrink-0 whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
+        <div aria-label="Azioni rapide" className="mt-2 flex w-full max-w-none flex-wrap items-center gap-2 py-1 max-agenda-wide:[&>*]:min-w-0 max-agenda-wide:[&>*]:flex-auto max-agenda-wide:[&_button]:w-full max-agenda-wide:[&_button]:px-2">
+          <Button className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> <span className="agenda-wide:hidden">Nuova</span><span className="hidden agenda-wide:inline">Nuova Prenotazione</span></Button>
+          <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> <span className="agenda-wide:hidden">Al volo</span><span className="hidden agenda-wide:inline">Accomoda al volo</span></Button>
+          <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
           <ServiceNotifications />
           <ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
