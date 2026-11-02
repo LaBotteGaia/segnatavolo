@@ -85,6 +85,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reservation_reminder_logs: {
+        Row: {
+          channel: string
+          created_at: string
+          detail: string | null
+          id: string
+          operator_id: string
+          outcome: string
+          reservation_id: string
+          restaurant_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          operator_id: string
+          outcome: string
+          reservation_id: string
+          restaurant_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          operator_id?: string
+          outcome?: string
+          reservation_id?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_reminder_logs_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_reminder_logs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           arrived: boolean
@@ -127,6 +175,7 @@ export type Database = {
           privacy_consent_at: string | null
           privacy_policy_url: string | null
           rejection_reason: string | null
+          reminder_channel: string
           restaurant_id: string | null
           shift: string
           status: string
@@ -178,6 +227,7 @@ export type Database = {
           privacy_consent_at?: string | null
           privacy_policy_url?: string | null
           rejection_reason?: string | null
+          reminder_channel?: string
           restaurant_id?: string | null
           shift: string
           status?: string
@@ -229,6 +279,7 @@ export type Database = {
           privacy_consent_at?: string | null
           privacy_policy_url?: string | null
           rejection_reason?: string | null
+          reminder_channel?: string
           restaurant_id?: string | null
           shift?: string
           status?: string
@@ -549,6 +600,7 @@ export type Database = {
           online_turns_override: boolean
           public_address: string
           public_logo_url: string
+          reminder_default_channel: string
           schedule_exceptions: Json
           settings: Json
           tempo_riassetto_minuti: number
@@ -587,6 +639,7 @@ export type Database = {
           online_turns_override?: boolean
           public_address?: string
           public_logo_url?: string
+          reminder_default_channel?: string
           schedule_exceptions?: Json
           settings?: Json
           tempo_riassetto_minuti?: number
@@ -625,6 +678,7 @@ export type Database = {
           online_turns_override?: boolean
           public_address?: string
           public_logo_url?: string
+          reminder_default_channel?: string
           schedule_exceptions?: Json
           settings?: Json
           tempo_riassetto_minuti?: number
