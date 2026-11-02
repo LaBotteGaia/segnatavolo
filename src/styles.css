@@ -9,7 +9,7 @@
   }
 }
 @custom-variant max-agenda-wide {
-  @media not ((min-width: 768px) and (orientation: landscape)) and (max-width: 1023.98px) {
+  @media (max-width: 767.98px), (max-width: 1023.98px) and (orientation: portrait) {
     @slot;
   }
 }
