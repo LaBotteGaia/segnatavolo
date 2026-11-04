@@ -76,6 +76,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#7a1f2b" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Segnatavolo" },
+      { property: "og:title", content: "Segnatavolo — Agenda prenotazioni per ristoranti" },
+      { property: "og:description", content: "Agenda digitale per gestire prenotazioni, tavoli e servizi del ristorante." },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
