@@ -22,13 +22,48 @@ export const getWhatsAppStatus = createServerFn({ method: 'GET' }).middleware([r
   const { data: allowed } = await context.supabase.rpc('can_use_restaurant', { _rid: data.id });
   if (!allowed) throw new Error('Non autorizzato');
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { data: row } = await supabaseAdmin.from('restaurant_whatsapp_settings').select('enabled,phone_number_id,display_phone,template_name,template_language,encrypted_token,updated_at').eq('restaurant_id', data.id).maybeSingle();
+  const { data: row } = await supabaseAdmin.from('restaurant_whatsapp_settings').select('enabled,phone_number_id,display_phone,template_name,template_language,encrypted_token,waba_id,updated_at').eq('restaurant_id', data.id).maybeSingle();
   const tokenSaved = !!row?.encrypted_token;
   return {
     enabled: !!row?.enabled, phone_number_id: row?.phone_number_id ?? '', display_phone: row?.display_phone ?? '',
     template_name: row?.template_name ?? '', template_language: row?.template_language ?? 'it', tokenSaved,
+    waba_id: row?.waba_id ?? '', connected: tokenSaved && !!row?.phone_number_id,
     ready: !!row?.enabled && tokenSaved && !!row?.phone_number_id, updated_at: row?.updated_at ?? null,
   };
+});
+
+/** Completa il collegamento Meta Embedded Signup: scambia il codice e salva le credenziali del ristorante. */
+export const whatsappExchangeToken = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({
+  code: z.string().trim().min(10).max(4000),
+  phone_number_id: z.string().trim().regex(/^\d{5,30}$/, 'Phone Number ID non valido'),
+  waba_id: z.string().trim().regex(/^\d{5,30}$/, 'WABA ID non valido'),
+}).parse(v)).handler(async ({ data, context }) => {
+  await requireMaster(context.supabase, data.id);
+  const { exchangeMetaCode } = await import('./whatsapp.server');
+  const r = await exchangeMetaCode(data.code);
+  if (!r.ok) return { ok: false as const, message: r.message };
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  const { encryptPassword } = await import('./restaurant-email.server');
+  const { whatsappAad } = await import('./whatsapp.server');
+  const { error } = await supabaseAdmin.from('restaurant_whatsapp_settings').upsert({
+    restaurant_id: data.id, enabled: true, phone_number_id: data.phone_number_id, waba_id: data.waba_id,
+    encrypted_token: await encryptPassword(r.token, whatsappAad(data.id)),
+    updated_at: new Date().toISOString(), updated_by: context.userId,
+  });
+  if (error) return { ok: false as const, message: 'Credenziali WhatsApp non salvate.' };
+  return { ok: true as const, message: 'WhatsApp Business collegato al ristorante.' };
+});
+
+/** Scollega la linea WhatsApp del ristorante: rimuove token e identificativi. */
+export const disconnectWhatsApp = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.parse(v)).handler(async ({ data, context }) => {
+  await requireMaster(context.supabase, data.id);
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  const { error } = await supabaseAdmin.from('restaurant_whatsapp_settings').upsert({
+    restaurant_id: data.id, enabled: false, phone_number_id: null, waba_id: null, display_phone: null,
+    encrypted_token: null, updated_at: new Date().toISOString(), updated_by: context.userId,
+  });
+  if (error) throw new Error('Scollegamento non riuscito');
+  return { ok: true };
 });
 
 export const saveWhatsAppSettings = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idInput.extend({ settings: settingsSchema, token: z.string().max(1000), clearToken: z.boolean().default(false) }).parse(v)).handler(async ({ data, context }) => {
@@ -54,7 +89,14 @@ export const testWhatsApp = createServerFn({ method: 'POST' }).middleware([requi
   const phoneNumberId = data.phone_number_id || saved?.phoneNumberId;
   const token = data.token.trim() || saved?.token;
   if (!phoneNumberId || !token) return { ok: false, message: 'Inserisci Phone Number ID e token di accesso.' };
-  // hello_world è il modello di prova predefinito di Meta: funziona anche fuori dalla finestra di 24 ore.
-  const r = await sendWhatsApp({ phoneNumberId, token }, data.to, { type: 'template', template: { name: 'hello_world', language: { code: 'en_US' } } });
+  // Con linea collegata usa il modello promemoria del ristorante (4 parametri: nome, data, ora, persone);
+  // altrimenti hello_world, il modello di prova predefinito di Meta, valido anche fuori dalla finestra di 24 ore.
+  const templateName = saved?.templateName || 'promemoria_prenotazione';
+  const templateLang = saved?.templateLanguage || 'it';
+  const useReminderTemplate = !!saved && !data.token.trim();
+  const body = useReminderTemplate
+    ? { type: 'template', template: { name: templateName, language: { code: templateLang }, components: [{ type: 'body', parameters: [{ type: 'text', text: 'Mario Rossi' }, { type: 'text', text: 'domani' }, { type: 'text', text: '20:00' }, { type: 'text', text: '4' }] }] } }
+    : { type: 'template', template: { name: 'hello_world', language: { code: 'en_US' } } };
+  const r = await sendWhatsApp({ phoneNumberId, token }, data.to, body);
   return r.ok ? { ok: true, message: 'Messaggio di prova accettato da Meta. Controlla il telefono.' } : { ok: false, message: r.message };
 });
