@@ -414,6 +414,13 @@
       "when": 1793626849646,
       "tag": "0058_restaurant_whatsapp_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793791510699,
+      "tag": "0059_restaurant_legal_pages",
+      "breakpoints": true
     }
   ]
 }

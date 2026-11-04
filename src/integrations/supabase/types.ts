@@ -624,6 +624,7 @@ export type Database = {
           contact_whatsapp: string
           created_at: string
           custom_intro_text: string
+          custom_privacy_url: string
           daily_summary_date: string | null
           daily_summary_enabled: boolean
           daily_summary_error: string | null
@@ -632,6 +633,7 @@ export type Database = {
           enable_double_shift: boolean
           first_shift_duration_minutes: number
           id: string
+          legal_name: string
           main_email: string
           main_phone: string
           main_whatsapp: string
@@ -642,8 +644,10 @@ export type Database = {
           online_config: Json
           online_enabled: boolean
           online_turns_override: boolean
+          privacy_email: string
           public_address: string
           public_logo_url: string
+          registered_address: string
           reminder_default_channel: string
           schedule_exceptions: Json
           settings: Json
@@ -663,6 +667,7 @@ export type Database = {
           contact_whatsapp?: string
           created_at?: string
           custom_intro_text?: string
+          custom_privacy_url?: string
           daily_summary_date?: string | null
           daily_summary_enabled?: boolean
           daily_summary_error?: string | null
@@ -671,6 +676,7 @@ export type Database = {
           enable_double_shift?: boolean
           first_shift_duration_minutes?: number
           id?: string
+          legal_name?: string
           main_email?: string
           main_phone?: string
           main_whatsapp?: string
@@ -681,8 +687,10 @@ export type Database = {
           online_config?: Json
           online_enabled?: boolean
           online_turns_override?: boolean
+          privacy_email?: string
           public_address?: string
           public_logo_url?: string
+          registered_address?: string
           reminder_default_channel?: string
           schedule_exceptions?: Json
           settings?: Json
@@ -702,6 +710,7 @@ export type Database = {
           contact_whatsapp?: string
           created_at?: string
           custom_intro_text?: string
+          custom_privacy_url?: string
           daily_summary_date?: string | null
           daily_summary_enabled?: boolean
           daily_summary_error?: string | null
@@ -710,6 +719,7 @@ export type Database = {
           enable_double_shift?: boolean
           first_shift_duration_minutes?: number
           id?: string
+          legal_name?: string
           main_email?: string
           main_phone?: string
           main_whatsapp?: string
@@ -720,8 +730,10 @@ export type Database = {
           online_config?: Json
           online_enabled?: boolean
           online_turns_override?: boolean
+          privacy_email?: string
           public_address?: string
           public_logo_url?: string
+          registered_address?: string
           reminder_default_channel?: string
           schedule_exceptions?: Json
           settings?: Json
@@ -967,12 +979,20 @@ export type Database = {
         Args: { _date: string; _shift: string; _slug: string }
         Returns: Json
       }
+      get_restaurant_legal: { Args: { _slug: string }; Returns: Json }
       handle_unconfirmed_booking: {
         Args: { _action: string; _id: string; _rid: string }
         Returns: boolean
       }
       is_master: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      list_public_restaurants: {
+        Args: never
+        Returns: {
+          name: string
+          slug: string
+        }[]
+      }
       manage_customer_booking:
         | {
             Args: {
