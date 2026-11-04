@@ -571,6 +571,7 @@ export type Database = {
       }
       restaurant_whatsapp_settings: {
         Row: {
+          created_at: string
           display_phone: string | null
           enabled: boolean
           encrypted_token: string | null
@@ -580,8 +581,10 @@ export type Database = {
           template_name: string | null
           updated_at: string
           updated_by: string | null
+          waba_id: string | null
         }
         Insert: {
+          created_at?: string
           display_phone?: string | null
           enabled?: boolean
           encrypted_token?: string | null
@@ -591,8 +594,10 @@ export type Database = {
           template_name?: string | null
           updated_at?: string
           updated_by?: string | null
+          waba_id?: string | null
         }
         Update: {
+          created_at?: string
           display_phone?: string | null
           enabled?: boolean
           encrypted_token?: string | null
@@ -602,6 +607,7 @@ export type Database = {
           template_name?: string | null
           updated_at?: string
           updated_by?: string | null
+          waba_id?: string | null
         }
         Relationships: [
           {
