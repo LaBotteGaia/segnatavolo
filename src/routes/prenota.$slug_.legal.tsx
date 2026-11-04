@@ -36,7 +36,7 @@ function LegalPage() {
       <h1 className="mb-2 font-display text-3xl">Informativa Privacy e Condizioni di Prenotazione</h1>
       <p className="mb-6 text-sm text-muted-foreground">Ai sensi degli artt. 13-14 del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003.</p>
       <RestaurantLegalContent r={r} />
-      <p className="mt-8 border-t pt3 pt-3 text-xs text-muted-foreground">Servizio di prenotazione fornito da Segnatavolo · <Link to="/termini" className="underline">Termini della piattaforma</Link></p>
+      <p className="mt-8 border-t pt-3 text-xs text-muted-foreground">Servizio di prenotazione fornito da Segnatavolo · <Link to="/termini" className="underline">Termini della piattaforma</Link></p>
     </div>
   </main>;
 }

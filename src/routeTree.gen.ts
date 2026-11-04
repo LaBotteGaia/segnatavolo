@@ -25,6 +25,7 @@ import { Route as InvitoTokenRouteImport } from './routes/invito.$token'
 import { Route as PrenotaSlugRouteImport } from './routes/prenota.$slug'
 import { Route as PrenotazioneTokenRouteImport } from './routes/prenotazione.$token'
 import { Route as PrenotazioneGestisciRouteImport } from './routes/prenotazione.gestisci'
+import { Route as PrenotaSlugLegalRouteImport } from './routes/prenota.$slug_.legal'
 import { Route as ApiPublicJobsMorningReminderRouteImport } from './routes/api/public/jobs/morning-reminder'
 import { Route as ApiPublicJobsOnlineDelayRouteImport } from './routes/api/public/jobs/online-delay'
 
@@ -107,6 +108,11 @@ const PrenotazioneGestisciRoute = PrenotazioneGestisciRouteImport.update({
   path: '/prenotazione/gestisci',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrenotaSlugLegalRoute = PrenotaSlugLegalRouteImport.update({
+  id: '/prenota/$slug_/legal',
+  path: '/prenota/$slug/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsMorningReminderRoute =
   ApiPublicJobsMorningReminderRouteImport.update({
     id: '/api/public/jobs/morning-reminder',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
   '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
+  '/prenota/$slug/legal': typeof PrenotaSlugLegalRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
   '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
+  '/prenota/$slug/legal': typeof PrenotaSlugLegalRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/prenota/$slug': typeof PrenotaSlugRoute
   '/prenotazione/$token': typeof PrenotazioneTokenRoute
   '/prenotazione/gestisci': typeof PrenotazioneGestisciRoute
+  '/prenota/$slug_/legal': typeof PrenotaSlugLegalRoute
   '/api/public/jobs/morning-reminder': typeof ApiPublicJobsMorningReminderRoute
   '/api/public/jobs/online-delay': typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/prenota/$slug'
     | '/prenotazione/$token'
     | '/prenotazione/gestisci'
+    | '/prenota/$slug/legal'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   fileRoutesByTo: FileRoutesByTo
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/prenota/$slug'
     | '/prenotazione/$token'
     | '/prenotazione/gestisci'
+    | '/prenota/$slug/legal'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   id:
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/prenota/$slug'
     | '/prenotazione/$token'
     | '/prenotazione/gestisci'
+    | '/prenota/$slug_/legal'
     | '/api/public/jobs/morning-reminder'
     | '/api/public/jobs/online-delay'
   fileRoutesById: FileRoutesById
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   PrenotaSlugRoute: typeof PrenotaSlugRoute
   PrenotazioneTokenRoute: typeof PrenotazioneTokenRoute
   PrenotazioneGestisciRoute: typeof PrenotazioneGestisciRoute
+  PrenotaSlugLegalRoute: typeof PrenotaSlugLegalRoute
   ApiPublicJobsMorningReminderRoute: typeof ApiPublicJobsMorningReminderRoute
   ApiPublicJobsOnlineDelayRoute: typeof ApiPublicJobsOnlineDelayRoute
 }
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrenotazioneGestisciRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prenota/$slug_/legal': {
+      id: '/prenota/$slug_/legal'
+      path: '/prenota/$slug/legal'
+      fullPath: '/prenota/$slug/legal'
+      preLoaderRoute: typeof PrenotaSlugLegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/morning-reminder': {
       id: '/api/public/jobs/morning-reminder'
       path: '/api/public/jobs/morning-reminder'
@@ -418,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrenotaSlugRoute: PrenotaSlugRoute,
   PrenotazioneTokenRoute: PrenotazioneTokenRoute,
   PrenotazioneGestisciRoute: PrenotazioneGestisciRoute,
+  PrenotaSlugLegalRoute: PrenotaSlugLegalRoute,
   ApiPublicJobsMorningReminderRoute: ApiPublicJobsMorningReminderRoute,
   ApiPublicJobsOnlineDelayRoute: ApiPublicJobsOnlineDelayRoute,
 }
