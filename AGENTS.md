@@ -40,3 +40,4 @@
 
 - Live floor (live-floor.ts): states from arrived flags and rotation intervals; seat_walkin_freed/limited RPCs; walkinFit is the single walk-in capacity rule (bigger ok, over comfort confirm, over max blocked), mirrored in SQL.
 - Exports escape HTML; service-sheet.ts orders print.
+- Restaurant legal pages are generated from restaurant columns via the public get_restaurant_legal RPC (online-enabled slugs only), so each venue is its own GDPR controller without storing legal text.
