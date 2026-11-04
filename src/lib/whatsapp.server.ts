@@ -18,6 +18,27 @@ export const toWhatsAppDigits = (phone: string) => {
   return d.replace(/\D/g, '');
 };
 
+/** Scambia l'authorization code dell'Embedded Signup Meta con un access token di sistema. */
+export async function exchangeMetaCode(code: string): Promise<{ ok: true; token: string } | { ok: false; message: string }> {
+  const appId = process.env['META_APP_ID'];
+  const appSecret = process.env['META_APP_SECRET'];
+  if (!appId || !appSecret) return { ok: false, message: 'Configurazione Meta della piattaforma non completata.' };
+  try {
+    const url = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${encodeURIComponent(appId)}&client_secret=${encodeURIComponent(appSecret)}&code=${encodeURIComponent(code)}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    if (!res.ok) {
+      console.error(`Meta token exchange failed [${res.status}]: ${text}`);
+      let msg = `Errore Meta ${res.status}`;
+      try { const j = JSON.parse(text) as { error?: { message?: string } }; if (j.error?.message) msg += `: ${j.error.message}`; } catch { /* corpo non JSON */ }
+      return { ok: false, message: msg.slice(0, 300) };
+    }
+    const j = JSON.parse(text) as { access_token?: string };
+    if (!j.access_token) return { ok: false, message: 'Meta non ha restituito il token di accesso.' };
+    return { ok: true, token: j.access_token };
+  } catch { return { ok: false, message: 'Server Meta non raggiungibile.' }; }
+}
+
 export async function sendWhatsApp(cfg: Pick<WhatsAppConfig, 'phoneNumberId' | 'token'>, to: string, body: object): Promise<{ ok: true; id: string | null } | { ok: false; message: string }> {
   try {
     const res = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`, {
