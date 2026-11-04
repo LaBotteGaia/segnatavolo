@@ -5,6 +5,7 @@ import { slugSchema } from '@/lib/online-booking';
 import { getRestaurantLegal } from '@/lib/restaurant-legal.functions';
 import { RestaurantLegalContent } from '@/components/RestaurantLegalContent';
 import { controllerName } from '@/lib/restaurant-legal';
+import { BackToAgendaLink } from '@/components/BackToAgendaLink';
 
 const options = (slug: string) => queryOptions({ queryKey: ['restaurant-legal', slug], queryFn: async () => { if (!slugSchema.safeParse(slug).success) throw notFound(); const r = await getRestaurantLegal({ data: { slug } }); if (!r) throw notFound(); return r; } });
 
@@ -30,7 +31,7 @@ function LegalPage() {
   return <main className="min-h-dvh bg-background text-foreground">
     <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
       <div className="flex min-w-0 items-center gap-3">{r.logo ? <img src={r.logo} alt={`Logo ${r.name}`} className="size-9 rounded object-contain" /> : <Utensils className="size-6 text-primary" />}<span className="truncate font-display text-lg">{r.name}</span></div>
-      <Link to="/prenota/$slug" params={{ slug }} className="inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-semibold hover:bg-muted"><ArrowLeft className="size-4" />Torna al modulo di prenotazione</Link>
+      <div className="flex flex-wrap justify-end gap-2"><BackToAgendaLink /><Link to="/prenota/$slug" params={{ slug }} className="inline-flex shrink-0 items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-semibold hover:bg-muted"><ArrowLeft className="size-4" />Torna al modulo di prenotazione</Link></div>
     </header>
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-2 font-display text-3xl">Informativa Privacy e Condizioni di Prenotazione</h1>
