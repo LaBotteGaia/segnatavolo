@@ -42,7 +42,23 @@ function useFacebookSdk() {
   return ready;
 }
 
+const WHATSAPP_COMING_SOON = true;
+
 export function WhatsAppSettings({ id }: { id: string }) {
+  if (WHATSAPP_COMING_SOON) return (
+    <section aria-disabled="true" className="space-y-2 rounded-lg border border-dashed bg-muted/40 p-4 opacity-80">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="font-semibold">WhatsApp Business del ristorante</h4>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">Prossimamente</span>
+      </div>
+      <p className="text-sm text-muted-foreground">Il collegamento del numero WhatsApp Business del locale per l’invio automatico dei promemoria è in fase di completamento e sarà disponibile in un prossimo aggiornamento.</p>
+      <p className="text-xs text-muted-foreground">Nel frattempo i promemoria WhatsApp si aprono precompilati sul dispositivo e si inviano a mano.</p>
+    </section>
+  );
+  return <WhatsAppSettingsLive id={id} />;
+}
+
+function WhatsAppSettingsLive({ id }: { id: string }) {
   const get = useServerFn(getWhatsAppStatus);
   const q = useQuery({ queryKey: ['whatsapp-settings', id], queryFn: () => get({ data: { id } }) });
   if (q.isError) return <p role="alert" className="text-sm text-destructive">Impostazioni WhatsApp non disponibili.</p>;
