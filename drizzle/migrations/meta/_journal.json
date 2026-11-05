@@ -435,6 +435,13 @@
       "when": 1793889931609,
       "tag": "0061_online_max_table_party",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1793890548265,
+      "tag": "0062_fix_online_slot_max_party",
+      "breakpoints": true
     }
   ]
 }
