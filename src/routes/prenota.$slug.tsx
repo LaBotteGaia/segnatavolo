@@ -3,7 +3,7 @@ import { OnlineBookingIntro } from '@/components/OnlineBookingIntro';
 import { DEFAULT_BOOKING_POLICY } from '@/lib/booking-policy';
 import { queryOptions,useSuspenseQuery,useQuery } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
-import { useEffect,useState } from 'react';
+import { useState } from 'react';
 import { format,parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { ArrowLeft,ArrowRight,Check,Loader2,Minus,Plus,Utensils } from 'lucide-react';
