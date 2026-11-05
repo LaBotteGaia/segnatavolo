@@ -1058,6 +1058,10 @@ export type Database = {
         Args: { _date: string; _rid: string; _shift: string }
         Returns: number
       }
+      online_slot_max_party: {
+        Args: { _date: string; _rid: string; _shift: string; _time: string }
+        Returns: number
+      }
       online_slot_remaining: {
         Args: {
           _date: string
@@ -1114,6 +1118,10 @@ export type Database = {
       }
       set_operator_name: { Args: { _name: string }; Returns: undefined }
       submit_online_booking: {
+        Args: { _data: Json; _slug: string }
+        Returns: Json
+      }
+      submit_online_booking_before_table_cap: {
         Args: { _data: Json; _slug: string }
         Returns: Json
       }
