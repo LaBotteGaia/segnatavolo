@@ -10,7 +10,7 @@ import { useMembership, useSettings } from "./membership";
 import { reliabilityStats, type HistoryRow } from "./no-show";
 
 export const APP_NAME = "Segnatavolo";
-export const APP_VERSION = "v0.8.32-alpha";
+export const APP_VERSION = "v0.8.33-alpha";
 
 /* ---------- Fedeltà cliente ---------- */
 export type VisitStats = { count: number; last: string | null };

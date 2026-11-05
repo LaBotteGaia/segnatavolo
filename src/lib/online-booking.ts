@@ -10,9 +10,17 @@ export type OnlineConfig = z.infer<typeof onlineConfigSchema>;
 export type OnlinePage = { name: string; address: string; logo: string; today: string; config: OnlineConfig; policy?: BookingPolicy; schedule_exceptions?: import('./schedule-exceptions').ScheduleException[]; shifts: Record<'pranzo'|'sera',{enabled:boolean;from:string;to:string}>; days: {date:string;pranzo:number|null;sera:number|null}[] };
 export function dayAvailable(day: OnlinePage['days'][number], people: number) { return (day.pranzo ?? -1)>=people || (day.sera ?? -1)>=people; }
 
-export type OnlineSlot = { time: string; remaining: number | null; turn?: number };
+export type OnlineSlot = { time: string; remaining: number | null; turn?: number; max_table?: number | null };
 export function slotGroups(slots: OnlineSlot[]) {
  return slots.some(s=>s.turn===1||s.turn===2) ? [1,2].map(turn=>({label:`${turn}° Turno`,slots:slots.filter(s=>s.turn===turn)})) : [{label:'',slots}];
 }
 export function partyLimit(remaining: number | null | undefined, maximum: number) { return Math.max(0, Math.min(remaining ?? 0, maximum)); }
 export function confirmedBooking(row: { status?: string }) { return row.status === undefined || row.status === "confirmed"; }
+export function slotCapacity(slot: OnlineSlot | undefined, maximum: number) { if (!slot) return 0; const table = slot.max_table ?? slot.remaining; return partyLimit(Math.min(slot.remaining ?? 0, table ?? 0), maximum); }
+/** Orari alternativi più vicini (prima e dopo) che possono accogliere il gruppo. */
+export function alternativeSlots(slots: OnlineSlot[], time: string, people: number, maximum: number) {
+ const ok = slots.filter(s => s.time !== time && slotCapacity(s, maximum) >= people);
+ const before = ok.filter(s => s.time < time).at(-1)?.time ?? null;
+ const after = ok.find(s => s.time > time)?.time ?? null;
+ return { before, after };
+}
