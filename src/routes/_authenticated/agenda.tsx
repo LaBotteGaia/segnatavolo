@@ -44,9 +44,11 @@ import { ServiceNotifications } from '@/components/agenda/ServiceNotifications';
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string; service?: boolean; live?: boolean } => {
-    const d = s["d"], h = s["h"], c = s["c"];
+  validateSearch: (s: Record<string, unknown>): { d?: string; h?: string; c?: string; service?: boolean; live?: boolean; richiesta?: string; azione?: "accetta" | "rifiuta" } => {
+    const d = s["d"], h = s["h"], c = s["c"], rq = s["richiesta"], az = s["azione"];
     return {
+      ...(typeof rq === "string" && /^[0-9a-f-]{36}$/i.test(rq) ? { richiesta: rq } : {}),
+      ...(az === "accetta" || az === "rifiuta" ? { azione: az } : {}),
       ...(s["service"] === true || s["service"] === "true" ? { service: true } : {}),
       ...(s["live"] === true || s["live"] === "true" ? { live: true } : {}),
       ...(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? { d } : {}),
@@ -445,7 +447,7 @@ function AgendaPage() {
 
       <main className="mt-2 w-full max-w-none px-3 sm:px-6 lg:px-8 agenda-wide:mt-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3">
         <div className="shrink-0"><UnconfirmedAlerts rows={reservations} /></div>
-        <div className="shrink-0"><OnlineRequests /></div>
+        <div className="shrink-0"><OnlineRequests linkId={search.richiesta} linkAction={search.azione} onLinkHandled={() => navigate({ search: ({ richiesta: _r, azione: _a, ...rest }) => rest, replace: true })} /></div>
         <div className="hidden gap-0 agenda-wide:flex agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-hidden">
           {shifts.map((s, i) => (
             <div key={s} className="flex h-full min-h-0 w-full min-w-0 flex-1 basis-0 gap-0">

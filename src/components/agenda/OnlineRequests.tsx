@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { AlertTriangle, Check, Loader2, X } from 'lucide-react';
@@ -16,7 +16,7 @@ import { TableDialog } from './TableDialog';
 import { decideCustomerChange } from '@/lib/customer-change.functions';
 import type { ManagedBooking } from '@/lib/booking-policy';
 
-export function OnlineRequests() {
+export function OnlineRequests({ linkId, linkAction, onLinkHandled }: { linkId?: string; linkAction?: 'accetta' | 'rifiuta'; onLinkHandled?: () => void } = {}) {
   const restaurantId = useActiveRestaurantId();
   const qc = useQueryClient();
   const decide = useServerFn(decideOnlineBooking);
@@ -70,6 +70,17 @@ export function OnlineRequests() {
     } catch { toast.error('Connessione interrotta: verifica lo stato della richiesta prima di riprovare.'); }
     finally { setBusy(false); }
   };
+  const linkDone = useRef<string | null>(null);
+  useEffect(() => {
+    if (!linkId || !linkAction || linkDone.current === linkId) return;
+    if (!requests.isSuccess || !tables || !rooms) return;
+    linkDone.current = linkId;
+    const r = requests.data.find(x => x.id === linkId);
+    if (!r) toast.info('Richiesta già gestita o non disponibile per questo ristorante.');
+    else if (linkAction === 'accetta') void prepare(r);
+    else { setReason(''); setReject(r); }
+    onLinkHandled?.();
+  }, [linkId, linkAction, requests.isSuccess, requests.data, tables, rooms]);
   if (requests.isError||changes.isError) return <p role="alert" className="border-l-4 border-warning bg-paper p-3 text-foreground">Richieste online non raggiungibili.</p>;
   if (!rows.length) return null;
   return <>
