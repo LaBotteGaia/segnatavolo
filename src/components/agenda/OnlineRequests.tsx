@@ -16,7 +16,7 @@ import { TableDialog } from './TableDialog';
 import { decideCustomerChange } from '@/lib/customer-change.functions';
 import type { ManagedBooking } from '@/lib/booking-policy';
 
-export function OnlineRequests({ linkId, linkAction, onLinkHandled }: { linkId?: string; linkAction?: 'accetta' | 'rifiuta'; onLinkHandled?: () => void } = {}) {
+export function OnlineRequests({ linkId, linkAction, onLinkHandled }: { linkId?: string | undefined; linkAction?: 'accetta' | 'rifiuta' | undefined; onLinkHandled?: () => void } = {}) {
   const restaurantId = useActiveRestaurantId();
   const qc = useQueryClient();
   const decide = useServerFn(decideOnlineBooking);
