@@ -442,6 +442,13 @@
       "when": 1793890548265,
       "tag": "0062_fix_online_slot_max_party",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794163625362,
+      "tag": "0063_manual_join_override_and_reminder_retry",
+      "breakpoints": true
     }
   ]
 }
