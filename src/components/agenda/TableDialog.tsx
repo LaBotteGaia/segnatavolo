@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { List, Map, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { canJoin, extraSeats, NO_EXTRAS, shiftName, useRooms, useTables, wallsOf, type Reservation, type TableExtras } from "@/lib/data";
 import { GRID_COLS, GRID_ROWS } from "./RoomGrid";
@@ -56,6 +55,7 @@ export function TableDialog({
       setSelected(reservation.table_ids);
       setForce(false);
       setForcedBusy([]);
+      setForcedJoin([]);
       setEx(extras ? { extra_sponde: extras.extra_sponde, extra_barelle: extras.extra_barelle, barella_seats: extras.barella_seats || 2 } : NO_EXTRAS);
       const first = tables?.find((t) => reservation.table_ids.includes(t.id));
       try { setView(localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "map"); } catch { setView("map"); }
@@ -70,6 +70,9 @@ export function TableDialog({
   const [force, setForce] = useState(false);
   /** Tavoli occupati che l'operatore ha scelto consapevolmente di forzare. */
   const [forcedBusy, setForcedBusy] = useState<string[]>([]);
+  /** Tavoli uniti forzando consapevolmente un vincolo di non unione. */
+  const [forcedJoin, setForcedJoin] = useState<string[]>([]);
+  const [askJoin, setAskJoin] = useState<string | null>(null);
   const cfg = { duration: settings.duration, buffer: settings.buffer };
   const stateOf = useMemo(() => {
     const sameShift = others.filter((o) => o.id !== reservation.id);
@@ -94,16 +97,13 @@ export function TableDialog({
   const suggestion = rooms && tables ? suggestTables({ people:reservation.people,date,shift:reservation.shift,time:reservation.time,tables,rooms,others,cfg,outside:reservation.outside,notes:reservation.notes,rules:settings.assignmentRules,customRules,wallsFor,me:reservation,habits }) : null;
   const [view,setView] = useState<'cards'|'map'>('map');
   const pickView = (v: 'cards'|'map') => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage opzionale */ } };
-  const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy' && !forcedBusy.includes(t.id)) || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor)));
+  const invalidSelected = selTables.some(t=>stateOf(t.id).kind==='busy' && !forcedBusy.includes(t.id)) || selTables.some((a,i)=>selTables.slice(i+1).some(b=>!canJoin(a,b,wallsFor) && !forcedJoin.includes(a.id) && !forcedJoin.includes(b.id)));
   const toggle = (id: string) => {
     if (selected.includes(id)) return setSelected((s) => s.filter((x) => x !== id));
     const t = tables?.find((x) => x.id === id);
     if (!t) return;
     if (stateOf(id).kind==='busy' && !forcedBusy.includes(id)) return setAskBusy(id);
-    if (t && selTables.some((o) => !canJoin(o, t, wallsFor))) {
-      toast.warning("⚠️ Impossibile unire questi tavoli: presenza di ostacolo o vincolo strutturale");
-      return;
-    }
+    if (t && !forcedJoin.includes(id) && selTables.some((o) => !canJoin(o, t, wallsFor))) return setAskJoin(id);
     const comodi = t.coperti_comodi ?? t.seats, max = Math.max(t.coperti_max ?? comodi, comodi);
     if (!selTables.length && reservation.people > comodi && reservation.people <= max) return setAskScomodo(id);
     setSelected((s) => [...s, id]);
@@ -172,6 +172,7 @@ export function TableDialog({
           {view==='cards' ? <TableCards tables={[...roomTables].sort((a,b)=>(a.ordine_riempimento ?? 10)-(b.ordine_riempimento ?? 10)||compareTableNames(a.name,b.name))} room={room} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} onToggle={toggle}/> : <FloorPlan room={room} tables={roomTables} selected={selected} suggested={suggestion?.ids??[]} people={reservation.people} stateOf={stateOf} closed={isRoomClosedFor(room,date,reservation.shift)&&!force} extended={extraSeats(ex)>0} onToggle={toggle}/>}
         </>}
         {selected.length>1&&<div className="rounded-full border border-dashed border-primary bg-primary/5 px-4 py-2 text-center text-sm font-semibold text-primary">Tavoli {selTables.map(t=>t.name).join(' + ')} uniti</div>}
+        {forcedJoin.some(id=>selected.includes(id))&&<p role="alert" className="rounded-md border border-warning bg-warning/15 px-3 py-2 text-sm font-semibold">⚠️ Unione forzata: questi tavoli normalmente non si uniscono, verifica la disposizione in sala.</p>}
         {forcedBusy.some(id=>selected.includes(id))&&<p role="alert" className="rounded-md border border-warning bg-warning/15 px-3 py-2 text-sm font-semibold">⚠️ Assegnazione forzata su tavolo occupato: verifica la rotazione in sala.</p>}
         <div className="sticky -bottom-3 z-20 -mx-3 space-y-2 border-t bg-paper px-3 pb-3 pt-2 shadow-[0_-6px_12px_-8px_hsl(0_0%_0%/0.3)] sm:-bottom-6 sm:-mx-6 sm:px-6 sm:pb-6">
           {invalidSelected&&<p role="alert" className="text-sm text-destructive">Assegnazione non disponibile: rimuovi i tavoli incompatibili.</p>}
@@ -183,6 +184,13 @@ export function TableDialog({
           </div>
         </div>
       </DialogContent>
+      <AlertDialog open={!!askJoin} onOpenChange={(o) => { if (!o) setAskJoin(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>⚠️ Vincolo di unione tavoli</AlertDialogTitle>
+            <AlertDialogDescription>Il Tavolo {tables?.find(t=>t.id===askJoin)?.name} normalmente non può essere unito ai tavoli selezionati (ostacolo, tavolo isola o vincolo impostato). Vuoi forzare comunque l'unione per necessità di servizio?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Annulla</AlertDialogCancel><AlertDialogAction onClick={() => { if (askJoin) { setForcedJoin((f) => [...f, askJoin]); setSelected((s) => [...s, askJoin]); } setAskJoin(null); }}>Forza unione</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={!!busyTable} onOpenChange={(o) => { if (!o) setAskBusy(null); }}>
         {busyTable && <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>⚠️ Tavolo già occupato</AlertDialogTitle>
