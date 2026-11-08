@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LegalTermsLink } from "@/components/LegalTerms";
+import { takeReturnPath } from "@/lib/return-path";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -38,7 +39,9 @@ function AuthPage() {
         toast.error("Email o password non corretti");
         return;
       }
-      navigate({ to: "/agenda" });
+      const back = takeReturnPath();
+      if (back) window.location.assign(back);
+      else navigate({ to: "/agenda" });
     } else {
       const { error } = await supabase.auth.signUp({
         email,
