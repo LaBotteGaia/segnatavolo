@@ -37,7 +37,7 @@ export function FloorPlan({ room, tables, selected, suggested, people, stateOf, 
         <Button type="button" variant="outline" size="icon" aria-label="Centra mappa" title="Centra mappa" onClick={() => resetTransform(reduced ? 0 : 150)}><Maximize/></Button>
         <Button type="button" variant={full ? 'default' : 'outline'} size="icon" aria-label={full ? 'Chiudi schermo intero' : 'Mappa a schermo intero'} title={full ? 'Chiudi schermo intero' : 'Mappa a schermo intero'} onClick={() => setFull(f => !f)}>{full ? <Minimize2/> : <Expand/>}</Button>
       </div>
-      <div data-no-swipe style={{ touchAction: "none", overscrollBehavior: "contain" }} className={cn("floor-plan-viewport relative w-full overflow-hidden", full ? "min-h-0 flex-1" : "h-[min(48vh,440px)] min-h-60")} data-x=" rounded-md border border-rule bg-background" aria-label={`Mappa di ${room.name}`}>
+      <div data-no-swipe style={{ touchAction: "none", overscrollBehavior: "contain" }} className={cn("floor-plan-viewport relative w-full overflow-hidden rounded-md border border-rule bg-background", full ? "min-h-0 flex-1" : "h-[min(48vh,440px)] min-h-60")} aria-label={`Mappa di ${room.name}`}>
         <TransformComponent wrapperClass="floor-plan-transform" contentClass="floor-plan-content">
           <div className="floor-plan-surface relative select-none" style={{ width: width + 24, height: height + 24 }}>
             <svg aria-label="Pareti e raccordi" className="pointer-events-none absolute inset-3 text-foreground" width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -75,5 +75,6 @@ export function FloorPlan({ room, tables, selected, suggested, people, stateOf, 
       </div>
       {!tables.length && <p className="text-sm text-muted-foreground">Nessun tavolo in questa sala.</p>}
     </div>}
-  </TransformWrapper>;
+  </TransformWrapper>}
+  </div>;
 }
