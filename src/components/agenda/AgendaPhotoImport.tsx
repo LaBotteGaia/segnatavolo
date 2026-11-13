@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { AlertTriangle, Camera, Check, Copy, Lightbulb, Loader2, Map as MapIcon, PenLine } from 'lucide-react';
 import { TableDialog } from './TableDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,9 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
   const [rows, setRows] = useState<Draft[]>([]);
   const [existing, setExisting] = useState<Reservation[]>([]);
   const [mapKey, setMapKey] = useState<string | null>(null);
+  const [book, setBook] = useState<Customer[]>([]);
+  const [findKey, setFindKey] = useState<string | null>(null);
+  const [findQ, setFindQ] = useState('');
   const ranges = rangesOf(settings);
   /** Esterno solo se richiesto a mano: di default si preferiscono le sale interne. */
   const wantsOutside = (notes: string) => /\b(fuori|dehors|esterno|esterni|terrazza|giardino|veranda|aperto)\b/i.test(notes);
@@ -93,7 +97,7 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
       const others = await loadDay(d);
       const { data: book } = await supabase.from('customers').select('*').eq('restaurant_id', restaurantId).limit(5000);
       const pageShift = r.result.shift && shifts.includes(r.result.shift) ? r.result.shift : fallbackShift;
-      setDay(d); setExisting(others);
+      setDay(d); setExisting(others); setBook(book ?? []);
       setRows(suggestAll(build(r.result.rows, pageShift, others, book ?? []), d, others));
       setOpen(true);
       if (r.result.date && r.result.date !== date) toast.info(`La pagina fotografata è del ${r.result.date.split('-').reverse().join('/')}: controlla la data prima di sincronizzare.`);
@@ -171,9 +175,32 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
                       : r.crossed ? <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5"><PenLine className="h-3 w-3" /> Barrata a penna</span>
                       : r.uncertain.length ? <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5"><AlertTriangle className="h-3 w-3" /> Da verificare</span>
                       : <span className="inline-flex items-center gap-1 rounded-full bg-free/15 px-2 py-0.5"><Check className="h-3 w-3" /> Nuova</span>}
-                    {!r.dup && !r.crossed && (r.customer
-                      ? <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5">👤 In anagrafica: {r.customer.name}{r.customerBy === 'name' ? ' (per nome, verifica)' : ''}<button type="button" className="ml-1 underline" onClick={() => patch(r.key, { customer: null, customerBy: null })}>Non è lui</button></span>
-                      : <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">🆕 Nuovo cliente</span>)}
+                    {!r.dup && !r.crossed && (
+                      <Popover open={findKey === r.key} onOpenChange={o => { setFindKey(o ? r.key : null); setFindQ(''); }}>
+                        <PopoverTrigger asChild>
+                          <button type="button" className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 underline-offset-2 hover:underline', r.customer ? 'bg-primary/15' : 'bg-muted')}>
+                            {r.customer ? <>👤 In anagrafica: {r.customer.name}{r.customerBy === 'name' ? ' (per nome, verifica)' : ''}</> : <>🆕 Nuovo cliente</>} 🔍
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-2" align="start">
+                          <Input autoFocus placeholder="Cerca nome o telefono…" value={findQ} onChange={e => setFindQ(e.target.value)} />
+                          <div className="mt-2 max-h-56 overflow-y-auto">
+                            {(() => {
+                              const q = findQ.trim().toLowerCase(); const qd = q.replace(/\D/g, '');
+                              const list = q.length < 2 ? [] : book.filter(c => c.name.toLowerCase().includes(q) || (qd.length >= 3 && normPhone(c.phone ?? '').includes(qd))).slice(0, 20);
+                              if (q.length < 2) return <p className="px-1 py-2 text-xs text-muted-foreground">Scrivi almeno 2 caratteri.</p>;
+                              if (!list.length) return <p className="px-1 py-2 text-xs text-muted-foreground">Nessun cliente trovato.</p>;
+                              return list.map(c => (
+                                <button key={c.id} type="button" className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-accent" onClick={() => { patch(r.key, { customer: c, customerBy: null, phone: r.phone || c.phone || '' }); setFindKey(null); }}>
+                                  <span className="font-medium">{c.name}</span> <span className="text-xs text-muted-foreground">{c.phone}</span>
+                                </button>
+                              ));
+                            })()}
+                          </div>
+                          {r.customer && <Button type="button" variant="outline" size="sm" className="mt-2 w-full" onClick={() => { patch(r.key, { customer: null, customerBy: null }); setFindKey(null); }}>Lascia come nuovo cliente</Button>}
+                        </PopoverContent>
+                      </Popover>
+                    )}
                     <span className="ml-auto" />
                     {r.dup ? <label className="flex items-center gap-1"><input type="checkbox" checked={r.updateDup} onChange={e => patch(r.key, { updateDup: e.target.checked })} /> Aggiorna dati mancanti</label>
                       : <label className="flex items-center gap-1"><input type="checkbox" checked={r.include} onChange={e => setRows(rs => suggestAll(rs.map(x => x.key === r.key ? { ...x, include: e.target.checked } : x), day, existing, r.key))} /> Importa</label>}
