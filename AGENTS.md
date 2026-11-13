@@ -40,3 +40,4 @@
 
 - Live floor (live-floor.ts): states from arrived flags and rotation intervals; seat_walkin_freed/limited RPCs; walkinFit is the single walk-in capacity rule (bigger ok, over comfort confirm, over max blocked), mirrored in SQL.
 - Exports escape HTML; service-sheet.ts orders print.
+- Agenda photo import: vision read in authenticated server fn with the restaurant's own encrypted AI key; parsing/merge rules in agenda-photo.ts; nothing persists before operator review, to keep tenants isolated and data confirmed.
