@@ -103,7 +103,7 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
     try { const others = await loadDay(d); setExisting(others); setRows(rs => suggestAll(rs.map(r => { const dup = r.crossed ? null : others.find(o => o.shift === r.shift && samePerson({ name: r.name, phone: r.phone, time: r.time }, o)) ?? null; return { ...r, dup, include: r.include && !dup, updateDup: false }; }), d, others)); }
     catch { toast.error('Agenda del giorno non raggiungibile'); }
   };
-  const patch = (key: string, p: Partial<Draft>, field?: string) => setRows(rs => rs.map(r => r.key === key ? { ...r, ...p, uncertain: field ? r.uncertain.filter(u => u !== field) : r.uncertain } : r));
+  const patch = (key: string, p: Partial<Draft>, field?: string) => setRows(rs => rs.map(r => r.key === key ? { ...r, ...p, uncertain: p.uncertain !== undefined ? p.uncertain : field ? r.uncertain.filter(u => u !== field) : r.uncertain } : r));
   const missing = (r: Draft) => [!r.name.trim() && 'nome', !(Number(r.people) >= 1) && 'persone', !normTime(r.time) && 'orario'].filter(Boolean) as string[];
   const chosen = rows.filter(r => r.include && !r.dup);
   const updates = rows.filter(r => r.dup && r.updateDup);
