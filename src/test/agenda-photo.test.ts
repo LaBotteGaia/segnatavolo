@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeRepeats, normalizePhotoResult, normTime, samePerson } from '@/lib/agenda-photo';
+import { mergeRepeats, normalizePhotoResult, normTime, samePerson, findCustomerMatch } from '@/lib/agenda-photo';
 
 describe('foto agenda', () => {
   it('converte orari scritti a mano', () => {
@@ -24,7 +24,6 @@ describe('foto agenda', () => {
   });
 });
 
-import { findCustomerMatch } from '@/lib/agenda-photo';
 describe('findCustomerMatch', () => {
   const book = [{ id: 'a', name: 'Carlotta Berti', phone: '335 6249037' }, { id: 'b', name: 'Michele', phone: '3406042868' }, { id: 'c', name: 'Michele', phone: '3330000000' }];
   it('riconosce per telefono normalizzato', () => expect(findCustomerMatch(book, 'Carlotta', '335-624-9037')?.customer.id).toBe('a'));
