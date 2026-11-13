@@ -1,5 +1,6 @@
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
-import { Check, Maximize, Minus, Plus, Sparkles, TriangleAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Expand, Maximize, Minimize2, Minus, Plus, Sparkles, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { gridOf, wallsOf, type Room, type RTable } from '@/lib/data';
@@ -17,15 +18,26 @@ export function FloorPlan({ room, tables, selected, suggested, people, stateOf, 
   const joined = tables.filter(t => selected.includes(t.id));
   const walls = wallsOf(room);
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  return <TransformWrapper key={room.id} initialScale={0.65} minScale={0.2} maxScale={2.5} centerOnInit
+  const box = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+  const [fit, setFit] = useState<number | null>(null);
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    const w = el.clientWidth || window.innerWidth - 32, h = full ? window.innerHeight - 140 : Math.min(window.innerHeight * 0.48, 440);
+    setFit(Math.max(0.2, Math.min(1, (w - 8) / (width + 24), (Math.max(h, 240) - 8) / (height + 24))));
+  }, [room.id, width, height, full]);
+  return <div ref={box} className={cn(full && 'fixed inset-0 z-[60] flex flex-col bg-paper p-3')}>
+  {fit === null ? <div className="h-60" /> : <TransformWrapper key={`${room.id}:${fit}`} initialScale={fit} minScale={0.2} maxScale={2.5} centerOnInit
     wheel={{ step: 0.04 }} panning={{ excluded: ['button'], velocityDisabled: true }} doubleClick={{ disabled: true }}>
-    {({ zoomIn, zoomOut, resetTransform }) => <div className="space-y-2">
+    {({ zoomIn, zoomOut, resetTransform }) => <div className={cn('space-y-2', full && 'flex min-h-0 flex-1 flex-col')}>
       <div className="flex items-center justify-end gap-1">
+        {full && <span className="mr-auto font-display font-bold">{room.name}</span>}
         <Button type="button" variant="outline" size="icon" aria-label="Riduci mappa" title="Riduci mappa" onClick={() => zoomOut(0.2, reduced ? 0 : 150)}><Minus/></Button>
         <Button type="button" variant="outline" size="icon" aria-label="Ingrandisci mappa" title="Ingrandisci mappa" onClick={() => zoomIn(0.2, reduced ? 0 : 150)}><Plus/></Button>
         <Button type="button" variant="outline" size="icon" aria-label="Centra mappa" title="Centra mappa" onClick={() => resetTransform(reduced ? 0 : 150)}><Maximize/></Button>
+        <Button type="button" variant={full ? 'default' : 'outline'} size="icon" aria-label={full ? 'Chiudi schermo intero' : 'Mappa a schermo intero'} title={full ? 'Chiudi schermo intero' : 'Mappa a schermo intero'} onClick={() => setFull(f => !f)}>{full ? <Minimize2/> : <Expand/>}</Button>
       </div>
-      <div data-no-swipe className="floor-plan-viewport relative h-[min(48vh,440px)] min-h-60 w-full overflow-hidden rounded-md border border-rule bg-background" aria-label={`Mappa di ${room.name}`}>
+      <div data-no-swipe style={{ touchAction: "none", overscrollBehavior: "contain" }} className={cn("floor-plan-viewport relative w-full overflow-hidden", full ? "min-h-0 flex-1" : "h-[min(48vh,440px)] min-h-60")} data-x=" rounded-md border border-rule bg-background" aria-label={`Mappa di ${room.name}`}>
         <TransformComponent wrapperClass="floor-plan-transform" contentClass="floor-plan-content">
           <div className="floor-plan-surface relative select-none" style={{ width: width + 24, height: height + 24 }}>
             <svg aria-label="Pareti e raccordi" className="pointer-events-none absolute inset-3 text-foreground" width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
