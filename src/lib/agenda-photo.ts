@@ -80,9 +80,13 @@ export function mergeRepeats(rows: PhotoRow[]): PhotoRow[] {
   for (const r of rows) {
     const hit = out.find(o => !o.crossed_out && !r.crossed_out && samePerson(o, r));
     if (!hit) { out.push({ ...r, uncertain: [...r.uncertain] }); continue; }
-    hit.phone ??= r.phone; hit.people ??= r.people; hit.time ??= r.time; hit.table_hint ??= r.table_hint;
+    const filled = new Set<string>();
+    if (hit.phone == null && r.phone) { hit.phone = r.phone; filled.add('phone'); }
+    if (hit.people == null && r.people != null) { hit.people = r.people; filled.add('people'); }
+    if (hit.time == null && r.time) { hit.time = r.time; filled.add('time'); }
+    hit.table_hint ??= r.table_hint;
     if (r.notes && !hit.notes.includes(r.notes)) hit.notes = [hit.notes, r.notes].filter(Boolean).join(' · ');
-    hit.uncertain = hit.uncertain.filter(u => !(u === 'phone' && hit.phone && !r.uncertain.includes('phone') ? false : false) && !((u === 'people' && hit.people) || (u === 'time' && hit.time)));
+    hit.uncertain = [...new Set([...hit.uncertain.filter(u => !filled.has(u)), ...r.uncertain.filter(u => filled.has(u))])];
   }
   return out;
 }

@@ -26,3 +26,29 @@ export async function callProvider(provider: AiProvider, key: string, transcript
     return { ok: false, message: (e as Error).name === 'AbortError' ? 'Il provider non ha risposto in tempo.' : 'Provider IA non raggiungibile.' };
   } finally { clearTimeout(timer); }
 }
+
+/** Lettura multimodale della foto agenda con il provider e la chiave del ristorante. */
+export async function callVisionProvider(provider: AiProvider, key: string, prompt: string, mime: string, base64: string): Promise<{ ok: true; text: string } | { ok: false; message: string }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 55000);
+  try {
+    if (provider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST', signal: ctrl.signal, headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'gpt-4o', max_tokens: 4000, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: prompt }, { role: 'user', content: [{ type: 'text', text: 'Leggi questa pagina di agenda.' }, { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}`, detail: 'high' } }] }] }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) return { ok: false, message: providerError(res.status, body) };
+      return { ok: true, text: body?.choices?.[0]?.message?.content ?? '' };
+    }
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent', {
+      method: 'POST', signal: ctrl.signal, headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: prompt }] }, contents: [{ role: 'user', parts: [{ inlineData: { mimeType: mime, data: base64 } }, { text: 'Leggi questa pagina di agenda.' }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8000 } }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, message: providerError(res.status, body) };
+    return { ok: true, text: body?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '' };
+  } catch (e) {
+    return { ok: false, message: (e as Error).name === 'AbortError' ? 'Il provider non ha risposto in tempo.' : 'Provider IA non raggiungibile.' };
+  } finally { clearTimeout(timer); }
+}
