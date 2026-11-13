@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: 'v0.8.40-alpha', date: '13 novembre 2026', items: ['Foto Agenda: tocca il badge del cliente per cercarlo in anagrafica e abbinarlo; i nuovi clienti vengono creati in automatico alla sincronizzazione.'] },
   { version: 'v0.8.39-alpha', date: '13 novembre 2026', items: ['Smartphone: pulsanti dell’agenda su due righe, Microfono e Foto più compatti.', 'Foto Agenda: riconosce i clienti già in anagrafica (telefono, o nome se unico) e segnala i nuovi clienti.'] },
   { version: 'v0.8.38-alpha', date: '13 novembre 2026', items: ['Foto Agenda: il pulsante Dati corretti ora conferma la riga e sblocca la sincronizzazione.', 'Mappa Sale: la sala si adatta allo schermo, nuovo pulsante schermo intero e trascinamento che non muove la pagina.'] },
   { version: 'v0.8.37-alpha', date: '13 novembre 2026', items: ['Foto Agenda: il tavolo suggerito è in sala interna; i dehors solo se nelle note c’è scritto fuori, dehors, terrazza o giardino.', 'Nuovo pulsante Mappa Sale per scegliere il tavolo sulla piantina del ristorante.'] },
