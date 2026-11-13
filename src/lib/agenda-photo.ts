@@ -92,7 +92,7 @@ export function mergeRepeats(rows: PhotoRow[]): PhotoRow[] {
 }
 
 type BookEntry = { id: string; name: string; first_name?: string | null; last_name?: string | null; phone: string | null; extra_phones?: string[] | null };
-const normName = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+const bookName = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
 /** Riconosce il cliente in anagrafica: telefono normalizzato certo; nome solo se univoco. */
 export function findCustomerMatch<C extends BookEntry>(book: C[], name: string, phone: string): { customer: C; by: 'phone' | 'name' } | null {
   const p = normPhone(phone);
@@ -101,8 +101,8 @@ export function findCustomerMatch<C extends BookEntry>(book: C[], name: string, 
     if (c) return { customer: c, by: 'phone' };
     return null;
   }
-  const n = normName(name);
+  const n = bookName(name);
   if (!n) return null;
-  const same = book.filter(x => normName(x.name) === n || normName(`${x.first_name ?? ''} ${x.last_name ?? ''}`) === n);
+  const same = book.filter(x => bookName(x.name) === n || bookName(`${x.first_name ?? ''} ${x.last_name ?? ''}`) === n);
   return same.length === 1 ? { customer: same[0]!, by: 'name' } : null;
 }
