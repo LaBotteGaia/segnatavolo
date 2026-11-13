@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: 'v0.8.39-alpha', date: '13 novembre 2026', items: ['Smartphone: pulsanti dell’agenda su due righe, Microfono e Foto più compatti.', 'Foto Agenda: riconosce i clienti già in anagrafica (telefono, o nome se unico) e segnala i nuovi clienti.'] },
   { version: 'v0.8.38-alpha', date: '13 novembre 2026', items: ['Foto Agenda: il pulsante Dati corretti ora conferma la riga e sblocca la sincronizzazione.', 'Mappa Sale: la sala si adatta allo schermo, nuovo pulsante schermo intero e trascinamento che non muove la pagina.'] },
   { version: 'v0.8.37-alpha', date: '13 novembre 2026', items: ['Foto Agenda: il tavolo suggerito è in sala interna; i dehors solo se nelle note c’è scritto fuori, dehors, terrazza o giardino.', 'Nuovo pulsante Mappa Sale per scegliere il tavolo sulla piantina del ristorante.'] },
   { version: 'v0.8.36-alpha', date: '13 novembre 2026', items: ['Foto Agenda: fotografando la pagina cartacea, l’IA del ristorante legge le prenotazioni scritte a mano, ignora i decori stampati, unisce i doppioni, segnala quelle già in agenda e chiede conferma dei dati incerti.', 'Ogni prenotazione letta riceve un tavolo suggerito, modificabile al volo prima della sincronizzazione.'] },
