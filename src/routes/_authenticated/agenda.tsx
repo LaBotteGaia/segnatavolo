@@ -2,6 +2,7 @@ import { ServiceHub } from "@/components/agenda/ServiceHub";
 import { OnlineRequests } from "@/components/agenda/OnlineRequests";
 import { WalkInDialog } from "@/components/agenda/WalkInDialog";
 import { VoiceDictation } from "@/components/agenda/VoiceDictation";
+import { AgendaPhotoImport } from "@/components/agenda/AgendaPhotoImport";
 import type { VoiceBooking } from "@/lib/voice-ai";
 import { rangesOf, timeSlots } from "@/lib/data";
 import { UNDO_DURATION } from "@/lib/service-actions";
@@ -428,6 +429,7 @@ function AgendaPage() {
           <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> <span className="agenda-wide:hidden">Al volo</span><span className="hidden agenda-wide:inline">Accomoda al volo</span></Button>
           <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
           <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
+          <AgendaPhotoImport date={date} shifts={shifts} fallbackShift={mobileShift} onDone={(d, s) => { setDate(d); setMobileShift(s); }} />
           <ServiceNotifications />
           <ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
         </div>
