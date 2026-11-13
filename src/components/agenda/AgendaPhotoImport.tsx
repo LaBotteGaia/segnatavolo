@@ -171,6 +171,9 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
                       : r.crossed ? <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5"><PenLine className="h-3 w-3" /> Barrata a penna</span>
                       : r.uncertain.length ? <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5"><AlertTriangle className="h-3 w-3" /> Da verificare</span>
                       : <span className="inline-flex items-center gap-1 rounded-full bg-free/15 px-2 py-0.5"><Check className="h-3 w-3" /> Nuova</span>}
+                    {!r.dup && !r.crossed && (r.customer
+                      ? <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5">👤 In anagrafica: {r.customer.name}{r.customerBy === 'name' ? ' (per nome, verifica)' : ''}<button type="button" className="ml-1 underline" onClick={() => patch(r.key, { customer: null, customerBy: null })}>Non è lui</button></span>
+                      : <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">🆕 Nuovo cliente</span>)}
                     <span className="ml-auto" />
                     {r.dup ? <label className="flex items-center gap-1"><input type="checkbox" checked={r.updateDup} onChange={e => patch(r.key, { updateDup: e.target.checked })} /> Aggiorna dati mancanti</label>
                       : <label className="flex items-center gap-1"><input type="checkbox" checked={r.include} onChange={e => setRows(rs => suggestAll(rs.map(x => x.key === r.key ? { ...x, include: e.target.checked } : x), day, existing, r.key))} /> Importa</label>}

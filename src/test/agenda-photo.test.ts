@@ -23,3 +23,11 @@ describe('foto agenda', () => {
     expect(r.rows[0]?.crossed_out).toBe(false);
   });
 });
+
+import { findCustomerMatch } from '@/lib/agenda-photo';
+describe('findCustomerMatch', () => {
+  const book = [{ id: 'a', name: 'Carlotta Berti', phone: '335 6249037' }, { id: 'b', name: 'Michele', phone: '3406042868' }, { id: 'c', name: 'Michele', phone: '3330000000' }];
+  it('riconosce per telefono normalizzato', () => expect(findCustomerMatch(book, 'Carlotta', '335-624-9037')?.customer.id).toBe('a'));
+  it('nome senza telefono solo se univoco', () => { expect(findCustomerMatch(book, 'berti carlotta', '')?.by).toBe('name'); expect(findCustomerMatch(book, 'Michele', '')).toBeNull(); });
+  it('telefono sconosciuto = nuovo cliente', () => expect(findCustomerMatch(book, 'Carlotta Berti', '3999999999')).toBeNull());
+});
