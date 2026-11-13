@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
-import { AlertTriangle, Camera, Check, Copy, Lightbulb, Loader2, PenLine } from 'lucide-react';
+import { AlertTriangle, Camera, Check, Copy, Lightbulb, Loader2, Map as MapIcon, PenLine } from 'lucide-react';
+import { TableDialog } from './TableDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,10 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
   const [day, setDay] = useState(date);
   const [rows, setRows] = useState<Draft[]>([]);
   const [existing, setExisting] = useState<Reservation[]>([]);
+  const [mapKey, setMapKey] = useState<string | null>(null);
   const ranges = rangesOf(settings);
+  /** Esterno solo se richiesto a mano: di default si preferiscono le sale interne. */
+  const wantsOutside = (notes: string) => /\b(fuori|dehors|esterno|esterni|terrazza|giardino|veranda|aperto)\b/i.test(notes);
   const shiftOf = (time: string, fallback: Shift) => shifts.find(s => time && timeSlots(s, ranges).includes(time)) ?? fallback;
 
   const loadDay = async (d: string) => {
@@ -60,7 +64,7 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
       if (!r.include || r.dup) return r;
       if (only && only !== r.key) { if (r.tables.length) taken.push({ id: r.key, name: r.name, table_ids: r.tables, time: r.time }); return r; }
       const others2 = taken.filter(t => (others.find(o => o.id === t.id)?.shift ?? list.find(x => x.key === t.id)?.shift) === r.shift);
-      const s = r.time && people > 0 ? suggestTables({ people, date: d, shift: r.shift, time: r.time, tables, rooms, others: others2, cfg: settings, notes: r.notes, rules: settings.assignmentRules, customRules, wallsFor: id => wallsOf(rooms.find(x => x.id === id)) }) : null;
+      const s = r.time && people > 0 ? suggestTables({ people, date: d, shift: r.shift, time: r.time, tables, rooms, others: others2, cfg: settings, outside: wantsOutside(r.notes), notes: r.notes, rules: settings.assignmentRules, customRules, wallsFor: id => wallsOf(rooms.find(x => x.id === id)) }) : null;
       const next = { ...r, tables: s?.ids ?? [], extras: s?.extras ?? NO_EXTRAS };
       if (next.tables.length) taken.push({ id: r.key, name: r.name, table_ids: next.tables, time: r.time });
       return next;
@@ -182,6 +186,7 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
                       {r.tables.length > 1 && <option value={r.tables.join(',')}>💡 {tableLabel(r.tables, tables, rooms)}</option>}
                       {tableOptions.map(t => <option key={t.id} value={t.id}>{r.tables.length === 1 && r.tables[0] === t.id ? '💡 ' : ''}Tavolo {t.name} · {rooms?.find(x => x.id === t.room_id)?.name ?? ''} ({t.coperti_comodi ?? t.seats}p)</option>)}
                     </select>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setMapKey(r.key)}><MapIcon /> Mappa Sale</Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => setRows(rs => suggestAll(rs, day, existing, r.key))}><Lightbulb /> Suggerisci</Button>
                     {r.uncertain.length > 0 && <Button type="button" size="sm" variant="outline" className="border-warning" onClick={() => patch(r.key, { uncertain: [] })}><Check /> Dati corretti</Button>}
                   </div>}
@@ -198,5 +203,17 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
         </div>
       </DialogContent>
     </Dialog>
+    {(() => {
+      const r = rows.find(x => x.key === mapKey);
+      if (!r) return null;
+      const others = [
+        ...existing.filter(o => o.status === 'confirmed' && o.shift === r.shift),
+        ...rows.filter(x => x.key !== r.key && x.include && !x.dup && x.shift === r.shift && x.tables.length).map(x => ({ id: x.key, name: x.name, table_ids: x.tables, time: normTime(x.time) ?? x.time })),
+      ];
+      return <TableDialog open onOpenChange={o => !o && setMapKey(null)} date={day}
+        reservation={{ id: r.key, name: r.name || 'Prenotazione', people: Number(r.people) || 1, shift: r.shift, table_ids: r.tables, time: normTime(r.time) ?? r.time, notes: r.notes, outside: wantsOutside(r.notes) }}
+        others={others} extras={r.extras}
+        onConfirm={(ids, ex) => { patch(r.key, { tables: ids, extras: ex }); setMapKey(null); }} />;
+    })()}
   </>;
 }
