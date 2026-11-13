@@ -424,14 +424,14 @@ function AgendaPage() {
             </Button>
           </div>
         </div>
-        <div aria-label="Azioni rapide" className="mt-2 grid w-full max-w-none grid-cols-3 items-center gap-2 py-1 [&>*]:min-w-0 max-agenda-wide:[&_button]:w-full max-agenda-wide:[&_button]:px-2 agenda-wide:flex agenda-wide:flex-wrap">
-          <Button className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> <span className="agenda-wide:hidden">Nuova</span><span className="hidden agenda-wide:inline">Nuova Prenotazione</span></Button>
-          <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> <span className="agenda-wide:hidden">Al volo</span><span className="hidden agenda-wide:inline">Accomoda al volo</span></Button>
-          <Button variant="secondary" className="whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
-          <VoiceDictation onResult={openVoice} selectedDate={date} className="flex-none" />
-          <AgendaPhotoImport date={date} shifts={shifts} fallbackShift={mobileShift} onDone={(d, s) => { setDate(d); setMobileShift(s); }} />
-          <ServiceNotifications />
-          <ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} />
+        <div aria-label="Azioni rapide" className="mt-2 grid w-full max-w-none grid-cols-12 items-center gap-2 py-1 [&>*]:min-w-0 max-agenda-wide:[&_button]:w-full max-agenda-wide:[&_button]:px-2 agenda-wide:flex agenda-wide:flex-wrap">
+          <Button className="col-span-4 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => openNew(mobileShift)}><Plus /> <span className="agenda-wide:hidden">Nuova</span><span className="hidden agenda-wide:inline">Nuova Prenotazione</span></Button>
+          <Button variant="secondary" className="col-span-4 whitespace-nowrap px-3" disabled={!shifts.length} onClick={() => setWalkinOpen(true)}><Zap /> <span className="agenda-wide:hidden">Al volo</span><span className="hidden agenda-wide:inline">Accomoda al volo</span></Button>
+          <Button variant="secondary" className="col-span-4 whitespace-nowrap px-3" disabled={!shifts.length} title="Modalità Sala Live (schermo orizzontale)" onClick={() => setLiveOpen(true)}><Monitor /> Sala Live</Button>
+          <VoiceDictation onResult={openVoice} selectedDate={date} className="col-span-2 flex-none" />
+          <AgendaPhotoImport date={date} shifts={shifts} fallbackShift={mobileShift} onDone={(d, s) => { setDate(d); setMobileShift(s); }} className="col-span-2" />
+          <div className="col-span-3"><ServiceNotifications /></div>
+          <div className="col-span-5"><ServiceHub onLive={() => setLiveOpen(true)} requestedOpen={search.service} onRequestedClose={() => navigate({ search: ({ service: _service, ...rest }) => rest, replace: true })} date={date} shifts={shifts} selectedShift={mobileShift} onAvailability={setAvailShift} /></div>
         </div>
         <div style={{ gridTemplateColumns: `repeat(${Math.max(shifts.length, 1)}, minmax(0, 1fr))` }} className="mt-2 grid w-full max-w-none gap-1 rounded-md bg-desk-foreground/10 p-1 agenda-wide:hidden">
           {shifts.map((s) => (

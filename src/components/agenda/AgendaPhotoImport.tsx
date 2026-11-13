@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { cn } from '@/lib/utils';
 import { useActiveRestaurantId } from '@/lib/tenant';
 import { useSettings } from '@/lib/membership';
-import { NO_EXTRAS, rangesOf, shiftName, tableLabel, timeSlots, useActiveCustomRules, useRooms, useTables, wallsOf, type Reservation, type Shift, type TableExtras } from '@/lib/data';
+import { NO_EXTRAS, rangesOf, shiftName, tableLabel, timeSlots, useActiveCustomRules, useRooms, useTables, wallsOf, type Reservation, type Shift, type TableExtras, type Customer } from '@/lib/data';
+import { findCustomerMatch } from '@/lib/agenda-photo';
 import { suggestTables } from '@/lib/allocation';
 import { readAgendaPhoto } from '@/lib/agenda-photo.functions';
 import { mergeRepeats, normPhone, normTime, samePerson, type PhotoRow } from '@/lib/agenda-photo';
 
-type Draft = { key: string; include: boolean; name: string; phone: string; people: string; time: string; shift: Shift; notes: string; uncertain: string[]; crossed: boolean; dup: Reservation | null; updateDup: boolean; tables: string[]; extras: TableExtras; hint: string | null };
+type Draft = { key: string; include: boolean; name: string; phone: string; people: string; time: string; shift: Shift; notes: string; uncertain: string[]; crossed: boolean; dup: Reservation | null; updateDup: boolean; tables: string[]; extras: TableExtras; hint: string | null; customer: Customer | null; customerBy: 'phone' | 'name' | null };
 
 async function toJpeg(file: File): Promise<string> {
   const url = URL.createObjectURL(file);
@@ -71,11 +72,12 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
     });
   };
 
-  const build = (src: PhotoRow[], pageShift: Shift, others: Reservation[]): Draft[] => mergeRepeats(src).map((r, i) => {
+  const build = (src: PhotoRow[], pageShift: Shift, others: Reservation[], book: Customer[]): Draft[] => mergeRepeats(src).map((r, i) => {
     const time = r.time ?? '';
     const shift = r.shift && shifts.includes(r.shift) ? r.shift : shiftOf(time, pageShift);
     const dup = r.crossed_out ? null : others.find(o => o.shift === shift && samePerson(r, { name: o.name, phone: o.phone, time: o.time })) ?? null;
-    return { key: `p${i}`, include: !r.crossed_out && !dup, name: r.name, phone: r.phone ?? '', people: r.people ? String(r.people) : '', time, shift, notes: [r.notes, r.table_hint ? `Tav. scritto: ${r.table_hint}` : ''].filter(Boolean).join(' · '), uncertain: r.uncertain, crossed: r.crossed_out, dup, updateDup: false, tables: [], extras: NO_EXTRAS, hint: r.table_hint };
+    const m = findCustomerMatch(book, r.name, r.phone ?? '');
+    return { customer: m?.customer ?? null, customerBy: m?.by ?? null, key: `p${i}`, include: !r.crossed_out && !dup, name: r.name, phone: r.phone || m?.customer.phone || '', people: r.people ? String(r.people) : '', time, shift, notes: [r.notes, r.table_hint ? `Tav. scritto: ${r.table_hint}` : ''].filter(Boolean).join(' · '), uncertain: r.uncertain, crossed: r.crossed_out, dup, updateDup: false, tables: [], extras: NO_EXTRAS, hint: r.table_hint };
   });
 
   const onFile = async (file: File | undefined) => {
@@ -89,9 +91,10 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
       if (!r.result.rows.length) { toast.info('Nessuna prenotazione scritta a mano trovata nella foto.'); return; }
       const d = r.result.date ?? date;
       const others = await loadDay(d);
+      const { data: book } = await supabase.from('customers').select('*').eq('restaurant_id', restaurantId).limit(5000);
       const pageShift = r.result.shift && shifts.includes(r.result.shift) ? r.result.shift : fallbackShift;
       setDay(d); setExisting(others);
-      setRows(suggestAll(build(r.result.rows, pageShift, others), d, others));
+      setRows(suggestAll(build(r.result.rows, pageShift, others, book ?? []), d, others));
       setOpen(true);
       if (r.result.date && r.result.date !== date) toast.info(`La pagina fotografata è del ${r.result.date.split('-').reverse().join('/')}: controlla la data prima di sincronizzare.`);
     } catch { toast.error('Lettura della foto non riuscita: controlla la connessione e riprova.'); }
@@ -116,8 +119,8 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
     try {
       for (const r of chosen) {
         const phone = normPhone(r.phone) || null;
-        let customerId: string | null = null;
-        if (phone) {
+        let customerId: string | null = r.customer?.id ?? null;
+        if (!customerId && phone) {
           const { data: c } = await supabase.from('customers').select('id').eq('restaurant_id', restaurantId).in('phone', [phone, r.phone.trim()]).limit(1).maybeSingle();
           customerId = c?.id ?? null;
         }
@@ -145,8 +148,8 @@ export function AgendaPhotoImport({ date, shifts, fallbackShift, onDone, classNa
 
   return <>
     <input ref={input} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => void onFile(e.target.files?.[0])} />
-    <Button variant="secondary" className={cn('whitespace-nowrap px-3', className)} disabled={!!busy || !shifts.length} title="Sincronizza da foto della pagina d'agenda" onClick={() => input.current?.click()}>
-      {busy === 'read' ? <Loader2 className="animate-spin" /> : <Camera />} <span className="agenda-wide:hidden">Foto</span><span className="hidden agenda-wide:inline">Foto Agenda</span>
+    <Button variant="secondary" className={cn('whitespace-nowrap px-2 agenda-wide:px-3', className)} disabled={!!busy || !shifts.length} title="Sincronizza da foto della pagina d'agenda" onClick={() => input.current?.click()}>
+      {busy === 'read' ? <Loader2 className="animate-spin" /> : <Camera />} <span className="sr-only">Foto</span><span className="hidden agenda-wide:inline">Foto Agenda</span>
     </Button>
     {busy === 'read' && <div role="status" className="fixed inset-x-0 bottom-4 z-50 mx-auto w-fit rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground shadow-lg">📖 Leggo la pagina dell'agenda…</div>}
     <Dialog open={open} onOpenChange={o => !busy && setOpen(o)}>
