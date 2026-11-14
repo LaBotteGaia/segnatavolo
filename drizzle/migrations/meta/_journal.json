@@ -449,6 +449,13 @@
       "when": 1794163625362,
       "tag": "0063_manual_join_override_and_reminder_retry",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1794643728235,
+      "tag": "0064_online_approval_comfort_capacity",
+      "breakpoints": true
     }
   ]
 }
