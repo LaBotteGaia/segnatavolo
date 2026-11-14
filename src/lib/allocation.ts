@@ -1,7 +1,7 @@
 /** Unico motore deterministico: regole → comfort → capienza sacrificata/prolunghe → conflitto. */
 import { canJoin, NO_EXTRAS, type RTable, type TableExtras } from './data';
 import { interval, isRoomClosedFor, tableState, type RotationCfg } from './rotation';
-import { customScore, normName, ruleMatches, type ActiveRule } from './custom-rules';
+import { customScore, normName, ruleMatches, isLastResort, type ActiveRule } from './custom-rules';
 import { habitScore, type TableHabits } from './table-habits';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 export type AssignmentTable = Pick<RTable, 'id' | 'name' | 'seats' | 'x' | 'y' | 'room_id' | 'no_join' | 'allow_extras'> & { accoppiabile?: boolean; adatto_seduta_lunga?: boolean; coperti_comodi?: number | null; coperti_max?: number | null; posti_scomodi_solo_in_unione?: boolean | null; ordine_riempimento?: number | null };
@@ -58,8 +58,9 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
     for(const t of [...list].sort(stable)) explore([t]);
     return out;
   };
-  const matching = [...(p.customRules ?? [])].filter(r=>ruleMatches(r.logic,p.people,p.time)).sort((a,b)=>b.logic.priority_rank-a.logic.priority_rank);
-  // Prima regola che offre una soluzione sicura: nessun punteggio può annullarne la priorità.
+  const matching = [...(p.customRules ?? [])].filter(r=>!isLastResort(r.logic) && ruleMatches(r.logic,p.people,p.time)).sort((a,b)=>b.logic.priority_rank-a.logic.priority_rank);
+  // Prima regola che offre una soluzione comoda; le soluzioni strette delle regole restano ripiego dopo le unioni comode.
+  let ruleFallback: Suggestion | null = null;
   for(const r of matching) {
     const a=r.logic.actions;
     let eligible=free.filter(t=>!a.force_zone_id || t.room_id===a.force_zone_id);
@@ -75,14 +76,18 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
       for(const room of openRooms) {
         const combo=sequence.flatMap(n=>{const t=eligible.find(t=>t.room_id===room.id && normName(t.name)===normName(n));return t?[t]:[];});
         if(combo.length!==sequence.length) continue;
-        const s=fit(combo,false,false) ?? fit(combo,true,false) ?? fit(combo,true,true);
+        const s=fit(combo,false,false);
         if(s) return {...s,stage:1,ruleId:r.id};
+        const tight=fit(combo,true,false) ?? fit(combo,true,true);
+        if(tight && !ruleFallback) ruleFallback={...tight,stage:1,ruleId:r.id};
       }
     }
     if(a.pairing_sequence.length && !a.preferred_table_numbers.length && !a.avoid_pairable && !a.force_zone_id) continue;
     const combos=allCombos(ordered);
-    for(const [sacrifice,extend] of [[false,false],[true,false],[true,true]] as const) {
-      for(const combo of combos) {const s=fit(combo,sacrifice,extend);if(s) return {...s,stage:1,ruleId:r.id};}
+    for(const combo of combos) {const s=fit(combo,false,false);if(s) return {...s,stage:1,ruleId:r.id};}
+    if(!ruleFallback) for(const [sacrifice,extend] of [[true,false],[true,true]] as const) {
+      for(const combo of combos) {const s=fit(combo,sacrifice,extend);if(s) { ruleFallback={...s,stage:1,ruleId:r.id}; break; }}
+      if(ruleFallback) break;
     }
   }
   const reservationPenalty=(t: AssignmentTable)=>customScore([t],p.people,p.time,p.customRules);
@@ -92,7 +97,7 @@ export function calculateBestTableAssignment(p: AssignmentParams): Suggestion | 
   const single=singles[0]; if(single) return fit([single],false,false);
   const combos=allCombos(free);
   const ranked=(sacrifice:boolean,extend:boolean)=>combos.flatMap(combo=>{const s=fit(combo,sacrifice,extend);return s?[{s,combo}]:[];}).sort((a,b)=>a.s.extras.extra_sponde-b.s.extras.extra_sponde || habit(b.s.ids)-habit(a.s.ids) || a.combo.reduce((s,t)=>s+pref(t),0)-b.combo.reduce((s,t)=>s+pref(t),0) || a.s.waste-b.s.waste || a.combo.length-b.combo.length || (a.combo[0] && b.combo[0] ? stable(a.combo[0],b.combo[0]) : 0));
-  return ranked(false,false)[0]?.s ?? ranked(true,false)[0]?.s ?? ranked(true,true)[0]?.s ?? null;
+  return ranked(false,false)[0]?.s ?? ruleFallback ?? ranked(true,false)[0]?.s ?? ranked(true,true)[0]?.s ?? null;
 }
 /** Compatibilità per tutti i chiamanti esistenti. */
 export const suggestTables = calculateBestTableAssignment;

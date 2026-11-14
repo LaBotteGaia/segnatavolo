@@ -43,6 +43,8 @@ export function activeRules(rows: CustomRule[] | undefined | null, restaurantId?
   return (rows ?? []).filter(r => r.is_active && (!restaurantId || r.restaurant_id === restaurantId)).flatMap(r => storedRules(r.parsed_logic).map((logic, i) => ({ id: `${r.id}:${i}`, logic, at: r.created_at ?? '' })))
     .sort((a,b) => b.logic.priority_rank - a.logic.priority_rank || a.at.localeCompare(b.at) || a.id.localeCompare(b.id)).map(({id,logic}) => ({id,logic}));
 }
+/** Regole che indicano un tavolo di ripiego ("ultima scelta"): penalizzano, non promuovono. */
+export const isLastResort = (r: ParsedRule) => /ultim[aoei]\s+(scelta|risorsa|opzione)|ripiego|solo se (non|necessario)|last resort/i.test(r.human_summary);
 export function ruleMatches(rule: ParsedRule, people: number, time: string) {
   const c = rule.conditions;
   if (people < c.min_pax || people > c.max_pax) return false;
@@ -53,13 +55,14 @@ export function ruleMatches(rule: ParsedRule, people: number, time: string) {
 /** Conserva la salvaguardia delle riserve non corrispondenti durante le euristiche. */
 export function customScore(combo: {name: string; accoppiabile?: boolean | null}[], people: number, time: string, rules?: ActiveRule[]): number {
   const names = combo.map(t => normName(t.name));
-  const matching = rules?.find(r => ruleMatches(r.logic, people, time));
+  const matching = rules?.find(r => !isLastResort(r.logic) && ruleMatches(r.logic, people, time));
   const a = matching?.logic.actions;
   let score = 0;
   if (a?.preferred_table_numbers.length) score += names.every(n => a.preferred_table_numbers.map(normName).includes(n)) ? 0 : 400;
   if (a?.pairing_sequence.length && combo.length > 1) { const i = a.pairing_sequence.findIndex(s => s.map(normName).sort().join('|') === [...names].sort().join('|')); score += i < 0 ? 300 : i; }
   if (a?.avoid_pairable) score += combo.some(t => t.accoppiabile !== false) ? 500 : Math.min(...names.map(n => /^\d+$/.test(n) ? Number(n) : 99));
-  if (rules?.some(r => r.logic.rule_type === 'table_priority' && !ruleMatches(r.logic, people, time) && r.logic.actions.preferred_table_numbers.some(p => names.includes(normName(p))))) score += 10000;
+  if (rules?.some(r => isLastResort(r.logic) && r.logic.actions.preferred_table_numbers.some(p => names.includes(normName(p))))) score += 5000;
+  if (rules?.some(r => r.logic.rule_type === 'table_priority' && !isLastResort(r.logic) && !ruleMatches(r.logic, people, time) && r.logic.actions.preferred_table_numbers.some(p => names.includes(normName(p))))) score += 10000;
   return score;
 }
 export const hasMatchingRule = (people: number, time: string, rules?: ActiveRule[]) => !!rules?.some(r => ruleMatches(r.logic, people, time));
