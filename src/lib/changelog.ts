@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: 'v0.8.44-alpha', date: '14 novembre 2026', items: ['Accomoda al volo usa la stessa griglia tavoli di Sala Live, utilizzabile anche con il telefono in verticale.'] },
   { version: 'v0.8.43-alpha', date: '14 novembre 2026', items: ['Accomoda al volo su smartphone: finestra a tutto schermo, elenco tavoli come vista iniziale (la scelta viene ricordata), coperti su una riga e pulsante Accomoda sempre visibile in basso.'] },
   { version: 'v0.8.42-alpha', date: '14 novembre 2026', items: ['Accomoda al volo: i tavoli liberi senza prenotazioni successive tornano subito selezionabili.'] },
   { version: 'v0.8.41-alpha', date: '14 novembre 2026', items: ['Richieste online: le unioni di tavoli comode hanno la precedenza sui tavoli singoli stretti.', 'Le regole "ultima scelta" ora rimandano davvero il tavolo indicato in fondo alle proposte.', 'Corretto il blocco "Tavoli insufficienti" quando un tavolo ammette posti aggiuntivi.'] },
