@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: 'v0.8.42-alpha', date: '14 novembre 2026', items: ['Accomoda al volo: i tavoli liberi senza prenotazioni successive tornano subito selezionabili.'] },
   { version: 'v0.8.41-alpha', date: '14 novembre 2026', items: ['Richieste online: le unioni di tavoli comode hanno la precedenza sui tavoli singoli stretti.', 'Le regole "ultima scelta" ora rimandano davvero il tavolo indicato in fondo alle proposte.', 'Corretto il blocco "Tavoli insufficienti" quando un tavolo ammette posti aggiuntivi.'] },
   { version: 'v0.8.40-alpha', date: '13 novembre 2026', items: ['Foto Agenda: tocca il badge del cliente per cercarlo in anagrafica e abbinarlo; i nuovi clienti vengono creati in automatico alla sincronizzazione.'] },
   { version: 'v0.8.39-alpha', date: '13 novembre 2026', items: ['Smartphone: pulsanti dell’agenda su due righe, Microfono e Foto più compatti.', 'Foto Agenda: riconosce i clienti già in anagrafica (telefono, o nome se unico) e segnala i nuovi clienti.'] },

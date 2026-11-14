@@ -79,6 +79,9 @@ describe("permanenza massima vincolata", () => {
   it("nessun vincolo se la seduta standard ci sta", () => {
     expect(limitedStay(22 * 60, 19 * 60 + 45, cfg)).toBeNull();
   });
+  it("tavolo senza prenotazioni successive è libero senza limiti", () => {
+    expect(limitedStay(NaN, 12 * 60 + 35, cfg)).toBeNull();
+  });
   it("rifiuta con meno di 15 minuti disponibili", () => {
     expect(limitedStay(21 * 60, 20 * 60 + 35, cfg)?.allowed).toBe(false);
   });

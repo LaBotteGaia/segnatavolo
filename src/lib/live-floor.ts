@@ -99,6 +99,7 @@ export function nextBookingOn(tableIds: string[], rows: LiveRes[], nowMin: numbe
  * Altrimenti uscita = prossima − riassetto; `allowed` false se restano meno di 15 minuti.
  */
 export function limitedStay(nextStart: number, nowMin: number, cfg: RotationCfg): { untilMin: number; until: string; minutes: number; allowed: boolean } | null {
+  if (!Number.isFinite(nextStart)) return null;
   if (cfg.duration >= 0 && nowMin + cfg.duration + cfg.buffer <= nextStart) return null;
   const untilMin = nextStart - cfg.buffer;
   const minutes = untilMin - nowMin;
