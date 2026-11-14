@@ -1,7 +1,7 @@
 /** Unico motore deterministico: regole → comfort → capienza sacrificata/prolunghe → conflitto. */
 import { canJoin, NO_EXTRAS, type RTable, type TableExtras } from './data';
 import { interval, isRoomClosedFor, tableState, type RotationCfg } from './rotation';
-import { customScore, normName, ruleMatches, type ActiveRule } from './custom-rules';
+import { customScore, normName, ruleMatches, isLastResort, type ActiveRule } from './custom-rules';
 import { habitScore, type TableHabits } from './table-habits';
 import { assignmentPreference, protectSmallParty, DEFAULT_ASSIGNMENT_RULES, type AssignmentRules } from './assignment-rules';
 export type AssignmentTable = Pick<RTable, 'id' | 'name' | 'seats' | 'x' | 'y' | 'room_id' | 'no_join' | 'allow_extras'> & { accoppiabile?: boolean; adatto_seduta_lunga?: boolean; coperti_comodi?: number | null; coperti_max?: number | null; posti_scomodi_solo_in_unione?: boolean | null; ordine_riempimento?: number | null };
