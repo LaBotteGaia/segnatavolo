@@ -2,6 +2,7 @@
 export type Release = { version: string; date: string; items: string[] };
 
 export const CHANGELOG: Release[] = [
+  { version: 'v0.8.45-alpha', date: '14 novembre 2026', items: ['Un solo tasto Sala Live: dentro trovi Accomoda al volo, anche con il telefono in verticale (tasto Ospiti per vedere gli arrivi).', 'Rimosse schermate doppie: le vecchie pagine Sale e Regole portano ora alla Configurazione Ristorante.'] },
   { version: 'v0.8.44-alpha', date: '14 novembre 2026', items: ['Accomoda al volo usa la stessa griglia tavoli di Sala Live, utilizzabile anche con il telefono in verticale.'] },
   { version: 'v0.8.43-alpha', date: '14 novembre 2026', items: ['Accomoda al volo su smartphone: finestra a tutto schermo, elenco tavoli come vista iniziale (la scelta viene ricordata), coperti su una riga e pulsante Accomoda sempre visibile in basso.'] },
   { version: 'v0.8.42-alpha', date: '14 novembre 2026', items: ['Accomoda al volo: i tavoli liberi senza prenotazioni successive tornano subito selezionabili.'] },
