@@ -1,6 +1,5 @@
 import { ServiceHub } from "@/components/agenda/ServiceHub";
 import { OnlineRequests } from "@/components/agenda/OnlineRequests";
-import { WalkInDialog } from "@/components/agenda/WalkInDialog";
 import { VoiceDictation } from "@/components/agenda/VoiceDictation";
 import { AgendaPhotoImport } from "@/components/agenda/AgendaPhotoImport";
 import type { VoiceBooking } from "@/lib/voice-ai";
@@ -469,7 +468,7 @@ function AgendaPage() {
       <TutorialAutoOpen />
       <footer className="mt-6 flex shrink-0 items-center agenda-wide:mt-0 agenda-wide:pb-1 justify-center gap-2 text-xs text-desk-foreground/70">{APP_NAME} <VersionBadge /> <ConnectionDot /></footer>
       <NewReservationDialog open={!!newShift} onOpenChange={(o) => !o && setNewShift(null)} initialDate={date} initialShift={newShift ?? mobileShift} onCreate={create} initialTime={prefill.time} initialTables={prefill.tables} initialCustomerId={bookCustomer} initialDraft={voiceDraft} />
-      <WalkInDialog open={walkinOpen} onOpenChange={setWalkinOpen} onSaved={(d, s) => { setMobileShift(s); setDate(d); }} />
+      <LiveFloorMode walkinOnly open={walkinOpen} onOpenChange={setWalkinOpen} onSaved={(d, s) => { setMobileShift(s); setDate(d); }} />
       <LiveFloorMode open={liveOpen} onOpenChange={setLiveOpen} />
       <AvailabilityPanel open={!!availShift} onOpenChange={(o) => !o && setAvailShift(null)} date={date} shift={availShift ?? mobileShift}
         rows={availShift ? byShift(availShift) : []} onPick={(time, tableId) => { const s = availShift ?? mobileShift; setAvailShift(null); openNew(s, { time, tables: [tableId] }); }} />
