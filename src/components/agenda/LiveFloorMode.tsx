@@ -40,8 +40,9 @@ function useIsLandscape() {
 }
 
 /** Modalità Servizio Live: HUD a tutto schermo, solo orizzontale, con colonna arrivi e griglia tavoli ordinata. */
-export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; walkinOnly?: boolean; onSaved?: (date: string, shift: "colazione" | "pranzo" | "sera") => void }) {
-  const landscape = useIsLandscape() || walkinOnly;
+export function LiveFloorMode({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const landscape = useIsLandscape();
+  const [guests, setGuests] = useState(false);
   const now = useServiceClock();
   const settings = useSettings();
   const customRules = useActiveCustomRules();
@@ -81,13 +82,13 @@ export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved 
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "Sala";
 
   const reset = () => { setSelected(null); setMoving(null); setWalkin(null); setSeating(null); setConfirmFreed(null); setLimited(null); setSwap(null); setBusy(false); setFocus(null); };
-  const done = () => { if (walkinOnly) { onSaved?.(clock.date, shift); close(); } };
+  const done = () => {};
   const close = () => { reset(); setScomodo(null); onOpenChange(false); };
 
   useEffect(() => {
     if (!open) return;
     reset();
-    if (walkinOnly) { setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante" }); return; }
+    setGuests(false);
     const el = document.documentElement;
     void el.requestFullscreen?.().then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> })?.lock?.("landscape")?.catch(() => {})).catch(() => {});
     return () => {
@@ -230,16 +231,6 @@ export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved 
 
   const dateLabel = format(parseISO(clock.date), "EEEE d MMMM", { locale: it }).replace(/^\w/, (c) => c.toUpperCase());
 
-  if (!landscape) {
-    return (
-      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-6 bg-desk p-6 text-center text-desk-foreground" data-no-swipe>
-        <span className="live-rotate text-7xl" aria-hidden>📱</span>
-        <p className="max-w-sm font-display text-2xl leading-snug">Ruota il dispositivo in orizzontale per accedere alla Modalità di Lavoro Live</p>
-        <Button variant="secondary" size="lg" onClick={close}><X /> Chiudi</Button>
-      </div>
-    );
-  }
-
   const resCard = (r: LiveRes) => (
     <div key={r.id} className={cn("flex items-start gap-2 rounded-md border border-desk-foreground/15 bg-desk-foreground/5 p-2", focus && r.table_ids.includes(focus) && "ring-2 ring-free")}
       onClick={() => r.table_ids[0] && setFocus(r.table_ids[0])} role="button" tabIndex={0}
@@ -260,19 +251,20 @@ export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved 
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-desk text-desk-foreground" data-no-swipe role="dialog" aria-label={walkinOnly ? "Accomoda al volo" : "Modalità Sala Live"}>
+    <div className="fixed inset-0 z-[60] flex flex-col bg-desk text-desk-foreground" data-no-swipe role="dialog" aria-label="Modalità Sala Live">
       <div className="shrink-0"><UnconfirmedAlerts rows={rows} /></div>
       <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-desk-foreground/10 px-3 py-2">
-        <h2 className="font-display text-lg leading-none">{walkinOnly ? <span className="inline-flex items-center gap-1"><Zap className="size-5" /> Accomoda al volo · {shiftName(shift)} {walk.time}</span> : <>{shiftName(shift).toUpperCase()} — {dateLabel}</>}</h2>
+        <h2 className="font-display text-lg leading-none">{shiftName(shift).toUpperCase()} — {dateLabel}</h2>
         <Button size="sm" variant="secondary" onClick={() => { setSelected(null); setMoving(null); setWalkin({ people: WALKIN_DEFAULT_PEOPLE, name: "Passante" }); }}>
           <Zap /> Accomoda al Volo
         </Button>
+        {!landscape && <Button size="sm" variant={guests ? "default" : "secondary"} onClick={() => setGuests((g) => !g)}>{guests ? "Tavoli" : `Ospiti (${lists.incoming.length + lists.seated.length})`}</Button>}
         <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide">
           <span>🪑 Seduti <b className="text-base">{counters.seatedCovers}</b></span>
           <span className="text-free">Liberi <b className="text-base">{counters.freeTables}</b></span>
           <span className="text-warning">In arrivo <b className="text-base">{counters.incomingTables}</b></span>
         </div>
-        <div className={cn("ml-auto items-center gap-1", walkinOnly ? "hidden sm:flex" : "flex")} aria-label="Zoom griglia tavoli">
+        <div className={cn("ml-auto items-center gap-1", landscape ? "flex" : "hidden sm:flex")} aria-label="Zoom griglia tavoli">
           <Button size="icon" variant="secondary" aria-label="Riduci zoom" disabled={zoom <= ZOOM_MIN} onClick={() => setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(1)))}><Minus /></Button>
           <Button variant="secondary" className="min-w-16" aria-label="Reimposta zoom" onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</Button>
           <Button size="icon" variant="secondary" aria-label="Aumenta zoom" disabled={zoom >= ZOOM_MAX} onClick={() => setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(1)))}><Plus /></Button>
@@ -288,7 +280,7 @@ export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved 
       )}
 
       <div className="flex min-h-0 flex-1">
-        {!walkinOnly && <aside className="flex w-[340px] shrink-0 flex-col overflow-y-auto border-r border-desk-foreground/10 p-3" aria-label="Gestione arrivi">
+        {(landscape || guests) && <aside className={cn("flex flex-col overflow-y-auto p-3", landscape ? "w-[340px] shrink-0 border-r border-desk-foreground/10" : "w-full")} aria-label="Gestione arrivi">
           <h3 className="font-display text-base">Ospiti Turno — {shiftName(shift)}</h3>
           <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-warning">In Arrivo ({lists.incoming.length})</p>
           <div className="space-y-2">
@@ -302,10 +294,10 @@ export function LiveFloorMode({ open, onOpenChange, walkinOnly = false, onSaved 
           </div>
         </aside>}
 
-        <div className="min-w-0 flex-1 overflow-auto p-3">
+        <div className={cn("min-w-0 flex-1 overflow-auto p-3", !landscape && guests && "hidden")}>
           {!gridTables.length && <p className="p-6 text-center">Nessuna sala aperta in questo turno.</p>}
           <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: `${100 / zoom}%` }}>
-            <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${walkinOnly ? 120 : 150}px, 1fr))` }}>
+            <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${landscape ? 150 : 120}px, 1fr))` }}>
               {gridTables.map((t) => {
                 const st = stateOf(t.id);
                 const flashing = (moving || seating) && st.kind === "free";
