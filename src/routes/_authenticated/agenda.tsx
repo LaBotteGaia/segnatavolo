@@ -313,7 +313,7 @@ function AgendaPage() {
     return (
       <section
         className={cn(
-          "paper-page [--page-margin:0.7rem] sm:[--page-margin:2.6rem] min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:py-3",
+          "paper-page [--page-margin:0.7rem] sm:[--page-margin:2.6rem] min-w-0 min-h-[70vh] flex-1 py-3 pl-5 pr-3 sm:pl-12 sm:pr-5 agenda-wide:flex agenda-wide:h-full agenda-wide:min-h-0 agenda-wide:flex-col agenda-wide:overflow-y-auto agenda-wide:overscroll-contain agenda-wide:py-3",
           side === "left" ? "agenda-wide:rounded-l-md spine-left" : side === "right" ? "agenda-wide:rounded-r-md spine-right" : "",
           shift === "sera"
             ? "max-agenda-wide:-ml-3 max-agenda-wide:rounded-r-md max-agenda-wide:spine-right max-agenda-wide:pl-8 max-agenda-wide:pr-4 sm:max-agenda-wide:-ml-6 sm:max-agenda-wide:pl-12"
@@ -353,7 +353,7 @@ function AgendaPage() {
           <span>Zona</span>
           <span />
         </div>
-        <div className="agenda-wide:min-h-0 agenda-wide:flex-1 agenda-wide:overflow-y-auto agenda-wide:overscroll-contain agenda-wide:pr-1">
+        <div className="agenda-wide:shrink-0 agenda-wide:pr-1">
         {rows.map((r) => (
           <ReservationRow
             key={r.id}
@@ -376,7 +376,7 @@ function AgendaPage() {
   };
 
   return (
-    <div className="min-h-screen w-full pb-10 agenda-wide:flex agenda-wide:h-screen agenda-wide:max-h-screen agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:pb-0">
+    <div className="min-h-screen w-full pb-10 agenda-wide:flex agenda-wide:h-dvh agenda-wide:min-h-0 agenda-wide:max-h-dvh agenda-wide:flex-col agenda-wide:overflow-hidden agenda-wide:pb-0">
       <div className="sticky top-0 z-30 shrink-0 border-b border-desk-foreground/10 bg-desk/95 px-3 py-2 sm:px-6 lg:px-8 text-desk-foreground backdrop-blur">
         <div className="grid w-full max-w-none grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 agenda-wide:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
           <Button size="sm" variant="secondary" className="col-start-1 row-start-1 shrink-0" onClick={() => setDate(todayStr())}>Oggi</Button>
