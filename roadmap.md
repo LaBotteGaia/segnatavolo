@@ -1,3 +1,4 @@
+- [ ] v0.8.47-alpha: correggere e verificare lo scorrimento delle pagine agenda su schermi orizzontali bassi, desktop e tema E-Ink.
 - [x] Ripristinare Arrivato sulle righe e segnalazione manuale No-Show.
 - [x] Calcolare storico per telefono e mostrare avvisi in creazione, ricerca e dettagli.
 - [x] Verificare regole e flusso completo su smartphone e desktop.
