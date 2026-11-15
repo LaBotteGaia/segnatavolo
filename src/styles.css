@@ -137,6 +137,27 @@
   --ring: oklch(0.7 0.13 25);
 }
 
+/* Modalità E-Ink / Carta: bianco e nero puro, nessuna animazione */
+.eink {
+  color-scheme: light;
+  --desk: #fff; --desk-foreground: #000; --paper: #fff; --rule: #000; --margin: #000; --ink: #000;
+  --background: #fff; --foreground: #000; --card: #fff; --card-foreground: #000;
+  --popover: #fff; --popover-foreground: #000; --primary: #000; --primary-foreground: #fff;
+  --secondary: #fff; --secondary-foreground: #000; --muted: #fff; --muted-foreground: #000;
+  --accent: #e5e5e5; --accent-foreground: #000; --destructive: #000; --destructive-foreground: #fff;
+  --border: #000; --input: #000; --ring: #000;
+  --free: #fff; --free-foreground: #000; --busy: #000; --busy-foreground: #fff;
+  --warning: #bbb; --recommendation: #666;
+  --shadow-book: none;
+}
+.eink *, .eink *::before, .eink *::after {
+  animation: none !important; transition: none !important;
+  box-shadow: none !important; text-shadow: none !important;
+  backdrop-filter: none !important; scroll-behavior: auto !important;
+}
+.eink body { -webkit-font-smoothing: none; }
+.eink .opacity-50, .eink .opacity-60, .eink .opacity-70 { opacity: 1 !important; }
+
 @layer base {
   * {
     border-color: var(--color-border);

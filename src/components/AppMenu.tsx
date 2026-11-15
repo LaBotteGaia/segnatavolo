@@ -108,10 +108,15 @@ export function AppMenu({ triggerClassName }: { triggerClassName?: string }) {
 
             <MenuHeading>Account &amp; Preferenze</MenuHeading>
             <MenuItem icon={<UserRound />} hint="Dati personali, password ed eliminazione account" onClick={() => { setOpen(false); setOperatorOpen(true); }}>Il Mio Profilo</MenuItem>
-            <label className="flex items-center gap-3 px-3 py-2.5" title="Cambia i colori di tutta l'app">
-              {theme === "dark" ? <Moon className="size-4 shrink-0" /> : <Sun className="size-4 shrink-0" />}<span className="flex-1 text-sm">Tema scuro</span>
-              <Switch checked={theme === "dark"} onCheckedChange={(v) => setTheme(v ? "dark" : "light")} aria-label="Tema scuro" />
-            </label>
+            <div className="px-3 py-2.5" title="Cambia i colori di tutta l'app">
+              <div className="mb-1.5 flex items-center gap-3">{theme === "dark" ? <Moon className="size-4 shrink-0" /> : <Sun className="size-4 shrink-0" />}<span className="text-sm">Tema</span></div>
+              <div role="radiogroup" aria-label="Tema" className="grid grid-cols-3 gap-1 rounded-md border p-0.5">
+                {([["light", "Chiaro"], ["dark", "Scuro"], ["eink", "E-Ink / Carta"]] as const).map(([v, l]) => (
+                  <button key={v} type="button" role="radio" aria-checked={theme === v} onClick={() => setTheme(v)}
+                    className={`rounded px-1.5 py-1 text-xs ${theme === v ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted"}`}>{l}</button>
+                ))}
+              </div>
+            </div>
             <label className="flex items-center gap-3 px-3 py-2.5" title="Avviso su questo dispositivo quando arriva una prenotazione">
               <Bell className="size-4 shrink-0" /><span className="flex-1 text-sm">Notifiche nuove prenotazioni</span>
               <Switch checked={notify} onCheckedChange={setNotify} aria-label="Notifiche nuove prenotazioni" />

@@ -104,7 +104,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="it" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: "try{if(localStorage.getItem('segnatavolo-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}" }} />
+        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('segnatavolo-theme');if(t==='dark'||t==='eink')document.documentElement.classList.add(t)}catch(e){}" }} />
         <HeadContent />
       </head>
       <body>
